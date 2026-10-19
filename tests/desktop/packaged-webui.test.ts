@@ -2,7 +2,7 @@ import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'fs'
 import { tmpdir } from 'os'
 import { dirname, join, resolve } from 'path'
 import { afterEach, describe, expect, it } from 'vitest'
-import verifyPackagedWebUi, { targetArchName } from '../../packages/desktop/scripts/verify-packaged-webui.mjs'
+import { verifyPackagedWebUiAssets as verifyPackagedWebUi, targetArchName } from '../../packages/desktop/scripts/verify-packaged-webui.mjs'
 
 const tempRoots: string[] = []
 

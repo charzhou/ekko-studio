@@ -3,6 +3,8 @@ import {
   mkdirSync,
   readFileSync,
   readdirSync,
+  renameSync,
+  rmSync,
   writeFileSync,
 } from 'node:fs'
 import {
@@ -31,6 +33,7 @@ import {
   windowsRuntimeNeedsRelocationRepair,
 } from './runtime-relocation'
 import { t } from './desktop-i18n'
+import { prepareBundledRuntime } from './bundled-runtime'
 
 const RUNTIME_MANIFEST_NAME = 'runtime-manifest.json'
 const PACKAGED_RUNTIME_RELEASE_NAME = 'runtime-release.json'
@@ -330,7 +333,13 @@ function readActiveRuntimeVersion(): ActiveRuntimeVersion | null {
 function writeActiveRuntimeManifest(active: ActiveRuntimeVersion): void {
   const file = activeVersionPath()
   mkdirSync(dirname(file), { recursive: true })
-  writeFileSync(file, JSON.stringify(active, null, 2) + '\n')
+  const temp = `${file}.${process.pid}.tmp`
+  try {
+    writeFileSync(temp, JSON.stringify(active, null, 2) + '\n')
+    renameSync(temp, file)
+  } finally {
+    rmSync(temp, { force: true })
+  }
 }
 
 async function copyTreeForMigration(source: string, destination: string): Promise<void> {
@@ -556,12 +565,25 @@ export function writeActiveRuntimeVersion(
   writeActiveRuntimeManifest(next)
 }
 
-// Runtime installation is managed outside this distribution. Ignore every legacy
-// URL/source/force-update override while retaining existing local runtimes.
+// Packaged Windows builds provision only their bundled archive. No remote
+// URL/source override is used; explicit local runtime directories remain supported.
 export async function ensureDesktopRuntime(
   onProgress?: RuntimeProgressHandler,
   _source?: RuntimeDownloadSource,
 ): Promise<void> {
+  if (app.isPackaged && process.platform === 'win32' && !process.env.HERMES_DESKTOP_RUNTIME_DIR?.trim()) {
+    const runtimeRoot = await prepareBundledRuntime({
+      resourceDirectory: join(process.resourcesPath, 'runtime'),
+      storageRoot: runtimeStorageRoot(),
+      platform: runtimePlatformKey(),
+      activeDirectory: desktopRuntimeDir(),
+      onProgress: stage => onProgress?.({
+        stage,
+        message: t(stage === 'verify' ? 'runtime.verifyingBundled' : stage === 'extract' ? 'runtime.extractingBundled' : 'runtime.ready'),
+      }),
+    })
+    writeActiveRuntimeVersion(runtimeRoot, { clearRuntimeActivationError: true })
+  }
   if (!runtimeReady()) throw new Error(t('runtime.localRequired'))
   onProgress?.({ stage: 'ready', message: t('runtime.ready') })
 }

@@ -21,16 +21,23 @@ files:
   - "!**/node_modules/.bin"
   - "!**/{.DS_Store,.git,.gitignore,.eslintrc*,.prettierrc*,*.map,tsconfig.json}"
 
-# Web UI source (built dist) lives outside the asar. Hermes uses a locally
-# installed runtime; AFY Studio never downloads runtime assets.
+# Web UI and the prebuilt offline runtime live outside the asar. The app
+# extracts its local runtime archive on first launch without downloading it.
 # This package lives at packages/desktop, so ../.. is the hermes-web-ui repo root.
 extraResources:
+  - from: "resources/runtime"
+    to: "runtime"
+    filter:
+      - "hermes-runtime-win-${arch}.json"
+      - "hermes-runtime-hermes-agent-*-win-${arch}.tar.gz"
+      - "hermes-runtime-hermes-agent-*-win-${arch}.tar.gz.sha256"
   - from: "build"
     to: "build"
     filter:
       - "icon.png"
       - "icon.ico"
       - "trayWindows.png"
+      - "runtime-release.json"
   - from: "../.."
     to: "webui"
     filter:
@@ -71,7 +78,7 @@ win:
   icon: build/icon.ico
   target:
     - target: nsis
-      arch: [x64, arm64]
+      arch: [x64]
   artifactName: "Ekko.Studio-${version}-${arch}.${ext}"
 
 nsis:

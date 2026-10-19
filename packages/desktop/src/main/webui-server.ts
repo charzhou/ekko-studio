@@ -638,6 +638,7 @@ export async function startWebUiServer(port = DEFAULT_PORT): Promise<string> {
     searchPath: userSearchPath,
     hermesHome: agentHome,
     managedRuntimes: runtimeCandidates,
+    preferManagedRuntime: app.isPackaged || Boolean(process.env.HERMES_DESKTOP_RUNTIME_DIR?.trim()),
   })
   const selectedManagedRuntime = hermesSelection.source === 'managed-runtime'
     ? runtimeCandidates.find(candidate => resolve(candidate.path) === resolve(hermesSelection.path))

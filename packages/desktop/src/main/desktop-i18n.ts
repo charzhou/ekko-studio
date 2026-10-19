@@ -15,6 +15,8 @@ type TranslationKey =
   | 'desktop.failedStartServices'
   | 'desktop.shuttingDown'
   | 'runtime.migrating'
+  | 'runtime.verifyingBundled'
+  | 'runtime.extractingBundled'
   | 'runtime.ready'
   | 'runtime.localRequired'
   | 'common.ok'
@@ -46,6 +48,8 @@ const translations: Record<DesktopLocale, Record<TranslationKey, string>> = {
     'desktop.failedStartServices': 'Failed to start local services',
     'desktop.shuttingDown': 'Closing local services...',
     'runtime.migrating': 'Copying Runtime and downloaded Web UI versions to the selected storage directory...',
+    'runtime.verifyingBundled': 'Verifying the bundled runtime...',
+    'runtime.extractingBundled': 'Preparing the local runtime. The first launch may take a moment...',
     'runtime.ready': 'AFY Studio runtime ready.',
     'runtime.localRequired': 'A local AFY Studio runtime is required. Automatic runtime downloads are disabled in AFY Studio.',
     'common.ok': 'OK',
@@ -74,6 +78,8 @@ const translations: Record<DesktopLocale, Record<TranslationKey, string>> = {
     'desktop.failedStartServices': '启动本地服务失败',
     'desktop.shuttingDown': '正在关闭本地服务...',
     'runtime.migrating': '正在将 Runtime 和已下载的 Web UI 版本迁移到所选存储目录...',
+    'runtime.verifyingBundled': '正在校验内置运行环境...',
+    'runtime.extractingBundled': '正在准备本地运行环境，首次启动可能稍需等待...',
     'runtime.ready': 'AFY Studio 运行时已就绪。',
     'runtime.localRequired': '需要本机已安装的 AFY Studio 运行时。AFY Studio 已停用自动下载运行时。',
     'common.ok': '确定',
@@ -102,6 +108,8 @@ const translations: Record<DesktopLocale, Record<TranslationKey, string>> = {
     'desktop.failedStartServices': '啟動本地服務失敗',
     'desktop.shuttingDown': '正在關閉本地服務...',
     'runtime.migrating': '正在將 Runtime 和已下載的 Web UI 版本遷移至所選儲存目錄...',
+    'runtime.verifyingBundled': '正在驗證內建執行環境...',
+    'runtime.extractingBundled': '正在準備本機執行環境，首次啟動可能需要稍候...',
     'runtime.ready': 'AFY Studio 運行時已就緒。',
     'runtime.localRequired': '需要本機已安裝的 AFY Studio 執行環境。AFY Studio 已停用自動下載執行環境。',
     'common.ok': '確定',
@@ -130,6 +138,8 @@ const translations: Record<DesktopLocale, Record<TranslationKey, string>> = {
     'desktop.failedStartServices': 'ローカルサービスの起動に失敗しました',
     'desktop.shuttingDown': 'ローカルサービスを終了しています...',
     'runtime.migrating': 'Runtime とダウンロード済み Web UI を選択した保存先へ移行しています...',
+    'runtime.verifyingBundled': '同梱の実行環境を検証しています...',
+    'runtime.extractingBundled': 'ローカルの実行環境を準備しています。初回起動には少し時間がかかる場合があります...',
     'runtime.ready': 'AFY Studio ランタイムの準備ができました。',
     'runtime.localRequired': 'ローカルの AFY Studio ランタイムが必要です。AFY Studio ではランタイムの自動ダウンロードは無効です。',
     'common.ok': 'OK',
@@ -158,6 +168,8 @@ const translations: Record<DesktopLocale, Record<TranslationKey, string>> = {
     'desktop.failedStartServices': '로컬 서비스 시작 실패',
     'desktop.shuttingDown': '로컬 서비스를 종료하는 중...',
     'runtime.migrating': 'Runtime과 다운로드된 Web UI를 선택한 저장 디렉터리로 이동하는 중...',
+    'runtime.verifyingBundled': '내장된 실행 환경을 확인하는 중...',
+    'runtime.extractingBundled': '로컬 실행 환경을 준비하는 중입니다. 처음 실행할 때는 잠시 기다려 주세요...',
     'runtime.ready': 'AFY Studio 런타임이 준비되었습니다.',
     'runtime.localRequired': '로컬 AFY Studio 런타임이 필요합니다. AFY Studio에서는 런타임 자동 다운로드가 비활성화되어 있습니다.',
     'common.ok': '확인',
@@ -186,6 +198,8 @@ const translations: Record<DesktopLocale, Record<TranslationKey, string>> = {
     'desktop.failedStartServices': 'Echec du demarrage des services locaux',
     'desktop.shuttingDown': 'Fermeture des services locaux...',
     'runtime.migrating': 'Migration du Runtime et des versions Web UI vers le repertoire selectionne...',
+    'runtime.verifyingBundled': 'Vérification de l’environnement d’exécution intégré...',
+    'runtime.extractingBundled': 'Préparation de l’environnement d’exécution local. Le premier démarrage peut prendre un moment...',
     'runtime.ready': 'Runtime AFY Studio pret.',
     'runtime.localRequired': 'Un runtime AFY Studio local est requis. Le téléchargement automatique est désactivé dans AFY Studio.',
     'common.ok': 'OK',
@@ -214,6 +228,8 @@ const translations: Record<DesktopLocale, Record<TranslationKey, string>> = {
     'desktop.failedStartServices': 'No se pudieron iniciar los servicios locales',
     'desktop.shuttingDown': 'Cerrando servicios locales...',
     'runtime.migrating': 'Moviendo Runtime y las versiones Web UI al directorio seleccionado...',
+    'runtime.verifyingBundled': 'Verificando el entorno de ejecución incluido...',
+    'runtime.extractingBundled': 'Preparando el entorno de ejecución local. El primer inicio puede tardar un momento...',
     'runtime.ready': 'Runtime de AFY Studio listo.',
     'runtime.localRequired': 'Se requiere un runtime AFY Studio local. Las descargas automáticas están desactivadas en AFY Studio.',
     'common.ok': 'Aceptar',
@@ -242,6 +258,8 @@ const translations: Record<DesktopLocale, Record<TranslationKey, string>> = {
     'desktop.failedStartServices': 'Lokale Dienste konnten nicht gestartet werden',
     'desktop.shuttingDown': 'Lokale Dienste werden beendet...',
     'runtime.migrating': 'Runtime und Web-UI-Versionen werden in das ausgewahlte Speicherverzeichnis verschoben...',
+    'runtime.verifyingBundled': 'Die mitgelieferte Laufzeitumgebung wird überprüft...',
+    'runtime.extractingBundled': 'Die lokale Laufzeitumgebung wird vorbereitet. Der erste Start kann einen Moment dauern...',
     'runtime.ready': 'AFY Studio Runtime ist bereit.',
     'runtime.localRequired': 'Eine lokale AFY Studio-Laufzeit ist erforderlich. Automatische Downloads sind in AFY Studio deaktiviert.',
     'common.ok': 'OK',
@@ -270,6 +288,8 @@ const translations: Record<DesktopLocale, Record<TranslationKey, string>> = {
     'desktop.failedStartServices': 'Falha ao iniciar os servicos locais',
     'desktop.shuttingDown': 'Encerrando servicos locais...',
     'runtime.migrating': 'Movendo o Runtime e as versoes Web UI para o diretorio selecionado...',
+    'runtime.verifyingBundled': 'Verificando o ambiente de execução incluído...',
+    'runtime.extractingBundled': 'Preparando o ambiente de execução local. A primeira inicialização pode levar alguns instantes...',
     'runtime.ready': 'Runtime AFY Studio pronto.',
     'runtime.localRequired': 'É necessário um runtime AFY Studio local. Os downloads automáticos estão desativados no AFY Studio.',
     'common.ok': 'OK',

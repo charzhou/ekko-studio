@@ -1,4 +1,6 @@
-import { existsSync, readdirSync } from 'node:fs'
+import { existsSync, readFileSync, readdirSync } from 'node:fs'
+import { runtimeReleaseMetadata, verifyBundledRuntime } from './verify-bundled-runtime.mjs'
+import { verifyOfflineRuntimeStartup } from './verify-offline-runtime-startup.mjs'
 import { join } from 'node:path'
 
 const ARCH_NAMES = ['ia32', 'x64', 'armv7l', 'arm64', 'universal']
@@ -117,7 +119,7 @@ function sherpaRuntimeFiles(platform) {
   ]
 }
 
-export default async function verifyPackagedWebUi(context) {
+export async function verifyPackagedWebUiAssets(context) {
   const webUiRoot = join(packagedResourcesDirectory(context), 'webui')
   const nodePtyRoot = join(webUiRoot, 'node_modules', 'node-pty')
   const nodePtyTarget = `${context.electronPlatformName}-${targetArchName(context.arch)}`
@@ -171,4 +173,23 @@ export default async function verifyPackagedWebUi(context) {
   }
 
   console.log(`[package] verified bundled Web UI and production dependencies at ${webUiRoot}`)
+}
+
+export default async function verifyPackagedWebUi(context) {
+  await verifyPackagedWebUiAssets(context)
+  const resourcesRoot = packagedResourcesDirectory(context)
+  const runtime = await verifyBundledRuntime(
+    join(resourcesRoot, 'runtime'), context.electronPlatformName, targetArchName(context.arch),
+  )
+  const releasePath = join(resourcesRoot, 'build', 'runtime-release.json')
+  const release = JSON.parse(readFileSync(releasePath, 'utf8'))
+  const expectedRelease = runtimeReleaseMetadata(runtime)
+  if (release.tag !== expectedRelease.tag || release.hermesAgentVersion !== expectedRelease.hermesAgentVersion
+    || release.hermesSource?.repository !== expectedRelease.hermesSource.repository
+    || release.hermesSource?.ref !== expectedRelease.hermesSource.ref
+    || release.hermesSource?.commit !== expectedRelease.hermesSource.commit) {
+    throw new Error(`Packaged runtime release identity disagrees with bundled runtime: ${releasePath}`)
+  }
+  await verifyOfflineRuntimeStartup(join(resourcesRoot, 'runtime'))
+  console.log(`[package] verified offline runtime ${runtime.hermesAgentVersion} at ${join(resourcesRoot, 'runtime')}`)
 }

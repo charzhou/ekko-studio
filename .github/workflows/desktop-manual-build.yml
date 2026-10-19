@@ -10,7 +10,7 @@ on:
         required: true
         type: choice
         default: x64
-        options: [x64, arm64]
+        options: [x64]
 
 permissions:
   contents: read
@@ -21,8 +21,9 @@ concurrency:
 
 jobs:
   desktop:
-    name: Windows ${{ inputs.target_arch || 'x64' }}
-    runs-on: ${{ inputs.target_arch == 'arm64' && 'windows-11-arm' || 'windows-latest' }}
+    name: Windows x64
+    needs: runtime
+    runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -44,31 +45,34 @@ jobs:
         run: npm prune --omit=dev --no-audit --no-fund
       - name: Verify image runtime
         run: npm run verify:sharp-runtime
-      - name: Build Windows ARM64 speech binding
-        if: inputs.target_arch == 'arm64'
-        run: node packages/desktop/scripts/build-windows-arm64-speech.mjs
       - name: Install desktop dependencies
         run: npm ci --prefix packages/desktop --no-audit --no-fund
+      - name: Download bundled offline runtime
+        uses: actions/download-artifact@v4
+        with:
+          name: afy-studio-runtime-windows-x64
+          path: packages/desktop/resources/runtime
+      - name: Verify runtime artifact and stage its release identity
+        run: node packages/desktop/scripts/stage-bundled-runtime.mjs
       - name: Build Windows installer
-        run: npm --prefix packages/desktop run dist -- --win nsis --${{ inputs.target_arch || 'x64' }} --publish never
+        run: npm --prefix packages/desktop run dist -- --win nsis --x64 --publish never
       - name: Upload installer
         uses: actions/upload-artifact@v4
         with:
-          name: afy-studio-windows-${{ inputs.target_arch || 'x64' }}
+          name: afy-studio-windows-x64
           path: packages/desktop/release/*.exe
           if-no-files-found: error
           retention-days: 7
 
   runtime:
-    # Hermes 0.22.0 still lacks several core Windows ARM64 wheels.
-    # Keep ARM64 installer builds available; runtime bundling starts with x64.
-    if: inputs.target_arch != 'arm64'
-    name: Windows runtime ${{ inputs.target_arch || 'x64' }}
-    runs-on: ${{ inputs.target_arch == 'arm64' && 'windows-11-arm' || 'windows-latest' }}
+    # Hermes 0.22.0 lacks core Windows ARM64 wheels. Distribute complete x64
+    # installers until an equivalent ARM64 runtime can be prepared.
+    name: Windows runtime x64
+    runs-on: windows-latest
     timeout-minutes: 90
     env:
       TARGET_OS: win32
-      TARGET_ARCH: ${{ inputs.target_arch || 'x64' }}
+      TARGET_ARCH: x64
       # Match the Hermes release currently used by the local AFY integration.
       # Keep version, release ref and peeled commit together when upgrading.
       HERMES_VERSION: 0.22.0
@@ -78,7 +82,7 @@ jobs:
       PBS_PY: 3.14.7
       PBS_TAG: '20260901'
       HERMES_DESKTOP_NODE_VERSION: 22.22.0
-      GIT_FOR_WINDOWS_URL: https://github.com/git-for-windows/git/releases/download/v2.56.0.windows.2/MinGit-2.56.0.2-${{ inputs.target_arch == 'arm64' && 'arm64' || '64-bit' }}.zip
+      GIT_FOR_WINDOWS_URL: https://github.com/git-for-windows/git/releases/download/v2.56.0.windows.2/MinGit-2.56.0.2-64-bit.zip
       # Core desktop tools and Anthropic support; optional messaging adapters,
       # browser binaries and upstream frontends are outside this runtime.
       HERMES_EXTRAS: all,anthropic
@@ -102,7 +106,7 @@ jobs:
       - name: Upload offline runtime
         uses: actions/upload-artifact@v4
         with:
-          name: afy-studio-runtime-windows-${{ inputs.target_arch || 'x64' }}
+          name: afy-studio-runtime-windows-x64
           path: |
             packages/desktop/release/runtime/*.tar.gz
             packages/desktop/release/runtime/*.tar.gz.sha256

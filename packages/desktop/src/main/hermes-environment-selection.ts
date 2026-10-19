@@ -56,6 +56,7 @@ export interface DesktopHermesSelectionOptions {
   hermesHome: string
   managedRuntime?: DesktopManagedHermesRuntime
   managedRuntimes?: DesktopManagedHermesRuntime[]
+  preferManagedRuntime?: boolean
   probeTimeoutMs?: number
 }
 
@@ -385,54 +386,68 @@ export async function resolveDesktopHermesSelection(
   const userCandidates = userCommands
     .map(command => completeUserCliSelection(command, options.hermesHome, baseEnv))
     .filter((candidate): candidate is NonNullable<typeof candidate> => Boolean(candidate))
-  for (const candidate of userCandidates) {
-    const probe = await probeHermesVersion(candidate, baseEnv, timeout, 'user-cli')
-    if (probe.ok) {
-      return {
-        ...candidate,
-        source: 'user-cli',
-        version: probe.version,
+  const managedRuntimeFailures: DesktopManagedHermesRuntimeFailure[] = []
+  const tryUserCli = async (): Promise<DesktopHermesSelection | undefined> => {
+    for (const candidate of userCandidates) {
+      const probe = await probeHermesVersion(candidate, baseEnv, timeout, 'user-cli')
+      if (probe.ok) {
+        return {
+          ...candidate,
+          source: 'user-cli',
+          version: probe.version,
+          ...(managedRuntimeFailures.length > 0 ? { managedRuntimeFailures } : {}),
+        }
       }
     }
+    return undefined
   }
-
-  const managedRuntimeFailures: DesktopManagedHermesRuntimeFailure[] = []
-  for (const managed of managedRuntimes) {
-    const preflightError = managedRuntimePreflightError(managed)
-    if (preflightError) {
-      managedRuntimeFailures.push({
-        directory: managed.directory,
-        version: managed.managedRuntimeVersion || '',
-        reason: preflightError,
-      })
-      continue
-    }
-
-    const managedEnv = { ...baseEnv }
-    if (managed.probePath) managedEnv[pathKey] = managed.probePath
-    const probe = await probeHermesVersion(managed, managedEnv, timeout, 'managed-runtime')
-    if (probe.ok) {
-      const missingAgentFiles = missingManagedRuntimeAgentFiles(managed)
-      if (missingAgentFiles.length > 0) {
+  const tryManagedRuntime = async (): Promise<DesktopHermesSelection | undefined> => {
+    for (const managed of managedRuntimes) {
+      const preflightError = managedRuntimePreflightError(managed)
+      if (preflightError) {
         managedRuntimeFailures.push({
           directory: managed.directory,
           version: managed.managedRuntimeVersion || '',
-          reason: `Runtime Agent files are missing: ${missingAgentFiles.join(', ')}`,
+          reason: preflightError,
         })
         continue
       }
-      return {
-        ...managed,
-        source: 'managed-runtime',
-        version: probe.version,
-        ...(managedRuntimeFailures.length > 0 ? { managedRuntimeFailures } : {}),
+
+      const managedEnv = { ...baseEnv }
+      if (managed.probePath) managedEnv[pathKey] = managed.probePath
+      const probe = await probeHermesVersion(managed, managedEnv, timeout, 'managed-runtime')
+      if (probe.ok) {
+        const missingAgentFiles = missingManagedRuntimeAgentFiles(managed)
+        if (missingAgentFiles.length > 0) {
+          managedRuntimeFailures.push({
+            directory: managed.directory,
+            version: managed.managedRuntimeVersion || '',
+            reason: `Runtime Agent files are missing: ${missingAgentFiles.join(', ')}`,
+          })
+          continue
+        }
+        return {
+          ...managed,
+          source: 'managed-runtime',
+          version: probe.version,
+          ...(managedRuntimeFailures.length > 0 ? { managedRuntimeFailures } : {}),
+        }
       }
+      managedRuntimeFailures.push({
+        directory: managed.directory,
+        version: managed.managedRuntimeVersion || '',
+        reason: probe.error,
+      })
     }
-    managedRuntimeFailures.push({
-      directory: managed.directory,
-      version: managed.managedRuntimeVersion || '',
-      reason: probe.error,
-    })
+    return undefined
+  }
+
+  const resolvers = options.preferManagedRuntime
+    ? [tryManagedRuntime, tryUserCli]
+    : [tryUserCli, tryManagedRuntime]
+  for (const resolveSelection of resolvers) {
+    const selection = await resolveSelection()
+    if (selection) return selection
   }
 
   return {

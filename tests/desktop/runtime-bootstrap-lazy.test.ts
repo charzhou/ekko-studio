@@ -3,14 +3,15 @@ import { resolve } from 'node:path'
 import { describe, expect, it } from 'vitest'
 
 describe('desktop Runtime bootstrap', () => {
-  it('starts Studio with local runtimes without a runtime download path', () => {
+  it('prepares the bundled Windows runtime before local services without a runtime download path', () => {
     const source = readFileSync(resolve(process.cwd(), 'packages/desktop/src/main/index.ts'), 'utf8')
     const bootstrap = source.slice(
       source.indexOf('async function bootstrap('),
       source.indexOf("ipcMain.handle('hermes-desktop:get-token'"),
     )
 
-    expect(bootstrap).not.toContain('ensureDesktopRuntime')
+    expect(bootstrap).toContain("if (app.isPackaged && process.platform === 'win32') await ensureDesktopRuntime(updateSplash)")
+    expect(bootstrap.indexOf('await ensureDesktopRuntime')).toBeLessThan(bootstrap.indexOf('await startWebUiServer(PORT)'))
     expect(bootstrap).not.toContain('HERMES_DESKTOP_RUNTIME_URL')
     expect(bootstrap).not.toContain('waitForRemoteServerReady')
     expect(bootstrap).toContain('await startWebUiServer(PORT)')

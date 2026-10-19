@@ -47,6 +47,7 @@ import {
   migratePendingRuntimeRoot,
   repairUpdatedDesktopRuntimeLaunchers,
   writeActiveRuntimeVersion,
+  ensureDesktopRuntime,
   type RuntimeProgress,
 } from './runtime-manager'
 import { BrowserManager } from './browser/browser-manager'
@@ -895,14 +896,19 @@ async function bootstrap() {
       console.warn(`[desktop] legacy Windows Hermes data migration will retry on the next launch: ${legacyMigration.error || 'unknown error'}`)
     }
     await migratePendingRuntimeRoot(updateSplash)
+    if (app.isPackaged && process.platform === 'win32') await ensureDesktopRuntime(updateSplash)
     repairUpdatedDesktopRuntimeLaunchers()
     if (isDesktopRuntimeReady()) {
       writeActiveRuntimeVersion()
       await installPackagedCommandShims()
     }
   } catch (err) {
-    console.error('Failed to prepare Hermes runtime:', err)
-    // A missing Hermes runtime must not block the built-in AFY agent.
+    console.error('Failed to prepare AFY Studio runtime:', err)
+    if (app.isPackaged && process.platform === 'win32') {
+      await loadServiceFailurePage(err, t('desktop.failedPrepareRuntime'))
+      isBootstrapping = false
+      return
+    }
   }
 
   try {
