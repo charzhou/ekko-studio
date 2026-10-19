@@ -10,9 +10,6 @@ const EKKO_BUILTIN_SKILLS = [
   'docx',
   'gh-issues',
   'github',
-  'grok-image-to-video',
-  'hermes-studio-installation',
-  'image-gen',
   'node-inspect-debugger',
   'obsidian',
   'ocr-and-documents',
@@ -28,9 +25,6 @@ const EKKO_BUILTIN_SKILLS = [
 ]
 
 const EKKO_REQUIRED_SKILL_FILES = [
-  ['hermes-studio-installation', 'references', 'coding-agents.md'],
-  ['hermes-studio-installation', 'references', 'hermes-runtime.md'],
-  ['hermes-studio-installation', 'references', 'studio.md'],
   ['document-to-action-items', 'LICENSE'],
   ['docx', 'LICENSE'],
   ['docx', 'references', 'revisions-and-comments.md'],
@@ -38,8 +32,6 @@ const EKKO_REQUIRED_SKILL_FILES = [
   ['docx', 'scripts', 'docx_edit.py'],
   ['docx', 'scripts', 'docx_read.py'],
   ['docx', 'scripts', 'docx_validate.py'],
-  ['grok-image-to-video', 'scripts', 'grok-image-to-video.mjs'],
-  ['image-gen', 'scripts', 'studio-image-gen.mjs'],
   ['ocr-and-documents', 'LICENSE'],
   ['ocr-and-documents', 'scripts', 'extract_marker.py'],
   ['ocr-and-documents', 'scripts', 'extract_pymupdf.py'],
