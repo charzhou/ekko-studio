@@ -157,7 +157,11 @@ if (!desktopBuild.includes('appId: com.hermeswebui.studio')) fail('OEM keeps the
 if (desktopManifest.name !== 'hermes-studio') fail('OEM keeps the existing desktop package identity')
 if (/^(?:mac|linux):/m.test(desktopBuild)) fail('AFY Studio only distributes Windows desktop installers')
 if (!manualBuild.includes('--win nsis') || !manualBuild.includes('--publish never')) fail('Windows build must produce installer artifacts without publication')
-if (/action-gh-release|gh release|prepare:runtime/.test(manualBuild)) fail('AFY Windows CI must not publish releases or download a managed runtime')
+if (/action-gh-release|gh release/.test(manualBuild)) fail('AFY Windows CI must not publish releases')
+// Build-time preparation supplies offline runtime artifacts; it must not restore
+// application runtime download/update endpoints or publication feeds.
+if (!manualBuild.includes('run prepare:runtime') || !manualBuild.includes('run package:runtime')
+  || !manualBuild.includes('afy-studio-runtime-windows-')) fail('AFY Windows CI must prepare and upload offline runtime artifacts')
 for (const retired of ['packages/esp32-c3', 'packages/tos', 'Dockerfile', 'docker-compose.yml']) {
   if (existsSync(path.join(root, retired))) fail('Retired OEM distribution remains: ' + retired)
 }

@@ -75,7 +75,7 @@ npm run build
 
 ## OEM distribution
 
-AFY Studio distributes Windows installers as workflow artifacts. Automatic updates,
+AFY Studio distributes Windows installers and offline runtime bundles as workflow artifacts. Automatic updates,
 managed runtime/model downloads, publication feeds, mobile/cloud relays, partner
 services, hardware firmware, Docker, NAS and macOS/Linux installers are excluded.
 Package IDs, data paths and protocols remain compatible. See `docs/oem/IMPLEMENTATION.md`.

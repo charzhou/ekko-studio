@@ -58,3 +58,55 @@ jobs:
           path: packages/desktop/release/*.exe
           if-no-files-found: error
           retention-days: 7
+
+  runtime:
+    # Hermes 0.22.0 still lacks several core Windows ARM64 wheels.
+    # Keep ARM64 installer builds available; runtime bundling starts with x64.
+    if: inputs.target_arch != 'arm64'
+    name: Windows runtime ${{ inputs.target_arch || 'x64' }}
+    runs-on: ${{ inputs.target_arch == 'arm64' && 'windows-11-arm' || 'windows-latest' }}
+    timeout-minutes: 90
+    env:
+      TARGET_OS: win32
+      TARGET_ARCH: ${{ inputs.target_arch || 'x64' }}
+      # Match the Hermes release currently used by the local AFY integration.
+      # Keep version, release ref and peeled commit together when upgrading.
+      HERMES_VERSION: 0.22.0
+      HERMES_SOURCE_REPOSITORY: https://github.com/NousResearch/hermes-agent.git
+      HERMES_SOURCE_REF: v0.22.0
+      HERMES_SOURCE_COMMIT: e06df9c2eae6901f4c88f464e0ae6e753c0428b8
+      PBS_PY: 3.14.7
+      PBS_TAG: '20260901'
+      HERMES_DESKTOP_NODE_VERSION: 22.22.0
+      GIT_FOR_WINDOWS_URL: https://github.com/git-for-windows/git/releases/download/v2.56.0.windows.2/MinGit-2.56.0.2-${{ inputs.target_arch == 'arm64' && 'arm64' || '64-bit' }}.zip
+      # Core desktop tools and Anthropic support; optional messaging adapters,
+      # browser binaries and upstream frontends are outside this runtime.
+      HERMES_EXTRAS: all,anthropic
+      HERMES_SKIP_BROWSER_RUNTIME: '1'
+      HERMES_SKIP_FRONTEND_BUILD: '1'
+      UV_PYTHON_DOWNLOADS: never
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: packages/desktop/package-lock.json
+      - uses: astral-sh/setup-uv@v6
+      - name: Install runtime build dependencies
+        run: npm ci --prefix packages/desktop --ignore-scripts --no-audit --no-fund
+      - name: Prepare pinned Windows runtime
+        run: npm --prefix packages/desktop run prepare:runtime
+      - name: Validate relocation and package runtime
+        run: npm --prefix packages/desktop run package:runtime
+      - name: Upload offline runtime
+        uses: actions/upload-artifact@v4
+        with:
+          name: afy-studio-runtime-windows-${{ inputs.target_arch || 'x64' }}
+          path: |
+            packages/desktop/release/runtime/*.tar.gz
+            packages/desktop/release/runtime/*.tar.gz.sha256
+            packages/desktop/release/runtime/*.json
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 7
