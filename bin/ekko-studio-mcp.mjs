@@ -47,7 +47,7 @@ const VERSION = readPackageVersion()
 function printHelp() {
   process.stdout.write(`${DISPLAY_COMMAND} v${VERSION}
 
-Ekko Studio MCP stdio server.
+AFY Studio MCP stdio server.
 
 Usage:
   ${DISPLAY_COMMAND} [api|browser|devices|use|plan]
@@ -451,7 +451,7 @@ const moduleHints = {
     keywords: ['codex', 'claude', 'coding agent', 'install', 'run'],
   },
   Config: {
-    purpose: 'Read and update Hermes Web UI configuration.',
+    purpose: 'Read and update AFY Studio configuration.',
     keywords: ['config', 'settings', 'preferences'],
   },
   Devices: {
@@ -592,7 +592,7 @@ function compactOpenApiDocument(openapi, args = {}) {
   }
 
   return {
-    title: openapi?.info?.title || 'Ekko Studio API',
+    title: openapi?.info?.title || 'AFY Studio API',
     version: openapi?.info?.version || '',
     usage: hasFilters
       ? 'Use the selected operation details to call ekko_studio_api_request with method, path, query, and body. Auth and profile are handled by the MCP server.'
@@ -608,7 +608,7 @@ function compactOpenApiDocument(openapi, args = {}) {
 const authArgumentProperties = {
   token: {
     type: 'string',
-    description: 'Optional Hermes Web UI bearer token. Usually omit this and pass profile so the MCP server can read the temporary profile token.',
+    description: 'Optional AFY Studio bearer token. Usually omit this and pass profile so the MCP server can read the temporary profile token.',
   },
   profile: {
     type: 'string',
@@ -655,7 +655,7 @@ function browserDescriptor() {
     if (process.platform !== 'win32' && (directoryInfo.mode & 0o077) !== 0) throw new Error('unsafe descriptor directory permissions')
     descriptor = JSON.parse(readFileSync(descriptorPath, 'utf8'))
   } catch {
-    throw new Error('Ekko Studio Desktop Browser is not running. Open the Desktop app and try again.')
+    throw new Error('AFY Studio Desktop Browser is not running. Open the Desktop app and try again.')
   }
   const endpoint = String(descriptor?.endpoint || '')
   const token = String(descriptor?.token || '')
@@ -664,7 +664,7 @@ function browserDescriptor() {
     throw new Error('Desktop Browser Broker descriptor is invalid')
   }
   if (!Number.isInteger(descriptor.desktopPid) || descriptor.desktopPid <= 0) throw new Error('Desktop Browser Broker PID is invalid')
-  try { process.kill(descriptor.desktopPid, 0) } catch { throw new Error('Ekko Studio Desktop Browser is no longer running') }
+  try { process.kill(descriptor.desktopPid, 0) } catch { throw new Error('AFY Studio Desktop Browser is no longer running') }
   return { endpoint, token, instanceId: String(descriptor.instanceId || '') }
 }
 
@@ -926,7 +926,7 @@ const tools = [
   {
     name: 'ekko_studio_browser_tabs',
     toolset: 'browser',
-    description: 'List, create, activate, close, or release control of Ekko Studio Desktop browser tabs. Reuse explicit tab_id values across calls.',
+    description: 'List, create, activate, close, or release control of AFY Studio Desktop browser tabs. Reuse explicit tab_id values across calls.',
     inputSchema: browserInputSchema({
       action: { type: 'string', enum: ['list', 'create', 'activate', 'close', 'release'] },
       tab_id: { type: 'string', description: 'Required for activate, close, and release.' },
@@ -937,7 +937,7 @@ const tools = [
   {
     name: 'ekko_studio_browser_navigate',
     toolset: 'browser',
-    description: 'Open an HTTP/HTTPS URL or move back, forward, reload, or stop one Ekko Studio Desktop browser tab.',
+    description: 'Open an HTTP/HTTPS URL or move back, forward, reload, or stop one AFY Studio Desktop browser tab.',
     inputSchema: browserInputSchema({
       tab_id: { type: 'string' },
       action: { type: 'string', enum: ['open', 'back', 'forward', 'reload', 'stop'], description: 'Defaults to open when url is provided.' },
@@ -1023,7 +1023,7 @@ const tools = [
   {
     name: 'ekko_studio_api_openapi_get',
     toolset: 'api',
-    description: 'Return Ekko Studio API documentation as compact JSON. When the user asks to read/check the operation manual, API docs, endpoint docs, 接口文档, 接口手册, or 操作手册, call this tool without filters first to get the outline/module index. Without filters, returns only module purpose, keywords, and operation counts because the full API catalog is large. For endpoint details, call again with tag, path, or method filters, then use ekko_studio_api_request.',
+    description: 'Return AFY Studio API documentation as compact JSON. When the user asks to read/check the operation manual, API docs, endpoint docs, 接口文档, 接口手册, or 操作手册, call this tool without filters first to get the outline/module index. Without filters, returns only module purpose, keywords, and operation counts because the full API catalog is large. For endpoint details, call again with tag, path, or method filters, then use ekko_studio_api_request.',
     inputSchema: inputSchema({
         path: {
           type: 'string',
@@ -1047,7 +1047,7 @@ const tools = [
   {
     name: 'ekko_studio_api_request',
     toolset: 'api',
-    description: 'Execute a Ekko Studio operation by calling an endpoint path. Use ekko_studio_api_openapi_get first as the operation manual to inspect method, parameters, requestBody, and responses. Do not use /api/studio/chat-run/* or /api/studio/sessions/* as an internal delegation mechanism.',
+    description: 'Execute a AFY Studio operation by calling an endpoint path. Use ekko_studio_api_openapi_get first as the operation manual to inspect method, parameters, requestBody, and responses. Do not use /api/studio/chat-run/* or /api/studio/sessions/* as an internal delegation mechanism.',
     inputSchema: inputSchema({
         method: {
           type: 'string',
@@ -1056,7 +1056,7 @@ const tools = [
         },
         path: {
           type: 'string',
-          description: 'Relative Ekko Studio endpoint path from the operation manual, for example /api/studio/sessions?limit=20. Full URLs and // paths are rejected.',
+          description: 'Relative AFY Studio endpoint path from the operation manual, for example /api/studio/sessions?limit=20. Full URLs and // paths are rejected.',
         },
         body: {
           type: ['object', 'array', 'string', 'number', 'boolean', 'null'],
@@ -1109,7 +1109,7 @@ const tools = [
   {
     name: 'ekko_studio_use_chat_run',
     toolset: 'use',
-    description: 'Start one user-requested Ekko Studio chat or coding-agent run through the HTTP bridge and wait for completion. Do not use this as an internal delegation or subtask mechanism.',
+    description: 'Start one user-requested AFY Studio chat or coding-agent run through the HTTP bridge and wait for completion. Do not use this as an internal delegation or subtask mechanism.',
     inputSchema: inputSchema({
         input: {
           oneOf: [
@@ -1198,7 +1198,7 @@ const tools = [
   {
     name: 'ekko_studio_use_sessions_list',
     toolset: 'use',
-    description: 'List Ekko Studio chat sessions for an explicit user-requested session operation. Do not use this as an internal delegation mechanism.',
+    description: 'List AFY Studio chat sessions for an explicit user-requested session operation. Do not use this as an internal delegation mechanism.',
     inputSchema: inputSchema({
         limit: {
           type: 'number',
@@ -1213,7 +1213,7 @@ const tools = [
   {
     name: 'ekko_studio_use_sessions_count',
     toolset: 'use',
-    description: 'Count Ekko Studio chat sessions without returning the session list. Do not use this as an internal delegation mechanism.',
+    description: 'Count AFY Studio chat sessions without returning the session list. Do not use this as an internal delegation mechanism.',
     inputSchema: inputSchema({
         source: {
           type: 'string',
@@ -1224,7 +1224,7 @@ const tools = [
   {
     name: 'ekko_studio_use_usage_stats',
     toolset: 'use',
-    description: 'Query Ekko Studio usage totals, cost estimate, model breakdown, and daily trend for the selected profile.',
+    description: 'Query AFY Studio usage totals, cost estimate, model breakdown, and daily trend for the selected profile.',
     inputSchema: inputSchema({
         days: {
           type: 'number',
@@ -1235,7 +1235,7 @@ const tools = [
   {
     name: 'ekko_studio_use_session_get',
     toolset: 'use',
-    description: 'Get one Ekko Studio session by id for an explicit user-requested session operation. Do not use this as an internal delegation mechanism.',
+    description: 'Get one AFY Studio session by id for an explicit user-requested session operation. Do not use this as an internal delegation mechanism.',
     inputSchema: inputSchema({
         session_id: {
           type: 'string',
@@ -1246,7 +1246,7 @@ const tools = [
   {
     name: 'ekko_studio_use_session_messages',
     toolset: 'use',
-    description: 'Get messages for one Ekko Studio conversation. By default returns user and assistant messages only. Do not use this as an internal delegation mechanism.',
+    description: 'Get messages for one AFY Studio conversation. By default returns user and assistant messages only. Do not use this as an internal delegation mechanism.',
     inputSchema: inputSchema({
         session_id: {
           type: 'string',
@@ -1276,7 +1276,7 @@ const tools = [
   {
     name: 'ekko_studio_use_session_delete',
     toolset: 'use',
-    description: 'Delete one Ekko Studio session by id for an explicit user-requested session operation. Do not use this as an internal delegation mechanism.',
+    description: 'Delete one AFY Studio session by id for an explicit user-requested session operation. Do not use this as an internal delegation mechanism.',
     inputSchema: inputSchema({
         session_id: {
           type: 'string',
@@ -1287,7 +1287,7 @@ const tools = [
   {
     name: 'ekko_studio_use_session_rename',
     toolset: 'use',
-    description: 'Rename one Ekko Studio session title for an explicit user-requested session operation. Do not use this as an internal delegation mechanism.',
+    description: 'Rename one AFY Studio session title for an explicit user-requested session operation. Do not use this as an internal delegation mechanism.',
     inputSchema: inputSchema({
         session_id: {
           type: 'string',
@@ -1302,13 +1302,13 @@ const tools = [
   {
     name: 'ekko_studio_use_profiles_list',
     toolset: 'use',
-    description: 'List Ekko Studio profiles.',
+    description: 'List AFY Studio profiles.',
     inputSchema: inputSchema(),
   },
   {
     name: 'ekko_studio_use_available_models',
     toolset: 'use',
-    description: 'List available Ekko Studio models for the selected profile as a compact provider/model summary. Use query to narrow results or include_details=true only when raw provider metadata is required.',
+    description: 'List available AFY Studio models for the selected profile as a compact provider/model summary. Use query to narrow results or include_details=true only when raw provider metadata is required.',
     inputSchema: inputSchema({
         query: {
           type: 'string',
@@ -1338,7 +1338,7 @@ const tools = [
   {
     name: 'ekko_studio_use_provider_add',
     toolset: 'use',
-    description: 'Add or update a Ekko Studio model provider for the selected profile, then make it the active default provider/model.',
+    description: 'Add or update a AFY Studio model provider for the selected profile, then make it the active default provider/model.',
     inputSchema: inputSchema({
         name: {
           type: 'string',
@@ -1374,7 +1374,7 @@ const tools = [
   {
     name: 'ekko_studio_use_provider_delete',
     toolset: 'use',
-    description: 'Delete a Ekko Studio model provider or clear a built-in provider credential for the selected profile.',
+    description: 'Delete a AFY Studio model provider or clear a built-in provider credential for the selected profile.',
     inputSchema: inputSchema({
         pool_key: {
           type: 'string',
@@ -1398,78 +1398,9 @@ const tools = [
     inputSchema: inputSchema(),
   },
   {
-    name: 'ekko_studio_use_mobile_location',
-    toolset: 'use',
-    description: 'Request the user’s current mobile-device location once for the current direct chat. The App always asks the user to confirm before sharing WGS84 coordinates. Never use proactively, for background tracking, or from delegated/workflow tasks.',
-    inputSchema: inputSchema({
-        session_id: {
-          type: 'string',
-          description: 'Exact current Ekko Studio direct-chat session id supplied in the run context.',
-        },
-        purpose: {
-          type: 'string',
-          description: 'Short user-visible explanation of why the current location is needed.',
-        },
-        accuracy: {
-          type: 'string',
-          enum: ['coarse', 'precise'],
-          description: 'Requested accuracy. Defaults to coarse; use precise only when necessary for the user’s request.',
-        },
-        timeout_ms: {
-          type: 'number',
-          description: 'Maximum time to wait for the user and device, from 3000 to 60000 milliseconds.',
-        },
-      }, ['session_id', 'purpose']),
-  },
-  {
-    name: 'ekko_studio_use_mobile_calendar',
-    toolset: 'use',
-    description: 'With the user’s explicit request, ask their mobile App to list, create, update, or delete calendar events in the current direct chat. The App always requires one-time confirmation. Single-item delete requires exact listed id, title and start_ms (calendar) or due_ms when present (reminder), with fresh App confirmation. Background access is not supported.',
-    inputSchema: inputSchema({
-      session_id: { type: 'string', description: 'Exact current Ekko Studio direct-chat session id supplied in the run context.' },
-      action: { type: 'string', enum: ['list', 'create', 'update', 'delete'], description: 'Calendar operation.' },
-      purpose: { type: 'string', description: 'Short user-visible reason for the request.' },
-      start_ms: { type: 'number', description: 'List range start as Unix milliseconds.' },
-      end_ms: { type: 'number', description: 'List range end as Unix milliseconds; maximum range is 31 days.' },
-      limit: { type: 'number', description: 'Maximum list result count, from 1 to 100.' },
-      item: { type: 'object', additionalProperties: true, description: 'Event fields for create/update: id (update), title, start_ms, end_ms, all_day, location, notes, reminder_minutes.' },
-      timeout_ms: { type: 'number', minimum: 3000, maximum: 300000, default: 300000, description: 'Wait time for user confirmation, from 3000 to 300000 milliseconds. Defaults to 5 minutes, matching the App consent card. Omit unless the user requests a shorter wait.' },
-    }, ['session_id', 'action', 'purpose']),
-  },
-  {
-    name: 'ekko_studio_use_mobile_reminders',
-    toolset: 'use',
-    description: 'With the user’s explicit request, ask their mobile App to list, create, update, complete, or delete reminders in the current direct chat. The App always requires one-time confirmation. Single-item delete requires exact listed id, title and start_ms (calendar) or due_ms when present (reminder), with fresh App confirmation. Background access is not supported.',
-    inputSchema: inputSchema({
-      session_id: { type: 'string', description: 'Exact current Ekko Studio direct-chat session id supplied in the run context.' },
-      action: { type: 'string', enum: ['list', 'create', 'update', 'complete', 'delete'], description: 'Reminder operation.' },
-      purpose: { type: 'string', description: 'Short user-visible reason for the request.' },
-      start_ms: { type: 'number', description: 'List range start as Unix milliseconds.' },
-      end_ms: { type: 'number', description: 'List range end as Unix milliseconds; maximum range is 31 days.' },
-      include_completed: { type: 'boolean', description: 'Include completed reminders when listing.' },
-      limit: { type: 'number', description: 'Maximum list result count, from 1 to 100.' },
-      item: { type: 'object', additionalProperties: true, description: 'Reminder fields: id (update/complete), title, due_ms, notes, priority, completed.' },
-      timeout_ms: { type: 'number', minimum: 3000, maximum: 300000, default: 300000, description: 'Wait time for user confirmation, from 3000 to 300000 milliseconds. Defaults to 5 minutes, matching the App consent card. Omit unless the user requests a shorter wait.' },
-    }, ['session_id', 'action', 'purpose']),
-  },
-  {
-    name: 'ekko_studio_use_mobile_health',
-    toolset: 'use',
-    description: 'With the user’s explicit request, ask their iPhone or iPad App to read selected Apple HealthKit data once in the current direct chat. iOS only; read-only; no background collection, diagnosis, advertising, delegated tasks, workflows, or group chats.',
-    inputSchema: inputSchema({
-      session_id: { type: 'string', description: 'Exact current Ekko Studio direct-chat session id supplied in the run context.' },
-      purpose: { type: 'string', description: 'Short user-visible reason for reading the health data.' },
-      metrics: { type: 'array', items: { type: 'string', enum: ['steps', 'sleep', 'heart_rate', 'resting_heart_rate', 'heart_rate_variability', 'oxygen_saturation', 'body_weight', 'active_energy', 'distance_walking_running', 'workouts'] }, minItems: 1, uniqueItems: true, description: 'Health metrics to read.' },
-      start_ms: { type: 'number', description: 'Range start as Unix milliseconds.' },
-      end_ms: { type: 'number', description: 'Range end as Unix milliseconds, not in the future; maximum range is 31 days.' },
-      limit: { type: 'number', minimum: 1, maximum: 100, description: 'Maximum sleep or workout records returned.' },
-      timeout_ms: { type: 'number', minimum: 3000, maximum: 300000, default: 300000, description: 'Wait time for one-time App confirmation.' },
-    }, ['session_id', 'purpose', 'metrics', 'start_ms', 'end_ms']),
-  },
-  {
     name: 'ekko_studio_use_workflows_list',
     toolset: 'use',
-    description: 'List Ekko Studio workflows for the selected or requested profile.',
+    description: 'List AFY Studio workflows for the selected or requested profile.',
     inputSchema: inputSchema({
         profile: {
           type: 'string',
@@ -1480,7 +1411,7 @@ const tools = [
   {
     name: 'ekko_studio_use_workflow_get',
     toolset: 'use',
-    description: 'Get one Ekko Studio workflow by id.',
+    description: 'Get one AFY Studio workflow by id.',
     inputSchema: inputSchema({
         workflow_id: {
           type: 'string',
@@ -1491,7 +1422,7 @@ const tools = [
   {
     name: 'ekko_studio_use_workflow_create',
     toolset: 'use',
-    description: 'Create a Ekko Studio workflow with optional nodes, edges, viewport, workspace, and profile.',
+    description: 'Create a AFY Studio workflow with optional nodes, edges, viewport, workspace, and profile.',
     inputSchema: inputSchema({
         name: {
           type: 'string',
@@ -1525,7 +1456,7 @@ const tools = [
   {
     name: 'ekko_studio_use_workflow_update',
     toolset: 'use',
-    description: 'Update a Ekko Studio workflow name, workspace, nodes, edges, or viewport.',
+    description: 'Update a AFY Studio workflow name, workspace, nodes, edges, or viewport.',
     inputSchema: inputSchema({
         workflow_id: {
           type: 'string',
@@ -1559,7 +1490,7 @@ const tools = [
   {
     name: 'ekko_studio_use_workflow_delete',
     toolset: 'use',
-    description: 'Delete one Ekko Studio workflow by id, including its workflow run records.',
+    description: 'Delete one AFY Studio workflow by id, including its workflow run records.',
     inputSchema: inputSchema({
         workflow_id: {
           type: 'string',
@@ -1667,169 +1598,29 @@ const tools = [
         },
       }, ['workflow_id', 'run_id']),
   },
-  {
-    name: 'ekko_studio_lan_devices_list',
-    toolset: 'devices',
-    description: 'List known LAN and remote devices from Hermes Web UI, including pairing and online status.',
-    inputSchema: inputSchema(),
-  },
-  {
-    name: 'ekko_studio_lan_devices_scan',
-    toolset: 'devices',
-    description: 'Refresh LAN device discovery cache and return known devices with pairing and online status.',
-    inputSchema: inputSchema(),
-  },
-  {
-    name: 'ekko_studio_lan_peer_connect',
-    toolset: 'devices',
-    description: 'Connect to a paired LAN device by device id.',
-    inputSchema: inputSchema({ device_id: { type: 'string' } }, ['device_id']),
-  },
-  {
-    name: 'ekko_studio_lan_peer_connections',
-    toolset: 'devices',
-    description: 'List active LAN peer socket connections.',
-    inputSchema: inputSchema(),
-  },
-  {
-    name: 'ekko_studio_lan_peer_disconnect',
-    toolset: 'devices',
-    description: 'Disconnect an active LAN peer socket connection.',
-    inputSchema: inputSchema({ connection_id: { type: 'string' } }, ['connection_id']),
-  },
-  {
-    name: 'ekko_studio_lan_terminal_create',
-    toolset: 'devices',
-    description: 'Create an interactive terminal on a connected LAN peer.',
-    inputSchema: inputSchema({
-        connection_id: { type: 'string' },
-        shell: { type: 'string' },
-        cols: { type: 'number' },
-        rows: { type: 'number' },
-      }, ['connection_id']),
-  },
-  {
-    name: 'ekko_studio_lan_terminal_list',
-    toolset: 'devices',
-    description: 'List interactive terminals tracked for a connected LAN peer, including IDs that can be read or closed.',
-    inputSchema: inputSchema({
-        connection_id: { type: 'string' },
-      }, ['connection_id']),
-  },
-  {
-    name: 'ekko_studio_lan_terminal_input',
-    toolset: 'devices',
-    description: 'Write input to an interactive terminal on a connected LAN peer.',
-    inputSchema: inputSchema({
-        connection_id: { type: 'string' },
-        terminal_id: { type: 'string' },
-        data: { type: 'string' },
-      }, ['connection_id', 'terminal_id', 'data']),
-  },
-  {
-    name: 'ekko_studio_lan_terminal_read',
-    toolset: 'devices',
-    description: 'Read buffered terminal output from an interactive terminal.',
-    inputSchema: inputSchema({
-        connection_id: { type: 'string' },
-        terminal_id: { type: 'string' },
-      }, ['connection_id', 'terminal_id']),
-  },
-  {
-    name: 'ekko_studio_lan_terminal_resize',
-    toolset: 'devices',
-    description: 'Resize an interactive terminal on a connected LAN peer.',
-    inputSchema: inputSchema({
-        connection_id: { type: 'string' },
-        terminal_id: { type: 'string' },
-        cols: { type: 'number' },
-        rows: { type: 'number' },
-      }, ['connection_id', 'terminal_id', 'cols', 'rows']),
-  },
-  {
-    name: 'ekko_studio_lan_terminal_close',
-    toolset: 'devices',
-    description: 'Close an interactive terminal on a connected LAN peer.',
-    inputSchema: inputSchema({
-        connection_id: { type: 'string' },
-        terminal_id: { type: 'string' },
-      }, ['connection_id', 'terminal_id']),
-  },
-  {
-    name: 'ekko_studio_lan_command_exec',
-    toolset: 'devices',
-    description: 'Run a command on a connected LAN peer using command plus args, without shell string execution.',
-    inputSchema: inputSchema({
-        connection_id: { type: 'string' },
-        command: { type: 'string' },
-        args: { type: 'array', items: { type: 'string' } },
-        cwd: { type: 'string' },
-        timeout_ms: { type: 'number' },
-      }, ['connection_id', 'command']),
-  },
-  {
-    name: 'ekko_studio_lan_file_download',
-    toolset: 'devices',
-    description: 'Download a file from a connected LAN peer remote path to a local path on this machine.',
-    inputSchema: inputSchema({
-        connection_id: { type: 'string' },
-        remote_path: { type: 'string' },
-        local_path: { type: 'string' },
-        timeout_ms: { type: 'number' },
-      }, ['connection_id', 'remote_path', 'local_path']),
-  },
-  {
-    name: 'ekko_studio_lan_file_upload',
-    toolset: 'devices',
-    description: 'Upload a local file path from this machine to a connected LAN peer remote path.',
-    inputSchema: inputSchema({
-        connection_id: { type: 'string' },
-        local_path: { type: 'string' },
-        remote_path: { type: 'string' },
-        timeout_ms: { type: 'number' },
-      }, ['connection_id', 'local_path', 'remote_path']),
-  },
 ]
 
 const TOOL_ALIASES = new Map([
   ['hermes_api_openapi_get', 'ekko_studio_api_openapi_get'],
   ['hermes_api_request', 'ekko_studio_api_request'],
   ['ekko_studio_use_workflow_run_rerun_from_node', 'ekko_studio_use_workflow_rerun_node'],
-  ['hermes_lan_devices_list', 'ekko_studio_lan_devices_list'],
-  ['hermes_lan_devices_scan', 'ekko_studio_lan_devices_scan'],
-  ['hermes_lan_peer_connect', 'ekko_studio_lan_peer_connect'],
-  ['hermes_lan_peer_connections', 'ekko_studio_lan_peer_connections'],
-  ['hermes_lan_peer_disconnect', 'ekko_studio_lan_peer_disconnect'],
-  ['hermes_lan_terminal_create', 'ekko_studio_lan_terminal_create'],
-  ['hermes_lan_terminal_list', 'ekko_studio_lan_terminal_list'],
-  ['hermes_lan_terminal_input', 'ekko_studio_lan_terminal_input'],
-  ['hermes_lan_terminal_read', 'ekko_studio_lan_terminal_read'],
-  ['hermes_lan_terminal_resize', 'ekko_studio_lan_terminal_resize'],
-  ['hermes_lan_terminal_close', 'ekko_studio_lan_terminal_close'],
-  ['hermes_lan_command_exec', 'ekko_studio_lan_command_exec'],
-  ['hermes_lan_file_download', 'ekko_studio_lan_file_download'],
-  ['hermes_lan_file_upload', 'ekko_studio_lan_file_upload'],
 ])
 
 const CATEGORY_TOOLSETS = {
   browser: {
     name: 'ekko_studio_browser_toolset',
-    coverage: 'Ekko Studio Desktop browser tabs and leases; HTTP/HTTPS navigation; accessibility snapshots with stable refs; single or sequential batch click, type, key press, and scroll interaction; viewport or full-page screenshots; bounded console log read and clear.',
-    description: 'Discover and invoke Ekko Studio Desktop browser operations without loading every browser tool schema into the model context. Covers tab list/create/activate/close/release, navigation back/forward/reload/stop/open, accessibility snapshots, single or batch click/type/key/scroll interaction, screenshots, and console logs. Use action=list for the compact operation catalog, action=describe for one full input schema, then action=call with that exact tool name and arguments.',
-  },
-  devices: {
-    name: 'ekko_studio_devices_toolset',
-    coverage: 'LAN and remote device discovery and status; paired peer connect/disconnect; interactive terminal create/list/input/read/resize/close; structured remote command execution; file upload and download.',
-    description: 'Discover and invoke Ekko Studio LAN/remote-device operations without loading every device tool schema into the model context. Covers device list/scan, paired peer connections, interactive terminal lifecycle and I/O, structured command execution using command plus argument arrays, and remote file upload/download. Use action=list for the compact operation catalog, action=describe for one full input schema, then action=call with that exact tool name and arguments.',
+    coverage: 'AFY Studio Desktop browser tabs and leases; HTTP/HTTPS navigation; accessibility snapshots with stable refs; single or sequential batch click, type, key press, and scroll interaction; viewport or full-page screenshots; bounded console log read and clear.',
+    description: 'Discover and invoke AFY Studio Desktop browser operations without loading every browser tool schema into the model context. Covers tab list/create/activate/close/release, navigation back/forward/reload/stop/open, accessibility snapshots, single or batch click/type/key/scroll interaction, screenshots, and console logs. Use action=list for the compact operation catalog, action=describe for one full input schema, then action=call with that exact tool name and arguments.',
   },
   use: {
     name: 'ekko_studio_use_toolset',
-    coverage: 'Explicit user-requested Studio chat/coding runs; one-time confirmed mobile location, calendar and reminder operations; session list/count/detail/messages/context/rename/delete; usage statistics; profiles and available models; provider add/delete; worker status; workflow CRUD and workflow run list/start/stop/rerun/delete.',
-    description: 'Discover and invoke high-level Ekko Studio operations without loading every Studio-use tool schema into the model context. Covers explicit user-requested chat or coding runs, one-time confirmed mobile location, calendar/reminder operations, session management and clean context, usage statistics, profiles/models/providers, worker status, workflow CRUD, and workflow run lifecycle. Never use chat/session or mobile-device operations as an internal delegation mechanism. Use action=list for the compact operation catalog, action=describe for one full input schema, then action=call with that exact tool name and arguments.',
+    coverage: 'Explicit user-requested Studio chat/coding runs; session list/count/detail/messages/context/rename/delete; usage statistics; profiles and available models; provider add/delete; worker status; workflow CRUD and workflow run list/start/stop/rerun/delete.',
+    description: 'Discover and invoke high-level AFY Studio operations without loading every Studio-use tool schema into the model context. Covers explicit user-requested chat or coding runs, session management and clean context, usage statistics, profiles/models/providers, worker status, workflow CRUD, and workflow run lifecycle. Never use chat/session operations as an internal delegation mechanism. Use action=list for the compact operation catalog, action=describe for one full input schema, then action=call with that exact tool name and arguments.',
   },
 }
 
 function categoryToolsetDefinition(toolset) {
+  if (toolset === 'devices') return null
   const category = CATEGORY_TOOLSETS[toolset]
   if (!category) return null
   return {
@@ -1869,7 +1660,7 @@ function resolveToolName(name) {
 }
 
 function activeToolsetTools() {
-  return tools.filter(tool => tool.toolset === ACTIVE_TOOLSET
+  return tools.filter(tool => tool.toolset !== 'devices' && !tool.name.startsWith('ekko_studio_use_mobile_') && tool.toolset === ACTIVE_TOOLSET
     && (SHARED_TASK_PLAN_ENABLED || tool.toolset !== 'plan')
     && (USER_CLARIFICATION_ENABLED || tool.name !== 'ekko_studio_clarify'))
 }
@@ -1887,12 +1678,13 @@ function categoryToolByName(name) {
 }
 
 function serverInstructions() {
+  if (ACTIVE_TOOLSET === 'devices') return ''
   if (ACTIVE_TOOLSET === 'plan') return SHARED_TASK_PLAN_ENABLED
     ? 'Use ekko_studio_update_plan from ekko-studio-interaction to maintain the current Studio task card. Use only the context_id supplied with the latest input; expired contexts cannot update another turn.'
-      + (USER_CLARIFICATION_ENABLED ? ' Use ekko_studio_clarify from this same MCP server to ask a necessary question and wait for the user in Studio/App, using the latest interaction context_id. Never treat timeout, dismissal, or cancellation as approval.' : '')
+      + (USER_CLARIFICATION_ENABLED ? ' Use ekko_studio_clarify from this same MCP server to ask a necessary question and wait for the user in AFY Studio, using the latest interaction context_id. Never treat timeout, dismissal, or cancellation as approval.' : '')
     : ''
   if (ACTIVE_TOOLSET === 'api') {
-    return 'Ekko Studio API operations. Use ekko_studio_api_openapi_get without filters for the compact module index, call it again with tag/path/method filters for endpoint details, then call ekko_studio_api_request with the documented relative path and JSON fields.'
+    return 'AFY Studio API operations. Use ekko_studio_api_openapi_get without filters for the compact module index, call it again with tag/path/method filters for endpoint details, then call ekko_studio_api_request with the documented relative path and JSON fields.'
   }
   const category = CATEGORY_TOOLSETS[ACTIVE_TOOLSET]
   return category ? `${category.description} Coverage: ${category.coverage}` : ''
@@ -2141,32 +1933,6 @@ async function callTool(name, args = {}, signal) {
       return jsonText(summarizeWorkerRuntime(
         await request('/api/studio/performance/runtime', withAuthArgs(args)),
       ))
-    case 'ekko_studio_use_mobile_location':
-      return jsonText(await request('/api/studio/mobile-location/request', withAuthArgs(args, {
-        method: 'POST',
-        body: pickDefined(args, ['session_id', 'purpose', 'accuracy', 'timeout_ms']),
-      })))
-    case 'ekko_studio_use_mobile_calendar':
-      return jsonText(await request('/api/studio/mobile-calendar/request', withAuthArgs(currentMobileSessionArgs(args), {
-        method: 'POST',
-        body: {
-          capability: 'calendar',
-          ...pickDefined(currentMobileSessionArgs(args), ['session_id', 'action', 'purpose', 'start_ms', 'end_ms', 'limit', 'item', 'timeout_ms']),
-        },
-      })))
-    case 'ekko_studio_use_mobile_reminders':
-      return jsonText(await request('/api/studio/mobile-calendar/request', withAuthArgs(currentMobileSessionArgs(args), {
-        method: 'POST',
-        body: {
-          capability: 'reminder',
-          ...pickDefined(currentMobileSessionArgs(args), ['session_id', 'action', 'purpose', 'start_ms', 'end_ms', 'include_completed', 'limit', 'item', 'timeout_ms']),
-        },
-      })))
-    case 'ekko_studio_use_mobile_health':
-      return jsonText(await request('/api/studio/mobile-health/request', withAuthArgs(currentMobileSessionArgs(args), {
-        method: 'POST',
-        body: pickDefined(currentMobileSessionArgs(args), ['session_id', 'purpose', 'metrics', 'start_ms', 'end_ms', 'limit', 'timeout_ms']),
-      })))
     case 'ekko_studio_use_workflows_list':
       return jsonText(await request('/api/studio/workflows', withAuthArgs(args, {
         query: pickDefined(args, ['profile']),
@@ -2229,52 +1995,6 @@ async function callTool(name, args = {}, signal) {
     case 'ekko_studio_use_workflow_run_delete':
       return jsonText(await request(`/api/studio/workflows/${encodeURIComponent(args.workflow_id)}/runs/${encodeURIComponent(args.run_id)}`, withAuthArgs(args, {
         method: 'DELETE',
-      })))
-    case 'ekko_studio_lan_devices_list':
-      return jsonText(await request('/api/devices', withAuthArgs(args)))
-    case 'ekko_studio_lan_devices_scan':
-      return jsonText(await request('/api/devices/scan', withAuthArgs(args, { method: 'POST' })))
-    case 'ekko_studio_lan_peer_connect':
-      return jsonText(await request(`/api/devices/${encodeURIComponent(args.device_id)}/connect`, withAuthArgs(args, { method: 'POST' })))
-    case 'ekko_studio_lan_peer_connections':
-      return jsonText(await request('/api/devices/peer-connections', withAuthArgs(args)))
-    case 'ekko_studio_lan_peer_disconnect':
-      return jsonText(await request(`/api/devices/peer-connections/${encodeURIComponent(args.connection_id)}/disconnect`, withAuthArgs(args, { method: 'POST' })))
-    case 'ekko_studio_lan_terminal_create':
-      return jsonText(await request(`/api/devices/peer-connections/${encodeURIComponent(args.connection_id)}/terminal`, withAuthArgs(args, {
-        method: 'POST',
-        body: { shell: args.shell, cols: args.cols, rows: args.rows },
-      })))
-    case 'ekko_studio_lan_terminal_list':
-      return jsonText(await request(`/api/devices/peer-connections/${encodeURIComponent(args.connection_id)}/terminals`, withAuthArgs(args)))
-    case 'ekko_studio_lan_terminal_input':
-      return jsonText(await request(`/api/devices/peer-connections/${encodeURIComponent(args.connection_id)}/terminal/${encodeURIComponent(args.terminal_id)}/input`, withAuthArgs(args, {
-        method: 'POST',
-        body: { data: args.data },
-      })))
-    case 'ekko_studio_lan_terminal_read':
-      return jsonText(await request(`/api/devices/peer-connections/${encodeURIComponent(args.connection_id)}/terminal/${encodeURIComponent(args.terminal_id)}/read`, withAuthArgs(args)))
-    case 'ekko_studio_lan_terminal_resize':
-      return jsonText(await request(`/api/devices/peer-connections/${encodeURIComponent(args.connection_id)}/terminal/${encodeURIComponent(args.terminal_id)}/resize`, withAuthArgs(args, {
-        method: 'POST',
-        body: { cols: args.cols, rows: args.rows },
-      })))
-    case 'ekko_studio_lan_terminal_close':
-      return jsonText(await request(`/api/devices/peer-connections/${encodeURIComponent(args.connection_id)}/terminal/${encodeURIComponent(args.terminal_id)}/close`, withAuthArgs(args, { method: 'POST' })))
-    case 'ekko_studio_lan_command_exec':
-      return jsonText(await request(`/api/devices/peer-connections/${encodeURIComponent(args.connection_id)}/exec`, withAuthArgs(args, {
-        method: 'POST',
-        body: { command: args.command, args: args.args || [], cwd: args.cwd, timeout_ms: args.timeout_ms },
-      })))
-    case 'ekko_studio_lan_file_download':
-      return jsonText(await request(`/api/devices/peer-connections/${encodeURIComponent(args.connection_id)}/download`, withAuthArgs(args, {
-        method: 'POST',
-        body: { remote_path: args.remote_path, local_path: args.local_path, timeout_ms: args.timeout_ms },
-      })))
-    case 'ekko_studio_lan_file_upload':
-      return jsonText(await request(`/api/devices/peer-connections/${encodeURIComponent(args.connection_id)}/upload`, withAuthArgs(args, {
-        method: 'POST',
-        body: { local_path: args.local_path, remote_path: args.remote_path, timeout_ms: args.timeout_ms },
       })))
     default:
       return errorText(`Unknown tool: ${name}`)

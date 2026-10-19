@@ -8,7 +8,7 @@ import { usePageSidebarState } from "@/composables/usePageSidebar"
 import PageLoading from '@/components/common/PageLoading.vue'
 import PageHeader from '@/components/layout/PageHeader.vue'
 import HeaderSidebarToggle from '@/components/layout/HeaderSidebarToggle.vue'
-import { AGENT_OPTIONS } from "@/utils/agent-options"
+import { isOemAgentEnabled, isOemSessionRunnable, OEM_AGENT_OPTIONS } from "@/utils/agent-options"
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import { NSpin, NButton, NCheckbox, NDrawer, NDrawerContent, NDropdown, NInput, NInputNumber, NModal, NPopconfirm, NSelect, NSpace, NTooltip, useMessage, type DropdownOption } from 'naive-ui'
 import {
@@ -428,7 +428,7 @@ const workflowSchedulePendingIds = ref<Set<string>>(new Set())
 let edgePreviewTimer: number | null = null
 let workflowBudgetClock: number | null = null
 
-const workflowAgentDefinitions = AGENT_OPTIONS
+const workflowAgentDefinitions = OEM_AGENT_OPTIONS
 
 const agentOptions = computed<WorkflowSelectOption[]>(() => workflowAgentDefinitions.filter(option =>
   isAgentStatusAvailable(agentStatusSnapshot.value, option.value),
@@ -585,6 +585,7 @@ function skillsLoadingForAgent(agent: string, profile = activeWorkflowProfile.va
 function withRuntimeNodeData(data: WorkflowAgentNodeData): WorkflowAgentNodeData {
   return {
     ...data,
+    readonly: Boolean(data.readonly) || !isOemAgentEnabled(data.agent),
     agentOptions: agentOptions.value,
     skillOptions: skillOptionsForAgent(data.agent),
     skillsLoading: skillsLoadingForAgent(data.agent),
@@ -602,6 +603,7 @@ function refreshWorkflowNodeSkillOptions() {
 }
 
 async function ensureSkillOptionsForAgent(agent: string, profile = activeWorkflowProfile.value): Promise<void> {
+  if (!isOemAgentEnabled(agent)) return
   const target = workflowAgentToSkillTarget(agent)
   const key = skillOptionsCacheKey(agent, profile)
   if (skillOptionsByKey.value[key] || skillOptionRequests.has(key)) return skillOptionRequests.get(key)
@@ -671,6 +673,7 @@ function makeNode(
       approvalRequired: data.approvalRequired === true,
       orchestration: { join: data.orchestration?.join === 'any' ? 'any' : 'all' },
       status: data.status || 'idle',
+      readonly: !isOemAgentEnabled(agent),
       agentOptions: agentOptions.value,
       skillOptions: skillOptionsForAgent(agent),
       skillsLoading: skillsLoadingForAgent(agent),
@@ -689,7 +692,7 @@ const nodes = ref<WorkflowNode[]>(makeInitialNodes())
 const edges = ref<WorkflowEdge[]>([])
 
 function unavailableWorkflowAgent() {
-  return nodes.value.find(node => !isAgentStatusAvailable(agentStatusSnapshot.value, node.data.agent))
+  return nodes.value.find(node => !isOemAgentEnabled(node.data.agent) || !isAgentStatusAvailable(agentStatusSnapshot.value, node.data.agent))
 }
 
 const edgeEditorEdge = computed(() => edges.value.find(edge => edge.id === edgeEditorId.value) || null)
@@ -895,7 +898,7 @@ const { catalog: workflowChatNativeCatalog } = useCodingAgentModels(
     const id = chatStore.activeSession?.codingAgentId || chatStore.activeSession?.agent || 'codex'
     return (agentMetadata(id)?.id || id) as CodingAgentId
   },
-  () => workflowChatPanelVisible.value && chatStore.activeSession?.id === workflowChatPanelSessionId.value
+  () => workflowChatPanelVisible.value && isOemSessionRunnable(chatStore.activeSession) && chatStore.activeSession?.id === workflowChatPanelSessionId.value
     && chatStore.activeSession?.codingAgentMode === 'global',
 )
 const workflowChatPanelModelLabel = computed(() => {
@@ -2601,6 +2604,7 @@ function workflowValidationError(): string | null {
 
   for (const node of nodes.value) {
     const label = workflowNodeLabel(node)
+    if (!isOemAgentEnabled(node.data.agent)) return t('oem.hermesOnly')
     if (node.data.agent === 'dsh' && (!node.data.agentPreset || node.data.agentPresetReady === false)) return t('dshPresets.selectMode')
     if (!node.data.title.trim()) return t('workflow.validation.nodeNameRequired', { node: node.id })
     const usesGlobalCodingAgent = ['claude-code', 'codex', 'pi', 'grok', 'opencode', 'dsh', 'cursor', 'antigravity', 'qwen', 'kimi', 'codebuddy', 'qoder', 'copilot', 'zcode'].includes(node.data.agent)
@@ -2844,7 +2848,8 @@ function workflowModelSelectionKey(id: string, agent: string, mode: string) {
 function updateNodeData(id: string, patch: Partial<WorkflowAgentNodeEditableData>) {
   if (selectedWorkflowRunId.value) return
   nodes.value = nodes.value.map<WorkflowNode>((node) => {
-    if (node.id !== id) return node
+    if (node.id !== id || !isOemAgentEnabled(node.data.agent)) return node
+    if (typeof patch.agent === 'string' && !isOemAgentEnabled(patch.agent)) return node
     const agentChanged = typeof patch.agent === 'string' && patch.agent !== node.data.agent
     const nextAgent = typeof patch.agent === 'string' ? patch.agent : node.data.agent
     const switched = agentChanged

@@ -550,7 +550,7 @@ export async function handleBridgeRun(
   }
   await writeModelRunProfileToken(socketUser, profile)
   const runPrompt = [
-    'When calling Hermes Web UI endpoints from tools or skills, include the current Hermes profile as the X-Hermes-Profile header if the endpoint supports profile-scoped behavior.',
+    'When calling AFY Studio endpoints from tools or skills, include the current Hermes profile as the X-Hermes-Profile header if the endpoint supports profile-scoped behavior.',
   ].filter(Boolean).join('\n')
   if (!callbackContext?.instructions) {
     fullInstructions = `\n${runPrompt}\n${fullInstructions}`

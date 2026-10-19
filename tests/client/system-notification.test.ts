@@ -59,7 +59,7 @@ describe('system notification adapter', () => {
     expect(JSON.stringify(shown[0])).not.toContain('Which environment?')
   })
 
-  it('passes only an internal Hermes target to the service worker notification', async () => {
+  it('passes only an internal AFY Studio target to the service worker notification', async () => {
     const showNotification = vi.fn(async () => undefined)
     const registration = { showNotification }
     Object.defineProperty(navigator, 'serviceWorker', { configurable: true, value: {

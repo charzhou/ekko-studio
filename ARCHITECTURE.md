@@ -1,8 +1,10 @@
 # Architecture
 
-Ekko Studio is a TypeScript monorepo that ships a local-first AI workspace
+AFY Studio is a TypeScript monorepo that ships a local-first AI workspace
 through a web console, a Koa backend, and an Electron desktop app. It integrates
-Ekko Agent, Hermes Agent, and coding agents for chat, coding, and workflows.
+Hermes Agent for chat, coding, and workflows. The OEM product keeps the original
+module boundaries and Studio orchestration surfaces, while Hermes is the only
+Agent execution backend exposed to users.
 
 ## Package Boundaries
 
@@ -10,7 +12,8 @@ Ekko Agent, Hermes Agent, and coding agents for chat, coding, and workflows.
 | --- | --- | --- |
 | Client | `packages/client/src` | Vue UI, routing, Pinia stores, API wrappers, i18n, browser-visible state. |
 | Server | `packages/server/src` | HTTP API, auth, Socket.IO, SQLite stores, file access, Hermes runtime integration. |
-| Ekko Agent | `packages/ekko-agent` | Canonical Ekko runtime, profile facade, providers, tools, memory, skills, conversations, and package API. |
+| Hermes integration | `packages/server/src/modules/hermes` and bridge runtime | Hermes Profiles, local Agent bridge, model providers, tools, approvals, streaming and execution lifecycle. |
+| Compatibility runtimes | `packages/ekko-agent`, `packages/server/src/modules/ekko`, `packages/server/src/modules/coding-agents` | Retained source boundaries and contracts; their Agent product entries are disabled in the OEM registry and routing policy. |
 | Desktop | `packages/desktop` | Electron shell, local Web UI server bootstrap, updater, bundled Python/Hermes runtime. |
 | Tests | `tests` | Vitest unit/integration tests and Playwright browser tests. |
 | CI | `.github/workflows` | Build, e2e, lockfile, Docker, and desktop release automation. |
@@ -40,7 +43,10 @@ should not duplicate server persistence rules.
 
 Server code is separated by business ownership under `modules/studio`,
 `modules/hermes`, `modules/ekko`, and `modules/coding-agents`; concrete module
-composition belongs in `bootstrap`.
+composition belongs in `bootstrap`. The OEM policy selects only
+`modules/hermes` for Agent execution. The other module boundaries remain in
+place for compatibility and shared contracts, but their Agent registrations and
+user-facing routes are disabled by policy.
 See `docs/harness/server-module-boundaries.md` for the complete target tree,
 ownership decisions, allowed dependency matrix, and migration rules.
 
@@ -73,80 +79,25 @@ Frontend rules:
 - Add visible text to all locale files.
 - Keep component styles scoped unless the style is intentionally global.
 
-## Desktop Release Flow
+## OEM desktop distribution
 
-Desktop packaging is intentionally split:
+The Windows desktop shell runs the local Koa server and built client. It uses
+an existing local Hermes installation; Hermes is the only Agent backend exposed
+by the OEM product. The Studio client, Socket.IO services, SQLite persistence,
+Hermes Profiles, workflows and group-chat orchestration remain the same
+architectural layers. Ekko and Coding Agent packages remain source-compatible
+but are not selectable product runtimes.
+Managed runtime/model downloads, automatic updates, remote/cloud/mobile services,
+partner integrations and hardware features are excluded by fixed OEM policy.
 
-- Pull requests run the web UI build and tests in `.github/workflows/build.yml`.
-- Published GitHub Releases run Web UI artifact packaging and Docker image publishing without
-  marking the release as GitHub latest.
-- The independent `tos-package-test.yml` workflow, triggered manually or by
-  TOS-related pull requests, builds a
-  TOS 7 x86_64 Deb service with a private Node.js runtime. It keeps beta packages,
-  checksums and static verification reports in Actions artifacts only, pending
-  TNAS lifecycle acceptance; it is separate from the main release workflows.
-- Manual dispatches run full desktop artifact packaging in `.github/workflows/desktop-release.yml`.
-- `.github/workflows/desktop-manual-build.yml` builds one desktop target for targeted repairs or re-runs.
-- Windows x64 and ARM64 use native runners and separate updater manifests
-  (`latest.yml` and `latest-arm64.yml`). See `packages/desktop/WINDOWS-ARM64.md`
-  for native speech staging and runtime acceptance.
-- Each release matrix target uploads only the artifact globs for its own platform.
-- A successful full desktop release marks the target GitHub Release as latest after all desktop artifacts
-  and the merged macOS updater manifest have been uploaded.
+The manual desktop workflow uses native Windows x64 or ARM64 runners, verifies
+production dependencies and uploads installer artifacts. There are no update feeds,
+release publication jobs, Docker/NAS packages or macOS/Linux installer targets.
 
-Do not make a Windows job require macOS `.dmg` files or a Linux job require
-Windows installers. Keep `fail_on_unmatched_files: true` where platform-specific
-artifact lists make the expectation explicit.
+Existing package IDs, CLI names, application data and API/MCP/IPC formats are kept
+for compatibility. See [OEM implementation](docs/oem/IMPLEMENTATION.md).
 
-### Desktop Hermes Runtime
-
-Hermes runtime assets are built separately by
-`.github/workflows/desktop-runtime.yml`. `packages/desktop/scripts/runtime-config.mjs`
-pins an upstream Hermes version, Git ref, and full commit; version overrides
-must supply the ref and commit together.
-
-For releases that declare placeholder package metadata (`0.0.0`), the runtime
-requires the matching `v<version>` source tag and uses upstream's install-stamp
-writer without changing tracked files. Installation and relocation checks read
-the canonical Hermes identity. Manual dispatches can override `python_version`
-and `python_build_tag` together; Hermes 0.22.2 uses Python 3.14.7 from the
-python-build-standalone `20260901` release.
-
-The portable Node.js included in runtime assets is pinned independently from
-the GitHub Actions runner. Manual runtime dispatches take a target release tag;
-when the release does not exist, the upload step creates it with the workflow's
-`GITHUB_TOKEN`. Do not pre-publish runtime-only releases with a user token,
-because that emits `release.published` and starts the normal Web UI and Docker
-release workflows.
-
-The published runtime keeps this updateable layout:
-
-```text
-python/                 Hermes Agent Git checkout and source root
-  .git/
-  base/                 Windows python-build-standalone base runtime
-  venv/                 bundled Python environment
-    Scripts/python.exe  Windows PEP 405 venv interpreter
-  agent-browser/
-  node/                  browser CLI npm prefix
-  ms-playwright/
-node/                    bundled Node.js
-git/                     bundled MinGit on Windows
-runtime-manifest.json
-```
-
-`prepare:runtime` fetches the exact source commit and installs its locked
-dependencies into `python/venv`. On Windows, the standalone base interpreter is
-embedded at `python/base` and a sibling PEP 405 venv wraps it. Windows requires
-an absolute `pyvenv.cfg` home, so the build, package validation, extraction, and
-runtime migration paths rebase that value before launching Python. This lets
-upstream `hermes update` safely target the environment through `VIRTUAL_ENV`.
-The build also creates the upstream TUI/dashboard and verifies that the retained
-checkout is clean. `package:runtime` includes the source and Git metadata in the
-GitHub/CF archive and records them in schema 2 of the runtime manifest. Do not
-patch tracked Hermes source during this build:
-Studio-specific integration belongs in Studio, and the clean checkout is what
-allows users to run the upstream `hermes update` command directly.
+Release artifact lists use `fail_on_unmatched_files: true` where publishing is enabled in upstream workflows.
 
 ## Validation Surface
 

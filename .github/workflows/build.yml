@@ -4,9 +4,11 @@ on:
   push:
     branches:
       - main
+      - oem
   pull_request:
     branches:
       - main
+      - oem
       - base
 
 permissions:

@@ -26,7 +26,6 @@ import { useSessionSearch } from "@/composables/useSessionSearch";
 import { watchServerTtsSettingsHydration } from "@/composables/useTtsSettingsHydration";
 import { useAppStore } from "@/stores/hermes/app";
 import { useProfilesStore } from "@/stores/hermes/profiles";
-import { isStoredSuperAdmin } from "@/api/client";
 import AuthEventListener from "@/components/auth/AuthEventListener.vue";
 import { desktopBridge } from "@/utils/desktop-bridge";
 import { naiveLocaleFor } from "@/constants/naiveLocale";
@@ -82,15 +81,8 @@ const GlobalPendingActions = defineAsyncComponent(
   async () =>
     (await import("@/components/layout/GlobalPendingActions.vue")).default,
 );
-const RuntimeRestartPrompt = defineAsyncComponent(
-  async () =>
-    (await import("@/components/layout/RuntimeRestartPrompt.vue")).default,
-);
 const ComputerUsePermissionPrompt = defineAsyncComponent(
   async () => (await import('@/components/ekko/ComputerUsePermissionPrompt.vue')).default,
-);
-const StudioAnnouncementPrompt = defineAsyncComponent(
-  async () => (await import('@/components/layout/StudioAnnouncementPrompt.vue')).default,
 );
 
 const {
@@ -143,7 +135,7 @@ provide(mobileNavigationKey, {
   target: computed(() => !isWideViewport.value && hasNavigationRail.value ? mobileSidebarHost.value : null),
 });
 const hasMobileContextSidebar = computed(() =>
-  !['hermes.connections', 'hermes.agentManager', 'hermes.models', 'hermes.usage', 'hermes.apiRelay'].includes(String(route.name)),
+  !['hermes.agentManager', 'hermes.models', 'hermes.usage'].includes(String(route.name)),
 );
 watch([hasNavigationRail, isWideViewport], () => { mobileNavigationOpen.value = false; });
 watch(sessionSearchOpen, (open) => { if (open) mobileNavigationOpen.value = false; });
@@ -159,11 +151,9 @@ const usesPageSidebar = computed(() =>
   [
     "hermes.chat",
     "hermes.session",
-    "hermes.connections",
     "hermes.agentManager",
     "hermes.models",
     "hermes.usage",
-    "hermes.apiRelay",
     "hermes.history",
     "hermes.historySession",
     "hermes.globalAgent",
@@ -427,14 +417,8 @@ useKeyboard();
           <GlobalPendingActions
             v-if="!isLoginPage && !isDesktopPetRoute && !isStandaloneChatPage"
           />
-          <RuntimeRestartPrompt
-            v-if="!isLoginPage && !isDesktopPetRoute && !isStandaloneChatPage && isStoredSuperAdmin()"
-          />
           <ComputerUsePermissionPrompt
             v-if="!isLoginPage && !isInviteOnlyPage && !isDesktopPetRoute && desktopBridge()?.computerUsePermissions?.claimReminder"
-          />
-          <StudioAnnouncementPrompt
-            v-if="!isLoginPage && !isInviteOnlyPage && !isDesktopPetRoute && !isStandaloneChatPage"
           />
         </NNotificationProvider>
       </NDialogProvider>

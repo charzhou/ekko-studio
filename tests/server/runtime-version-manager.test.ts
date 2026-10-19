@@ -145,12 +145,9 @@ describe('runtime version manager storage migration', () => {
     expect(status.hermes.agentRoot).toBe(process.env.HERMES_AGENT_ROOT)
     expect(status.hermes.source).toBe('user-cli')
     expect(status.hermes.dataDirectory).toBe(process.env.HERMES_HOME)
-    expect(status.hermes.remoteVersions).toEqual(['0.19.1', '0.20.4'])
+    expect(status.hermes.remoteVersions).toEqual([])
     expect(status.webui.remoteVersions).toEqual([])
-    expect(fetch).toHaveBeenCalledWith(
-      'https://api.ekkostudio.xyz/api/studio/versions',
-      expect.objectContaining({ signal: expect.any(AbortSignal) }),
-    )
+    expect(fetch).not.toHaveBeenCalled()
   })
 
   it('can probe the desktop CLI before loading Runtime state', async () => {
@@ -217,8 +214,8 @@ describe('runtime version manager storage migration', () => {
     expect(fetchMock).not.toHaveBeenCalled()
     expect(status.active).toMatchObject({ hermesRuntimeVersion: '0.19.1' })
     expect(status.activeVersionPath).toBe(activeVersionPath)
-    expect(status.remoteManifestUrl).not.toBe('')
-    expect(status.remoteError).toBe('')
+    expect(status.remoteManifestUrl).toBe('')
+    expect(status.remoteError).toContain('disabled')
     expect(status.hermes).toMatchObject({
       activeVersion: '0.19.1',
       agentVersion: 'v2026.8.1',
@@ -239,7 +236,7 @@ describe('runtime version manager storage migration', () => {
     })
   })
 
-  it('falls back to the previous website manifest when the Studio version API is unavailable', async () => {
+  it('does not contact hosted manifests when the Studio version API is unavailable', async () => {
     const fetchMock = vi.fn()
       .mockRejectedValueOnce(new Error('connect ECONNREFUSED'))
       .mockResolvedValueOnce({
@@ -251,21 +248,12 @@ describe('runtime version manager storage migration', () => {
     const { getRuntimeVersionStatus } = await import('../../packages/server/src/modules/hermes/services/runtime/version-manager')
     const status = await getRuntimeVersionStatus()
 
-    expect(fetchMock).toHaveBeenNthCalledWith(
-      1,
-      'https://api.ekkostudio.xyz/api/studio/versions',
-      expect.objectContaining({ signal: expect.any(AbortSignal) }),
-    )
-    expect(fetchMock).toHaveBeenNthCalledWith(
-      2,
-      'https://ekkostudio.xyz/versions.json',
-      expect.objectContaining({ signal: expect.any(AbortSignal) }),
-    )
-    expect(status.hermes.remoteVersions).toEqual(['0.19.1', '0.20.0'])
-    expect(status.remoteError).toBe('')
+    expect(fetchMock).not.toHaveBeenCalled()
+    expect(status.hermes.remoteVersions).toEqual([])
+    expect(status.remoteError).toContain('disabled')
   })
 
-  it('reports both errors when the Studio API and website manifest are unavailable', async () => {
+  it('reports the disabled policy when hosted manifests are unavailable', async () => {
     vi.stubGlobal('fetch', vi.fn()
       .mockResolvedValueOnce({ ok: false, status: 503 })
       .mockRejectedValueOnce(new Error('website unavailable')))
@@ -274,8 +262,8 @@ describe('runtime version manager storage migration', () => {
     const status = await getRuntimeVersionStatus()
 
     expect(status.hermes.remoteVersions).toEqual([])
-    expect(status.remoteError).toContain('returned 503')
-    expect(status.remoteError).toContain('fallback failed: website unavailable')
+    expect(fetch).not.toHaveBeenCalled()
+    expect(status.remoteError).toContain('disabled')
   })
 
   it('rejects a destination nested inside the current Runtime storage root', async () => {

@@ -1,3 +1,5 @@
+import { isRemovedPartnerProvider } from '../public/oem'
+
 /**
  * Compatibility layer for the two `config.yaml` provider schemas used by Hermes Agent.
  *
@@ -127,7 +129,7 @@ export function normalizeCustomProviderEntry(
   } else if (providerKey && providerKey.trim()) {
     name = providerKey.trim()
   }
-  if (!name) return null
+  if (!name || isRemovedPartnerProvider(name, baseUrl) || isRemovedPartnerProvider(providerKey)) return null
 
   const normalized: NormalizedCustomProvider = { name, base_url: baseUrl, source }
 

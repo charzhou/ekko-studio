@@ -50,7 +50,9 @@ vi.mock('../../packages/ekko-agent/src', () => ({
 vi.mock('../../packages/server/src/modules/studio/public/chat-agent-runtime', () => ({
   createChatEkkoAuthorizedProviderFetch: vi.fn(() => vi.fn()),
   createPrimaryAgentBridge: vi.fn(() => ({
-    request: bridgeRequestMock,
+    request: (payload: any, options: any) => payload.action === 'destroy'
+      ? bridgeDestroyMock(payload.session_id, payload.profile, payload.worker_key)
+      : payload.action === 'interrupt' ? Promise.resolve({ ok: true }) : bridgeRequestMock(payload, options),
     destroy: bridgeDestroyMock,
   })),
   getChatEkkoAgent: getGlobalEkkoAgentMock,
@@ -112,67 +114,32 @@ describe('ChatContextCompressor', () => {
     global.fetch = originalFetch
   })
 
-  it('uses a fresh prompt-isolated, tool-free, skill-free Ekko agent for summarization', async () => {
+  it('uses only the Hermes bridge with a separate summarization session', async () => {
     const { callSummarizer } = await import('../../packages/server/src/modules/studio/services/context-compressor')
-    ekkoRuntimeRunMock.mockResolvedValue({
-      output: { role: 'assistant', content: 'ekko summary', finishReason: 'stop' },
+    bridgeRequestMock.mockResolvedValue({ ok: true, status: 'complete', result: { final_response: 'hermes summary' } })
+
+    const result = await callSummarizer('', undefined, 'Summarize these turns.', [], 12_000, undefined, {
+      profile: 'work', model: 'summary-model', provider: 'openrouter', sessionId: 'session-1',
     })
 
-    const result = await callSummarizer(
-      '',
-      undefined,
-      'Summarize these turns.',
-      [],
-      12_000,
-      undefined,
-      {
-        profile: 'work',
-        model: 'summary-model',
-        provider: 'openrouter',
-        sessionId: 'session-1',
-      },
-    )
-
-    expect(result).toBe('ekko summary')
-    expect(ekkoRuntimeOptionsMock).toHaveBeenCalledWith(expect.objectContaining({
-      modelClient: expect.objectContaining({
-        capabilities: expect.objectContaining({ streaming: true }),
-      }),
-      toolsEnabled: false,
-      skillsEnabled: false,
-      runtimeInstructions: [],
-      maxSteps: 1,
-      maxModelRetries: 0,
-      modelDefaults: expect.objectContaining({
-        model: 'summary-model',
-      }),
-    }))
-    expect(ekkoRuntimeOptionsMock.mock.calls[0]?.[0]?.modelDefaults).not.toHaveProperty('toolChoice')
-    expect(ekkoRuntimeRunMock).toHaveBeenCalledWith(expect.objectContaining({
-      memoryEnabled: false,
-      messages: [
-        { role: 'user', content: 'Summarize these turns.' },
-        { role: 'user', content: 'Generate the context checkpoint summary now.' },
-      ],
-      metadata: {
-        purpose: 'context-compression',
-        profile: 'work',
-        session_id: 'session-1',
-      },
-      logContext: {
-        profile: 'work',
-        sessionId: 'session-1',
-      },
-    }))
-    expect(bridgeRequestMock).not.toHaveBeenCalled()
-    expect(bridgeDestroyMock).not.toHaveBeenCalled()
+    expect(result).toBe('hermes summary')
+    expect(bridgeRequestMock).toHaveBeenCalledWith(expect.objectContaining({
+      action: 'chat', profile: 'work', source: 'api_server', wait: false,
+      model: 'summary-model', provider: 'openrouter',
+      instructions: expect.stringContaining('context checkpoint summarizer'),
+      conversation_history: [{ role: 'user', content: 'Summarize these turns.' }],
+    }), { timeoutMs: 27_000 })
+    const request = bridgeRequestMock.mock.calls[0][0]
+    expect(request.session_id).not.toBe('session-1')
+    expect(bridgeDestroyMock).toHaveBeenCalledWith(request.session_id, 'work', request.worker_key)
+    expect(getGlobalEkkoAgentMock).not.toHaveBeenCalled()
   })
 
-  it('falls back to the existing Hermes summarizer when the caller allows it', async () => {
+  it('uses Hermes directly without trying an Ekko fallback', async () => {
     const { callSummarizer } = await import('../../packages/server/src/modules/studio/services/context-compressor')
-    ekkoRuntimeRunMock.mockRejectedValueOnce(new Error('provider unavailable'))
+    ekkoRuntimeRunMock.mockRejectedValueOnce(new Error('Ekko must not run'))
     bridgeRequestMock.mockResolvedValue({
-      status: 'completed',
+      ok: true, status: 'complete',
       result: { final_response: 'hermes fallback summary' },
     })
 
@@ -192,7 +159,7 @@ describe('ChatContextCompressor', () => {
     )
 
     expect(result).toBe('hermes fallback summary')
-    expect(ekkoRuntimeRunMock).toHaveBeenCalledTimes(1)
+    expect(ekkoRuntimeRunMock).not.toHaveBeenCalled()
     expect(bridgeRequestMock).toHaveBeenCalledTimes(1)
   })
 
@@ -202,14 +169,14 @@ describe('ChatContextCompressor', () => {
     const compressor = new ChatContextCompressor({ config: { tailMessageCount: 10 } })
     await expect(compressor.compress([
       { role: 'user', content: 'old' }, { role: 'assistant', content: 'answer' }, { role: 'user', content: 'new' },
-    ], '', undefined, 'session-1', { profile: 'default', model: 'summary-model', provider: 'openrouter', force: true, allowHermesFallback: false })).rejects.toThrow('ekko summarizer failed')
+    ], '', undefined, 'session-1', { profile: 'default', model: 'summary-model', provider: 'openrouter', force: true, allowHermesFallback: false })).rejects.toThrow('summarizer failed')
     expect(saveCompressionSnapshotMock).not.toHaveBeenCalled()
-    expect(bridgeRequestMock).not.toHaveBeenCalled()
+    expect(bridgeRequestMock).toHaveBeenCalledTimes(1)
   })
 
-  it('does not fall back to Hermes when the caller disables it', async () => {
+  it('reports Hermes failure even when the legacy fallback flag is disabled', async () => {
     const { callSummarizer } = await import('../../packages/server/src/modules/studio/services/context-compressor')
-    ekkoRuntimeRunMock.mockRejectedValueOnce(new Error('provider unavailable'))
+    bridgeRequestMock.mockRejectedValueOnce(new Error('provider unavailable'))
 
     await expect(callSummarizer(
       '',
@@ -226,9 +193,9 @@ describe('ChatContextCompressor', () => {
       },
     )).rejects.toThrow('provider unavailable')
 
-    expect(ekkoRuntimeRunMock).toHaveBeenCalledTimes(1)
-    expect(bridgeRequestMock).not.toHaveBeenCalled()
-    expect(bridgeDestroyMock).not.toHaveBeenCalled()
+    expect(ekkoRuntimeRunMock).not.toHaveBeenCalled()
+    expect(bridgeRequestMock).toHaveBeenCalledTimes(1)
+    expect(bridgeDestroyMock).toHaveBeenCalledTimes(1)
   })
 
   it('keeps full history when full summarization fails', async () => {
@@ -318,7 +285,7 @@ describe('ChatContextCompressor', () => {
 
     getCompressionSnapshotMock.mockReturnValue(null)
     bridgeRequestMock.mockResolvedValue({
-      status: 'completed',
+      ok: true, status: 'complete',
       result: { final_response: 'compressed summary' },
     })
 
@@ -350,7 +317,7 @@ describe('ChatContextCompressor', () => {
     ]
     getCompressionSnapshotMock.mockReturnValue(null)
     bridgeRequestMock.mockResolvedValue({
-      status: 'completed',
+      ok: true, status: 'complete',
       result: { final_response: 'compressed summary' },
     })
 
@@ -362,9 +329,9 @@ describe('ChatContextCompressor', () => {
     expect(bridgeRequestMock).toHaveBeenCalledWith(expect.objectContaining({
       action: 'chat',
       profile: 'default',
-      worker_key: 'default:compression:s1',
+      worker_key: expect.stringContaining('default:summary:'),
       message: 'Generate the context checkpoint summary now.',
-      wait: true,
+      wait: false,
     }), expect.any(Object))
     const request = bridgeRequestMock.mock.calls[0][0]
     expect(request.conversation_history[0]).toEqual(expect.objectContaining({
@@ -376,7 +343,7 @@ describe('ChatContextCompressor', () => {
     expect(bridgeDestroyMock).toHaveBeenCalledWith(
       compressSessionId,
       'default',
-      'default:compression:s1',
+      request.worker_key,
     )
   })
 
@@ -398,7 +365,7 @@ describe('ChatContextCompressor', () => {
 
     getCompressionSnapshotMock.mockReturnValue(null)
     bridgeRequestMock.mockResolvedValue({
-      status: 'completed',
+      ok: true, status: 'complete',
       result: { final_response: 'compressed summary' },
     })
 
@@ -429,7 +396,7 @@ describe('ChatContextCompressor', () => {
 
     getCompressionSnapshotMock.mockReturnValue(null)
     bridgeRequestMock.mockResolvedValue({
-      status: 'completed',
+      ok: true, status: 'complete',
       result: { final_response: 'compressed summary' },
     })
 
@@ -459,7 +426,7 @@ describe('ChatContextCompressor', () => {
       messageCountAtTime: 21,
     })
     bridgeRequestMock.mockResolvedValue({
-      status: 'completed',
+      ok: true, status: 'complete',
       result: { final_response: 'rebuilt summary' },
     })
 
@@ -501,7 +468,7 @@ describe('ChatContextCompressor', () => {
       messageCountAtTime: 21,
     })
     bridgeRequestMock.mockResolvedValue({
-      status: 'completed',
+      ok: true, status: 'complete',
       result: { final_response: 'updated stale summary' },
     })
 
@@ -529,7 +496,7 @@ describe('ChatContextCompressor', () => {
 
     getCompressionSnapshotMock.mockReturnValue(null)
     bridgeRequestMock.mockResolvedValue({
-      status: 'completed',
+      ok: true, status: 'complete',
       result: { final_response: 'compressed all messages' },
     })
 
@@ -563,7 +530,7 @@ describe('ChatContextCompressor', () => {
 
     getCompressionSnapshotMock.mockReturnValue(null)
     bridgeRequestMock.mockResolvedValue({
-      status: 'completed',
+      ok: true, status: 'complete',
       result: { final_response: 'short summary' },
     })
 
@@ -590,7 +557,7 @@ describe('ChatContextCompressor', () => {
 
     getCompressionSnapshotMock.mockReturnValue(null)
     bridgeRequestMock.mockResolvedValue({
-      status: 'completed',
+      ok: true, status: 'complete',
       result: { final_response: longSummary },
     })
 
@@ -655,7 +622,7 @@ describe('ChatContextCompressor', () => {
       messageCountAtTime: 3,
     })
     bridgeRequestMock.mockResolvedValue({
-      status: 'completed',
+      ok: true, status: 'complete',
       result: { final_response: 'updated summary' },
     })
 
@@ -697,7 +664,7 @@ describe('ChatContextCompressor', () => {
     }))
     getCompressionSnapshotMock.mockReturnValue(null)
     bridgeRequestMock.mockResolvedValue({
-      status: 'completed',
+      ok: true, status: 'complete',
       result: { final_response: 'cursor summary' },
     })
 
@@ -807,7 +774,7 @@ describe('ChatContextCompressor', () => {
       historyRevision: 0,
     })
     bridgeRequestMock.mockResolvedValue({
-      status: 'completed',
+      ok: true, status: 'complete',
       result: { final_response: 'upgraded summary' },
     })
 
@@ -841,7 +808,7 @@ describe('ChatContextCompressor', () => {
       historyRevision: 0,
     })
     bridgeRequestMock.mockResolvedValue({
-      status: 'completed',
+      ok: true, status: 'complete',
       result: { final_response: 'export summary' },
     })
 

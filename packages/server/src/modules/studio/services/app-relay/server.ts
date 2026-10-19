@@ -1,3 +1,4 @@
+import { requireOemFeature } from '../../public/oem'
 import type { Server as SocketIoServer, Socket } from 'socket.io'
 import { io as createClientSocket, type Socket as ClientSocket } from 'socket.io-client'
 import { authenticateUserToken, inspectAppUserToken } from '../../middleware/auth'
@@ -138,7 +139,7 @@ type NormalizedBody = {
 }
 
 /**
- * Serves the App-facing relay protocol directly from Ekko Studio.
+ * Serves the App-facing relay protocol directly from AFY Studio.
  *
  * The cloud relay uses the same App events but forwards them through the
  * outbound AppRelayClient. On a LAN connection this server terminates those
@@ -399,7 +400,7 @@ export class LocalAppRelayServer {
     }
     const authenticated = Boolean(socket.data.localUserToken) && await this.authorized(socket)
     if (!authenticated && !loginRequest) {
-      return httpError(request.id, 'app_relay_unauthorized', 'Log in to Ekko Studio before using the App relay', 401)
+      return httpError(request.id, 'app_relay_unauthorized', 'Log in to AFY Studio before using the App relay', 401)
     }
 
     const headers = normalizeHeaders(request.headers)
@@ -789,6 +790,7 @@ export function startLocalAppRelayServer(
   io: SocketIoServer,
   options: LocalAppRelayServerOptions = {},
 ): LocalAppRelayServer {
+  requireOemFeature('cloudServices')
   if (activeLocalAppRelayServer) return activeLocalAppRelayServer
   activeLocalAppRelayServer = new LocalAppRelayServer(io, options)
   activeLocalAppRelayServer.init()

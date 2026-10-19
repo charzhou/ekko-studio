@@ -123,8 +123,8 @@ describe('health controller version metadata', () => {
   })
 
   it('reads the root package version in ts-node/dev mode instead of falling back to 0.0.0', async () => {
-    const pkg = readRootPackage()
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: true }))
+    const pkg = readRootPackage()
 
     const { healthCheck } = await loadHealthControllerWithoutInjectedVersion()
     const ctx = createMockCtx()
@@ -146,7 +146,7 @@ describe('health controller version metadata', () => {
     expect(ctx.body.webui_version).toBe('9.9.9-test')
   })
 
-  it('checks npm latest using the root package name', async () => {
+  it('does not check a hosted npm version in AFY Studio', async () => {
     vi.spyOn(console, 'log').mockImplementation(() => {})
     const pkg = readRootPackage()
     const fetchMock = vi.fn().mockResolvedValue({
@@ -159,19 +159,16 @@ describe('health controller version metadata', () => {
 
     await checkLatestVersion()
 
-    expect(fetchMock).toHaveBeenCalledWith(
-      `https://registry.npmjs.org/${pkg.name}/latest`,
-      expect.objectContaining({ signal: expect.any(AbortSignal) }),
-    )
+    expect(fetchMock).not.toHaveBeenCalled()
 
     const ctx = createMockCtx()
     await healthCheck(ctx)
 
-    expect(ctx.body.webui_latest).toBe('99.99.99')
-    expect(ctx.body.webui_update_available).toBe(true)
+    expect(ctx.body.webui_latest).toBe('')
+    expect(ctx.body.webui_update_available).toBe(false)
   })
 
-  it('does not report a registry version lower than the local build as an update', async () => {
+  it('keeps hosted version metadata empty regardless of local build version', async () => {
     const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {})
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
       ok: true,
@@ -185,7 +182,7 @@ describe('health controller version metadata', () => {
     const ctx = createMockCtx()
     await healthCheck(ctx)
 
-    expect(ctx.body.webui_latest).toBe('0.6.17')
+    expect(ctx.body.webui_latest).toBe('')
     expect(ctx.body.webui_update_available).toBe(false)
     expect(logSpy).not.toHaveBeenCalledWith(expect.stringContaining('Update available'))
   })
@@ -213,7 +210,7 @@ describe('health controller version metadata', () => {
     expect(ctx.body.webui_update_available).toBe(false)
   })
 
-  it('reports Docker while retaining version checks for upgrade guidance', async () => {
+  it('reports Docker without enabling hosted version checks', async () => {
     const fetchMock = vi.fn().mockResolvedValue({
       ok: true,
       json: vi.fn().mockResolvedValue({ version: '0.6.29' }),
@@ -228,11 +225,11 @@ describe('health controller version metadata', () => {
     const ctx = createMockCtx()
     await healthCheck(ctx)
 
-    expect(fetchMock).toHaveBeenCalledOnce()
+    expect(fetchMock).not.toHaveBeenCalled()
     expect(ctx.body).toEqual(expect.objectContaining({
       is_docker: true,
-      webui_latest: '0.6.29',
-      webui_update_available: true,
+      webui_latest: '',
+      webui_update_available: false,
     }))
   })
 

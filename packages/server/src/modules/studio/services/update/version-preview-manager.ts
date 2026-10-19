@@ -1,3 +1,4 @@
+import { OEM_FEATURES, OEM_DISABLED_MESSAGE } from '../../public/oem'
 import { isStudioPackageName, readStudioPackageInfo, type StudioPackageName } from '../package-info'
 import { execFile, execFileSync, spawn, type ChildProcess } from 'child_process'
 import { appendFileSync, closeSync, existsSync, mkdirSync, openSync, readFileSync, rmSync, writeFileSync } from 'fs'
@@ -1040,11 +1041,16 @@ function spawnRestart(port: string, packageName: StudioPackageName) {
 }
 
 export async function handleUpdate(ctx: any) {
+  if (!OEM_FEATURES.updates) {
+    ctx.status = 410
+    ctx.body = { error: 'feature_disabled', message: OEM_DISABLED_MESSAGE, disabled: true }
+    return
+  }
   if (updateInProgress) {
     ctx.status = 409
     ctx.body = {
       success: false,
-      message: 'Ekko Studio update is already in progress',
+      message: 'AFY Studio update is already in progress',
     }
     return
   }
@@ -1055,7 +1061,7 @@ export async function handleUpdate(ctx: any) {
     ctx.body = {
       success: false,
       code: DOCKER_ENVIRONMENT_CODE,
-      message: 'Ekko Studio update is not available inside Docker. '
+      message: 'AFY Studio update is not available inside Docker. '
         + 'Please pull a new image and recreate the container:\n\n'
         + '  docker compose pull\n'
         + '  docker compose up -d --force-recreate',
@@ -1114,10 +1120,20 @@ export async function handleUpdate(ctx: any) {
 }
 
 export async function previewStatus(ctx: any) {
+  if (!OEM_FEATURES.updates) {
+    ctx.status = 410
+    ctx.body = { error: 'feature_disabled', message: OEM_DISABLED_MESSAGE, disabled: true }
+    return
+  }
   ctx.body = previewPayload()
 }
 
 export async function previewTags(ctx: any) {
+  if (!OEM_FEATURES.updates) {
+    ctx.status = 410
+    ctx.body = { error: 'feature_disabled', message: OEM_DISABLED_MESSAGE, disabled: true }
+    return
+  }
   const cachedTags = previewState.getCachedTags()
   if (cachedTags) {
     ctx.body = { tags: cachedTags }
@@ -1158,6 +1174,11 @@ export async function previewTags(ctx: any) {
 }
 
 export async function preparePreview(ctx: any) {
+  if (!OEM_FEATURES.updates) {
+    ctx.status = 410
+    ctx.body = { error: 'feature_disabled', message: OEM_DISABLED_MESSAGE, disabled: true }
+    return
+  }
   try {
     const tag = assertTagRef((ctx.request.body as any)?.tag)
     const queued = queuePreviewAction('prepare', async () => {
@@ -1179,6 +1200,11 @@ export async function preparePreview(ctx: any) {
 }
 
 export async function installPreview(ctx: any) {
+  if (!OEM_FEATURES.updates) {
+    ctx.status = 410
+    ctx.body = { error: 'feature_disabled', message: OEM_DISABLED_MESSAGE, disabled: true }
+    return
+  }
   const queued = queuePreviewAction('install', async () => {
     appendPreviewActionLog('npm install requested')
     await stopPreviewProcess()
@@ -1214,6 +1240,11 @@ export async function installPreview(ctx: any) {
 }
 
 export async function startPreview(ctx: any) {
+  if (!OEM_FEATURES.updates) {
+    ctx.status = 410
+    ctx.body = { error: 'feature_disabled', message: OEM_DISABLED_MESSAGE, disabled: true }
+    return
+  }
   try {
     const tag = (ctx.request.body as any)?.tag
     const requestedTag = typeof tag === 'string' && tag.trim() ? assertTagRef(tag) : ''
@@ -1303,6 +1334,11 @@ export async function startPreview(ctx: any) {
 }
 
 export async function stopPreview(ctx: any) {
+  if (!OEM_FEATURES.updates) {
+    ctx.status = 410
+    ctx.body = { error: 'feature_disabled', message: OEM_DISABLED_MESSAGE, disabled: true }
+    return
+  }
   appendPreviewActionLog('stop preview requested')
   await stopPreviewProcess()
   ctx.body = previewPayload({ success: true })

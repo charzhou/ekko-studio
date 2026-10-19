@@ -396,6 +396,7 @@ class AgentPool:
         model: str | None = None,
         provider: str | None = None,
         background_delegation_enabled: bool | None = None,
+        summary_only: bool = False,
     ) -> AgentSession:
         requested_model = str(model or "").strip()
         requested_provider = str(provider or "").strip()
@@ -406,6 +407,8 @@ class AgentPool:
         with self._lock:
             existing = self._sessions.get(session_id)
             if existing is not None:
+                if bool(existing.config.get("summary_only")) != summary_only:
+                    raise RuntimeError("Cannot change an existing session's summary-only policy")
                 # If profile changed, destroy old session and recreate
                 profile_changed = bool(profile and existing.config.get("profile") != profile)
                 runtime_changed = bool(
@@ -482,17 +485,17 @@ class AgentPool:
             with _profile_env(profile):
                 _refresh_worker_profile_env()
                 _refresh_approval_allowlist()
-                discovered_mcp_tools = _discover_bridge_mcp_tools()
+                discovered_mcp_tools = [] if summary_only else _discover_bridge_mcp_tools()
                 cfg = _load_cfg()
                 resolved_model = requested_model or _resolve_model(cfg)
                 runtime = _resolve_runtime(resolved_model, requested_provider or None)
                 agent_cfg = cfg.get("agent") or {}
-                prompt = str(agent_cfg.get("system_prompt", "") or "").strip() or None
+                prompt = None if summary_only else str(agent_cfg.get("system_prompt", "") or "").strip() or None
 
                 agent = AIAgent(
                     model=resolved_model,
-                    fallback_model=_load_fallback_model(cfg),
-                    max_iterations=_cfg_max_turns(cfg, 90),
+                    fallback_model=None if summary_only else _load_fallback_model(cfg),
+                    max_iterations=1 if summary_only else _cfg_max_turns(cfg, 90),
                     provider=runtime.get("provider"),
                     base_url=runtime.get("base_url"),
                     api_key=runtime.get("api_key"),
@@ -504,11 +507,11 @@ class AgentPool:
                     verbose_logging=False,
                     reasoning_config=_load_reasoning_config(resolved_model),
                     service_tier=_load_service_tier(),
-                    enabled_toolsets=_load_enabled_toolsets(),
-                    disabled_toolsets=_load_disabled_toolsets(),
+                    enabled_toolsets=[] if summary_only else _load_enabled_toolsets(),
+                    disabled_toolsets=None if summary_only else _load_disabled_toolsets(),
                     platform=_bridge_platform(),
                     session_id=session_id,
-                    session_db=self._db.get_for_profile(profile),
+                    session_db=None if summary_only else self._db.get_for_profile(profile),
                     ephemeral_system_prompt=prompt,
                     status_callback=self._status_callback(session_id),
                     thinking_callback=self._make_thinking_callback(session_id),
@@ -519,7 +522,25 @@ class AgentPool:
                     tool_start_callback=self._tool_start_callback(session_id),
                     tool_complete_callback=self._tool_complete_callback(session_id),
                     clarify_callback=self._clarify_callback(session_id),
+                    **({
+                        "skip_context_files": True,
+                        "skip_memory": True,
+                        "skip_background_review": True,
+                        "load_soul_identity": False,
+                        "prefill_messages": [],
+                    } if summary_only else {}),
                 )
+                if summary_only:
+                    # Defense in depth against runtime plugins or an unsolicited
+                    # provider tool call reintroducing execution into summaries.
+                    agent.tools = []
+                    agent.valid_tool_names = set()
+                    agent._persist_disabled = True
+
+                    def reject_summary_tools(*_args: Any, **_kwargs: Any) -> Any:
+                        raise RuntimeError("Tools are disabled for summary-only sessions")
+
+                    agent._execute_tool_calls = reject_summary_tools
                 agent.compression_enabled = False
                 self._install_compression_hook(agent, session_id)
                 self._install_prepersist_dedup_hook(agent)
@@ -543,12 +564,13 @@ class AgentPool:
                         "platform": _bridge_platform(),
                         "resumed": False,
                         "resumed_message_count": 0,
+                        "summary_only": summary_only,
                         "mcp_tool_count": len(discovered_mcp_tools),
                         "active_mcp_tool_count": len(mcp_tool_names),
                         "db_error": self._db.error,
                         # This is an Agent-session policy, not a per-turn flag.
                         # Callers select it when the cached AIAgent is created.
-                        "background_delegation_enabled": background_delegation_enabled is not False,
+                        "background_delegation_enabled": not summary_only and background_delegation_enabled is not False,
                     },
                 )
                 self._install_boundary_interrupt(session)
@@ -1763,6 +1785,7 @@ class AgentPool:
         source: str | None = None,
         reasoning_effort: str | None = None,
         background_delegation_enabled: bool | None = None,
+        summary_only: bool = False,
     ) -> RunRecord:
         session = self.get_or_create(
             session_id,
@@ -1770,6 +1793,7 @@ class AgentPool:
             model=model,
             provider=provider,
             background_delegation_enabled=background_delegation_enabled,
+            summary_only=summary_only,
         )
         # Install after agent construction so any runtime plugin initialization
         # has completed. Rechecking on every run also recovers from a forced
@@ -1918,8 +1942,10 @@ class AgentPool:
                     registered_gateway_approval_session = session.session_id
                 except Exception:
                     pass
-                self._prepersist_user_message(session, message, storage_message, conversation_history, profile, source)
-                db_count_after_prepersist = self._session_db_message_count(session.session_id, profile)
+                summary_only = bool(session.config.get("summary_only"))
+                if not summary_only:
+                    self._prepersist_user_message(session, message, storage_message, conversation_history, profile, source)
+                db_count_after_prepersist = None if summary_only else self._session_db_message_count(session.session_id, profile)
                 agent_message = self._prepend_pending_model_switch_note(session, message)
                 if force_compress:
                     compress = getattr(session.agent, "_compress_context", None)
@@ -1976,13 +2002,14 @@ class AgentPool:
                         result["finish_reason"] = "boundary_interrupt"
                         session.boundary_reached_run_id = record.run_id
                 result_for_tail_sync = result
-                self._sync_result_tail_to_session_db(
-                    session,
-                    result,
-                    conversation_history,
-                    profile,
-                    db_count_after_prepersist,
-                )
+                if not summary_only:
+                    self._sync_result_tail_to_session_db(
+                        session,
+                        result,
+                        conversation_history,
+                        profile,
+                        db_count_after_prepersist,
+                    )
                 tail_synced = True
                 final_response = str(
                     result.get("final_response")
@@ -1991,7 +2018,7 @@ class AgentPool:
                     or "".join(record.deltas)
                     or ""
                 ).strip()
-                title_db = self._db.get_for_profile(profile)
+                title_db = None if summary_only else self._db.get_for_profile(profile)
                 if title_db is not None and final_response and not result.get("failed") and not result.get("partial"):
                     try:
                         from agent.title_generator import maybe_auto_title
@@ -2046,7 +2073,7 @@ class AgentPool:
             except Exception as exc:
                 with session.lock:
                     boundary_interrupted = self._boundary_result_for_run(session, record.run_id)
-                if not tail_synced:
+                if not tail_synced and not session.config.get("summary_only"):
                     try:
                         fallback_result = result_for_tail_sync or self._result_from_agent_messages_for_sync(session)
                         if fallback_result is not None:

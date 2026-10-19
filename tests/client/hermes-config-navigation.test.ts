@@ -4,8 +4,8 @@ import { describe, expect, it } from "vitest";
 const readClientFile = (path: string) =>
   readFileSync(`packages/client/src/${path}`, "utf8");
 
-describe("Hermes configuration navigation", () => {
-  it("moves Hermes-only pages into the dedicated sidebar", () => {
+describe("AFY Studio configuration navigation", () => {
+  it("moves AFY Studio-only pages into the dedicated sidebar", () => {
     const app = readClientFile("App.vue");
     const appSidebar = readClientFile("components/layout/AppSidebar.vue");
     const configSidebar = readClientFile(
@@ -61,7 +61,7 @@ describe("Hermes configuration navigation", () => {
     ]) {
       expect(appSidebar).not.toContain(`t(\"${label}\")`);
     }
-    expect(appSidebar).not.toContain("<span>Hermes</span>");
+    expect(appSidebar).not.toContain("<span>AFY Studio</span>");
     expect(appSidebar).not.toContain("nav-group-label");
     expect(appSidebar).not.toContain("groupLabel(");
     expect(appSidebar.indexOf('t("sidebar.petdex")')).toBeGreaterThan(
@@ -71,7 +71,7 @@ describe("Hermes configuration navigation", () => {
     expect(router.match(/meta: \{ hermesConfig: true \}/g)).toHaveLength(9);
   });
 
-  it("keeps Studio settings separate and migrates Hermes setting tabs", () => {
+  it("keeps Studio settings separate and migrates AFY Studio setting tabs", () => {
     const settingsView = readClientFile("views/hermes/SettingsView.vue");
     const hermesSettings = readClientFile(
       "views/hermes/HermesSettingsView.vue",

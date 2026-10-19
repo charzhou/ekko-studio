@@ -225,8 +225,8 @@ export async function request<T>(path: string, options: RequestInit = {}): Promi
   // Inject active profile header for request-scoped endpoints. Explicit profile
   // selectors in the URL/body and profile-name routes are validated directly.
   const profileName = selectedProfile || getActiveProfileName()
-  if (profileName && !new Headers(options.headers).has('X-Hermes-Profile') && shouldAttachProfileHeader(path, options)) {
-    headers['X-Hermes-Profile'] = profileName
+  if (profileName && !new Headers(options.headers).has('X-AFY Studio-Profile') && shouldAttachProfileHeader(path, options)) {
+    headers['X-AFY Studio-Profile'] = profileName
   }
 
   const res = await fetch(url, { ...options, headers })

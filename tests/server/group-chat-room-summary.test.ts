@@ -1,4 +1,5 @@
-import { describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
+import type { JevGenerationContext } from '../../packages/server/src/modules/studio/public/jev'
 import {
   buildGroupSummaryUserPrompt,
   cleanGroupMessages,
@@ -7,6 +8,20 @@ import {
   type GroupRoomSummary,
   type GroupSummaryRunner,
 } from '../../packages/server/src/modules/studio/services/group-chat/room-summary'
+
+const bridge = vi.hoisted(() => ({ request: vi.fn(), destroy: vi.fn(), interrupt: vi.fn() }))
+vi.mock('../../packages/server/src/modules/studio/public/group-chat-agent-runtime', () => ({
+  createGroupPrimaryAgentBridge: () => ({
+    request: (payload: any, options: any) => payload.action === 'destroy'
+      ? bridge.destroy(payload.session_id, payload.profile, payload.worker_key)
+      : payload.action === 'interrupt' ? bridge.interrupt(payload) : bridge.request(payload, options),
+  }),
+}))
+beforeEach(() => {
+  bridge.request.mockReset().mockResolvedValue({ ok: true, status: 'complete', result: { final_response: 'Hermes summary' } })
+  bridge.destroy.mockReset().mockResolvedValue(undefined)
+  bridge.interrupt.mockReset().mockResolvedValue(undefined)
+})
 
 function message(
   id: string,
@@ -25,7 +40,7 @@ function message(
   }
 }
 
-function harness(runner: GroupSummaryRunner) {
+function harness(runner?: GroupSummaryRunner) {
   const summaries = new Map<string, GroupRoomSummary>()
   const runTokens = new Map<string, { token: string; leaseExpiresAt: number }>()
   const messages: any[] = []
@@ -103,6 +118,42 @@ function harness(runner: GroupSummaryRunner) {
 }
 
 describe('group chat rolling room summary', () => {
+  it('generates and cleans up the default summary through Hermes', async () => {
+    const { messages, summaries, service } = harness()
+    messages.push(message('u1', 'user', 'request', 1), message('a1', 'assistant', 'reply', 2))
+    await service.checkAfterMessage('room-1', 'a1')
+    expect(summaries.get('room-1')?.summary).toBe('Hermes summary')
+    expect(bridge.request).toHaveBeenCalledWith(expect.objectContaining({
+      action: 'chat', profile: 'default', model: 'gpt-test', provider: 'openai',
+      instructions: GROUP_SUMMARY_SYSTEM_PROMPT, wait: false, background_delegation_enabled: false,
+    }), { timeoutMs: 315_000 })
+    const request = bridge.request.mock.calls[0][0]
+    expect(bridge.destroy).toHaveBeenCalledWith(request.session_id, 'default', request.worker_key)
+  })
+
+  it('checks revision authority before dispatching a Hermes summary', async () => {
+    const { service } = harness()
+    const context = { signal: new AbortController().signal, beforeDispatch: vi.fn().mockRejectedValue(new Error('authority revoked')) }
+    await expect(service.reviseCommittedSummary({ profile: 'default', provider: 'openai', model: 'gpt-test', apiMode: 'chat_completions', previousSummary: '', candidateSummary: 'old', messages: [], roomId: 'room-1' }, context as unknown as JevGenerationContext)).rejects.toThrow('authority revoked')
+    expect(bridge.request).not.toHaveBeenCalled()
+  })
+
+  it('interrupts an aborted revision and discards its late Hermes result', async () => {
+    const { service } = harness()
+    const abort = new AbortController()
+    let finish!: (value: unknown) => void
+    bridge.request.mockImplementation(() => new Promise(resolve => { finish = resolve }))
+    const running = service.reviseCommittedSummary({ profile: 'default', provider: 'openai', model: 'gpt-test', apiMode: 'chat_completions', previousSummary: '', candidateSummary: 'old', messages: [], roomId: 'room-1' }, {
+      signal: abort.signal, beforeDispatch: vi.fn().mockResolvedValue(undefined),
+    } as unknown as JevGenerationContext)
+    await vi.waitFor(() => expect(bridge.request).toHaveBeenCalledTimes(1))
+    abort.abort(new Error('revision canceled'))
+    finish({ ok: true, status: 'complete', output: 'late revision' })
+    await expect(running).rejects.toThrow('revision canceled')
+    expect(bridge.interrupt).toHaveBeenCalledTimes(1)
+    expect(bridge.destroy).toHaveBeenCalledTimes(1)
+  })
+
   it('treats rolling history as untrusted structured data and preserves attribution metadata', () => {
     const prompt = buildGroupSummaryUserPrompt(
       'The room chose provider openai.',

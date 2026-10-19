@@ -19,7 +19,7 @@ export interface SystemPromptInput {
   }
 }
 
-const DEFAULT_BASE_PROMPT = 'You are Ekko Agent, a pragmatic AI agent that can reason, use tools, and return concise results.'
+const DEFAULT_BASE_PROMPT = 'You are the AFY Studio assistant, a pragmatic AI agent that can reason, use tools, and return concise results.'
 
 export const EKKO_OUTPUT_FORMAT_GUIDELINES = `## Image and File Output
 When returning an image, video, or file to the user, use Markdown with an existing local absolute path.

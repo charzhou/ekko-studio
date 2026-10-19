@@ -26,14 +26,14 @@ function extractAllHeadings(text: string, messageId: string): OutlineItem[] {
   const items: OutlineItem[] = []
   let cleanedText = text.replace(/<think>[\s\S]*?<\/think>/g, '')
   const lines = cleanedText.split('\n')
-  
+
   let headingIndex = 0
   for (const line of lines) {
     const trimmed = line.trim()
     const h1Match = trimmed.match(/^#\s+(.+)/)
     const h2Match = trimmed.match(/^##\s+(.+)/)
     const h3Match = trimmed.match(/^###\s+(.+)/)
-    
+
     if (h1Match) {
       headingIndex++
       items.push({
@@ -66,7 +66,7 @@ function extractAllHeadings(text: string, messageId: string): OutlineItem[] {
       })
     }
   }
-  
+
   return items
 }
 
@@ -83,7 +83,7 @@ const outlineItems = computed<OutlineItem[]>(() => {
   const items: OutlineItem[] = []
   let i = 0
   const filteredMessages = props.messages.filter(m => m.role === 'user' || m.role === 'assistant')
-  
+
   while (i < filteredMessages.length) {
     const msg = filteredMessages[i]
     if (msg.role === 'user') {

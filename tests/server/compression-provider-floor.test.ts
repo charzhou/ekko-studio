@@ -2,15 +2,17 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 // Real compressor, session store, usage store and snapshot store on an in-memory database;
 // only the summarizer model call, profile config and context length are stubbed.
-const summarizerRun = vi.fn()
+const bridgeRequestMock = vi.fn()
+const bridgeLifecycleRequestMock = vi.fn()
 
 describe('compression decisions with the provider usage floor', () => {
   let db: any = null
 
   beforeEach(async () => {
     vi.resetModules()
-    summarizerRun.mockReset()
-    summarizerRun.mockResolvedValue({ output: { role: 'assistant', content: 'new summary', finishReason: 'stop' } })
+    bridgeRequestMock.mockReset()
+    bridgeRequestMock.mockResolvedValue({ ok: true, status: 'complete', result: { final_response: 'new summary' } })
+    bridgeLifecycleRequestMock.mockReset().mockResolvedValue({ ok: true })
     const { DatabaseSync } = await import('node:sqlite')
     db = new DatabaseSync(':memory:')
     vi.doMock('../../packages/server/src/modules/studio/infrastructure/database/index', () => ({
@@ -26,11 +28,11 @@ describe('compression decisions with the provider usage floor', () => {
     }))
     vi.doMock('../../packages/server/src/modules/studio/public/chat-agent-runtime', async importOriginal => ({
       ...(await importOriginal<object>()),
-      resolveChatEkkoProviderRuntimeConfig: vi.fn(async () => ({ provider: 'p', baseUrl: 'http://x', apiKey: 'k', apiMode: 'chat_completions' })),
-      resolveChatEkkoModelProviderConfigs: vi.fn(() => ({ providerConfig: { id: 'p' } })),
-      createChatEkkoModelClient: vi.fn(() => ({})),
-      createChatEkkoAuthorizedProviderFetch: vi.fn(() => vi.fn()),
-      getChatEkkoAgent: vi.fn(() => ({ runIsolated: (_options: unknown, input: unknown) => summarizerRun(input) })),
+      createPrimaryAgentBridge: vi.fn(() => ({
+        request: (payload: { action: string }, options: unknown) => payload.action === 'chat'
+          ? bridgeRequestMock(payload, options)
+          : bridgeLifecycleRequestMock(payload, options),
+      })),
     }))
     const { initAllHermesTables } = await import('../../packages/server/src/modules/studio/infrastructure/database/schemas')
     initAllHermesTables()
@@ -88,12 +90,23 @@ describe('compression decisions with the provider usage floor', () => {
     // backward reaches zero; over-budget compression must fold the whole group.
     const history = await run(sessionId)
     if (scenario === 'under-budget') {
-      expect(summarizerRun).not.toHaveBeenCalled()
+      expect(bridgeRequestMock).not.toHaveBeenCalled()
       expect(history.filter(message => message.role === 'tool')).toHaveLength(21)
       expect(getCompressionSnapshot(sessionId)?.compressedThroughMessageId).toBe(cursor)
       return
     }
-    expect(summarizerRun).toHaveBeenCalledTimes(1)
+    expect(bridgeRequestMock).toHaveBeenCalledTimes(1)
+    expect(bridgeRequestMock).toHaveBeenCalledWith(expect.objectContaining({
+      action: 'chat', profile: 'default', source: 'api_server', summary_only: true, wait: false, model: 'm', provider: 'p',
+      conversation_history: expect.arrayContaining([
+        expect.objectContaining({ role: 'user', content: expect.stringContaining('short previous summary') }),
+      ]),
+    }), expect.objectContaining({ timeoutMs: expect.any(Number) }))
+    const request = bridgeRequestMock.mock.calls[0][0]
+    expect(request.session_id).not.toBe(sessionId)
+    expect(bridgeLifecycleRequestMock).toHaveBeenCalledWith({
+      action: 'destroy', session_id: request.session_id, profile: 'default', worker_key: request.worker_key, stop_worker: true,
+    }, { timeoutMs: 5_000 })
     expect(history.map(message => [message.role, message.content])).toEqual([
       ['user', expect.stringContaining('new summary')],
       ...recent.map(message => [message.role, message.content]),
@@ -102,7 +115,7 @@ describe('compression decisions with the provider usage floor', () => {
     // Once this group is summarized, the next run reuses its snapshot and tail.
     expect((await run(sessionId)).map(message => [message.role, message.content]))
       .toEqual(history.map(message => [message.role, message.content]))
-    expect(summarizerRun).toHaveBeenCalledTimes(1)
+    expect(bridgeRequestMock).toHaveBeenCalledTimes(1)
   })
 
   it('saves a snapshot when the floor triggers compression, so the same usage does not trigger it again', async () => {
@@ -122,13 +135,13 @@ describe('compression decisions with the provider usage floor', () => {
 
     await run('s1')
     const snapshot = getCompressionSnapshot('s1')
-    expect(summarizerRun).toHaveBeenCalledTimes(1)
+    expect(bridgeRequestMock).toHaveBeenCalledTimes(1)
     expect(snapshot?.summary).toBe('new summary')
     expect(snapshot?.compressedThroughMessageId).toBe(ids[5])
     expect(snapshot?.updatedAt).toBeGreaterThan(2_000)
 
     await run('s1')
-    expect(summarizerRun).toHaveBeenCalledTimes(1)
+    expect(bridgeRequestMock).toHaveBeenCalledTimes(1)
   })
 
   it('ignores provider usage recorded before a history clear in the same second', async () => {
@@ -151,7 +164,7 @@ describe('compression decisions with the provider usage floor', () => {
       addMessage({ session_id: 's2', role: 'user', content: 'retry' })
 
       await expect(run('s2')).resolves.toEqual([{ role: 'user', content: 'failed request' }])
-      expect(summarizerRun).not.toHaveBeenCalled()
+      expect(bridgeRequestMock).not.toHaveBeenCalled()
     } finally {
       vi.useRealTimers()
     }
@@ -182,12 +195,12 @@ describe('compression decisions with the provider usage floor', () => {
     await expect(forceCompressBridgeHistory('small', 'default', [], 160_000, { model: 'm', provider: 'p', excludeLastUser: true, overBudget: true }))
       .rejects.toMatchObject({ name: 'ContextWindowTooSmallError' })
     expect(getCompressionSnapshot('small')?.updatedAt).toBe(100_000)
-    expect(summarizerRun).not.toHaveBeenCalled()
+    expect(bridgeRequestMock).not.toHaveBeenCalled()
 
     // A summary above its budget (20% of 256k) is re-summarized in place and the snapshot advances.
     const largeCursor = seed('large', 'older context detail '.repeat(20_000))
     await run('large')
-    expect(summarizerRun).toHaveBeenCalledTimes(1)
+    expect(bridgeRequestMock).toHaveBeenCalledTimes(1)
     expect(getCompressionSnapshot('large')).toMatchObject({ summary: 'new summary', compressedThroughMessageId: largeCursor })
     expect(getCompressionSnapshot('large')?.updatedAt).toBeGreaterThan(200_000)
   })

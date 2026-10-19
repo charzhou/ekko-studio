@@ -91,7 +91,7 @@ for (const viewport of [
   await expect(page.locator('.new-chat-page')).toBeVisible()
 })
 
-for (const width of [320, 390, 440]) test(`Hermes category menu fits a ${width}px viewport without shifting the page`, async ({ page }) => {
+for (const width of [320, 390, 440]) test(`AFY Studio category menu fits a ${width}px viewport without shifting the page`, async ({ page }) => {
   await page.setViewportSize({ width, height: 844 })
   await authenticate(page, TEST_ACCESS_KEY, 'research')
   await page.addInitScript(() => localStorage.setItem('hermes_new_chat_agent_v1', 'hermes'))

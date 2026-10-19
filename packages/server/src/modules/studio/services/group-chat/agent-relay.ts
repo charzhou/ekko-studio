@@ -1,3 +1,4 @@
+import { OEM_FEATURES, requireOemFeature } from '../../public/oem'
 import { randomUUID } from 'node:crypto'
 import { constants as fsConstants } from 'node:fs'
 import { lstat, mkdir, open, rename, rm, writeFile } from 'node:fs/promises'
@@ -1517,6 +1518,7 @@ class OutboundRelayConnection {
   }
 
   async connect(): Promise<PersistedOutboundLink> {
+    requireOemFeature('cloudServices')
     const reconnecting = Boolean(this.link.connectorId && this.link.credential)
     this.socket = io(`${this.link.cloudOrigin}/group-chat-agent-relay`, {
       auth: groupAgentSocketAuth({
@@ -1975,6 +1977,7 @@ export class GroupAgentOutboundRelayManager {
     pairingTicket: string
     agent: RemoteGroupAgentDescriptor
   }): Promise<{ connectorId: string; roomId?: string; roomName?: string; inviteCode?: string }> {
+    requireOemFeature('cloudServices')
     const cloudOrigin = normalizeOrigin(input.cloudOrigin)
     const cloudMachineId = normalizeCloudAgentMachineId(input.cloudMachineId)
     const targetOrigin = normalizeOrigin(input.targetOrigin)
@@ -2010,6 +2013,7 @@ export class GroupAgentOutboundRelayManager {
   }
 
   async restore(): Promise<void> {
+    if (!OEM_FEATURES.cloudServices) return
     await rm(OUTBOUND_ATTACHMENTS_DIR, { recursive: true, force: true }).catch(() => undefined)
     const links = await this.readPersisted()
     for (const link of links) {

@@ -26,7 +26,7 @@ function runPython(script: string): Record<string, unknown> {
  *
  * ``disabledExpr`` is a Python expression so each case can drive the loader's return value.
  */
-function disabledToolsetsHarness(disabledExpr: string): string {
+function disabledToolsetsHarness(disabledExpr: string, summaryOnly = false): string {
   return String.raw`
 import contextlib
 import importlib.util
@@ -89,11 +89,27 @@ class AIAgent:
 run_agent.AIAgent = AIAgent
 sys.modules["run_agent"] = run_agent
 
-session = bridge_pool.AgentPool().get_or_create("session-1")
-print(json.dumps({
+pool = bridge_pool.AgentPool()
+session = pool.get_or_create("session-1", summary_only=${summaryOnly ? 'True' : 'False'})
+result = {
     "disabled_toolsets": session.agent.kwargs.get("disabled_toolsets"),
     "enabled_toolsets": session.agent.kwargs.get("enabled_toolsets"),
-}))
+}
+if ${summaryOnly ? 'True' : 'False'}:
+    result.update({key: session.agent.kwargs.get(key) for key in (
+        "max_iterations", "skip_context_files", "skip_memory", "skip_background_review", "session_db",
+    )})
+    result["tools"] = session.agent.tools
+    result["background_delegation_enabled"] = session.config["background_delegation_enabled"]
+    try:
+        session.agent._execute_tool_calls({}, [], "summary-task")
+    except RuntimeError as exc:
+        result["tool_error"] = str(exc)
+    try:
+        pool.get_or_create("session-1", summary_only=False)
+    except RuntimeError as exc:
+        result["policy_change_error"] = str(exc)
+print(json.dumps(result))
 `
 }
 
@@ -114,5 +130,70 @@ describe('Agent Bridge disabled toolsets', () => {
       disabled_toolsets: null,
       enabled_toolsets: [],
     })
+  })
+
+  it('isolates summary workers from tools, skills, memory, persistence, and background work', () => {
+    expect(runPython(disabledToolsetsHarness('["web"]', true))).toEqual({
+      disabled_toolsets: null, enabled_toolsets: [], max_iterations: 1,
+      skip_context_files: true, skip_memory: true, skip_background_review: true,
+      session_db: null, tools: [], background_delegation_enabled: false,
+      tool_error: 'Tools are disabled for summary-only sessions',
+      policy_change_error: "Cannot change an existing session's summary-only policy",
+    })
+  })
+
+  it('forwards the summary policy at the worker boundary and retires only its dedicated broker worker', () => {
+    const script = disabledToolsetsHarness('None', true).replace('print(json.dumps(result))', String.raw`
+bridge_runtime.__getattr__ = lambda _name: (lambda *_args, **_kwargs: None)
+transport = types.ModuleType("bridge_transport")
+transport.__getattr__ = lambda _name: (lambda *_args, **_kwargs: None)
+sys.modules["bridge_transport"] = transport
+
+def load_module(name):
+    spec = importlib.util.spec_from_file_location(name, "packages/server/src/modules/hermes/services/bridge/python/" + name + ".py")
+    module = importlib.util.module_from_spec(spec)
+    sys.modules[name] = module
+    spec.loader.exec_module(module)
+    return module
+
+server_module = load_module("bridge_server")
+class CapturePool:
+    def start_chat(self, *args):
+        self.args = args
+        return types.SimpleNamespace(run_id="summary-run", status="running")
+server = object.__new__(server_module.BridgeServer)
+server.pool = CapturePool()
+server.handle({"action": "chat", "session_id": "s", "message": "summarize", "summary_only": True})
+assert server.pool.args[-1] is True
+server.handle({"action": "chat", "session_id": "s", "message": "chat"})
+assert server.pool.args[-1] is False
+
+broker_module = load_module("bridge_broker")
+broker = broker_module.BridgeBroker("ipc:///tmp/summary-fixture.sock")
+class Worker:
+    stopped = False
+    def stop(self):
+        self.stopped = True
+worker = Worker()
+key = "work:summary:summary-session"
+broker._workers[key] = worker
+broker._session_profile["summary-session"] = "work"
+broker._session_worker_key["summary-session"] = key
+broker._run_profile["summary-run"] = "work"
+broker._run_worker_key["summary-run"] = key
+# get_result does not need a worker key from the caller: admission records it.
+assert broker._route_for_run("summary-run") == ("work", key)
+destroyed = broker.handle({"action": "destroy", "session_id": "summary-session", "profile": "work", "worker_key": key, "stop_worker": True})
+assert destroyed["worker_stopped"] and worker.stopped
+assert key not in broker._workers and "summary-run" not in broker._run_worker_key
+try:
+    broker.handle({"action": "destroy", "session_id": "chat-session", "profile": "work", "worker_key": "work", "stop_worker": True})
+except ValueError:
+    pass
+else:
+    raise AssertionError("ordinary Profile worker must not be stopped by summary cleanup")
+print(json.dumps({"summary_policy_forwarded": True, "worker_stopped": worker.stopped}))
+`)
+    expect(runPython(script)).toEqual({ summary_policy_forwarded: true, worker_stopped: true })
   })
 })

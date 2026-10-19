@@ -17,16 +17,8 @@ interface CredentialTarget {
 // Secrets and their fingerprints remain on the server. Only statistics are shared.
 const inflight = new Map<string, Promise<Pick<ApiRelayAccount, 'status' | 'usage' | 'error'>>>()
 
-export function apiRelayUsageEndpoint(baseUrl: string): string | null {
-  try {
-    const url = new URL(baseUrl)
-    if (url.protocol !== 'https:' || url.username || url.password || (url.port && url.port !== '443')) return null
-    if (url.hostname !== 'apikey.fan' && !url.hostname.endsWith('.apikey.fan')) return null
-    url.pathname = url.pathname.replace(/\/+$/, '').replace(/\/v1$/, '') + '/v1/usage'
-    url.search = ''
-    url.hash = ''
-    return url.href
-  } catch { return null }
+export function apiRelayUsageEndpoint(_baseUrl: string): string | null {
+  return null
 }
 
 function credentialIdentity(endpoint: string, apiKey: string): string {
@@ -160,17 +152,6 @@ async function queryTarget(target: CredentialTarget): Promise<Pick<ApiRelayAccou
   try { return await request } finally { inflight.delete(identity) }
 }
 
-export async function getApiRelayUsage(profiles: string[]): Promise<ApiRelayUsageResult> {
-  const targets = await collectTargets(profiles)
-  const accounts: ApiRelayAccount[] = []
-  // Limit outbound concurrency when a user has many separate keys.
-  for (let offset = 0; offset < targets.length; offset += 4) {
-    accounts.push(...await Promise.all(targets.slice(offset, offset + 4).map(async (target, index) => ({
-      id: `credential-${offset + index + 1}`,
-      endpoint: target.endpoint,
-      sources: target.sources,
-      ...await queryTarget(target),
-    }))))
-  }
-  return { configured: accounts.length > 0, checkedAt: new Date().toISOString(), accounts }
+export async function getApiRelayUsage(_profiles: string[]): Promise<ApiRelayUsageResult> {
+  return { configured: false, checkedAt: new Date().toISOString(), accounts: [] }
 }

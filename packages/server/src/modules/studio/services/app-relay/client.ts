@@ -1,3 +1,4 @@
+import { OEM_FEATURES, requireOemFeature } from '../../public/oem'
 import { randomUUID } from 'crypto'
 import { io, type Socket } from 'socket.io-client'
 import { config } from '../../public/config'
@@ -257,6 +258,7 @@ export class AppRelayClient {
   }
 
   start(): void {
+    requireOemFeature('cloudServices')
     if (this.socket) return
     this.socket = io(this.relayUrl, {
       auth: async (callback) => {
@@ -962,6 +964,7 @@ export class AppRelayClient {
 const activeAppRelayClients = new Map<string, AppRelayClient>()
 
 export function startAppRelayClient(options: StartAppRelayClientOptions): AppRelayClient | null {
+  if (!OEM_FEATURES.cloudServices) return null
   const relayUrl = String(options.relayUrl || '').trim()
   const machineId = String(options.machineId || '').trim()
   // The stable machine id is derived from the exact PEM bytes. Preserve the

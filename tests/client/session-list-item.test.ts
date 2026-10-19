@@ -161,7 +161,7 @@ describe('SessionListItem', () => {
     expect(wrapper.emitted('open-new')).toBeUndefined()
   })
 
-  it('renders the Hermes logo for Hermes sessions', () => {
+  it('renders the AFY Studio logo for AFY Studio sessions', () => {
     const wrapper = mount(SessionListItem, {
       props: {
         session: { ...session, source: 'cli', agent: 'hermes' },
@@ -177,12 +177,12 @@ describe('SessionListItem', () => {
     })
 
     const logo = wrapper.get('.session-item-agent-logo')
-    expect(logo.attributes('src')).toBe('/coding-agents/hermes.png')
-    expect(logo.attributes('alt')).toBe('Hermes')
+    expect(logo.attributes('src')).toBe('/logo.png')
+    expect(logo.attributes('alt')).toBe('AFY Studio')
     expect(wrapper.find('.session-item-agent-name').exists()).toBe(false)
   })
 
-  it('renders the Hermes logo for Hermes Global Agent sessions', () => {
+  it('renders the AFY Studio logo for AFY Studio Global Agent sessions', () => {
     const wrapper = mount(SessionListItem, {
       props: {
         session: { ...session, source: 'global_agent', agent: 'hermes' },
@@ -198,8 +198,8 @@ describe('SessionListItem', () => {
     })
 
     const logo = wrapper.get('.session-item-agent-logo')
-    expect(logo.attributes('src')).toBe('/coding-agents/hermes.png')
-    expect(logo.attributes('alt')).toBe('Hermes')
+    expect(logo.attributes('src')).toBe('/logo.png')
+    expect(logo.attributes('alt')).toBe('AFY Studio')
   })
 
   it('renders the Ekko logo for Ekko Global Agent sessions', () => {
@@ -224,10 +224,10 @@ describe('SessionListItem', () => {
 
     const logo = wrapper.get('.session-item-agent-logo')
     expect(logo.attributes('src')).toBe('/coding-agents/ekko-agent.png')
-    expect(logo.attributes('alt')).toBe('Ekko')
+    expect(logo.attributes('alt')).toBe('AFY Studio')
   })
 
-  it('defaults old sessions without agent metadata to the Hermes logo', () => {
+  it('defaults old sessions without agent metadata to the AFY Studio logo', () => {
     const wrapper = mount(SessionListItem, {
       props: {
         session: { ...session, source: undefined, agent: undefined, codingAgentId: undefined },
@@ -243,8 +243,8 @@ describe('SessionListItem', () => {
     })
 
     const logo = wrapper.get('.session-item-agent-logo')
-    expect(logo.attributes('src')).toBe('/coding-agents/hermes.png')
-    expect(logo.attributes('alt')).toBe('Hermes')
+    expect(logo.attributes('src')).toBe('/logo.png')
+    expect(logo.attributes('alt')).toBe('AFY Studio')
     expect(wrapper.find('.session-item-agent-name').exists()).toBe(false)
   })
 

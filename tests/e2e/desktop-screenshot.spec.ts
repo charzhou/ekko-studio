@@ -15,7 +15,7 @@ async function openOverlay(page: Page) {
     context.fillRect(100, 100, 500, 350)
     context.fillStyle = '#fff'
     context.font = '28px sans-serif'
-    context.fillText('Ekko Studio screenshot', 130, 160)
+    context.fillText('AFY Studio screenshot', 130, 160)
     const state = { submitted: [] as unknown[], cancelled: 0, selected: 0 }
     const target = window as any
     target.__SCREENSHOT__ = state

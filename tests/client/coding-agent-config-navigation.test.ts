@@ -4,12 +4,12 @@ import { describe, expect, it } from 'vitest'
 const readClientFile = (path: string) => readFileSync(`packages/client/src/${path}`, 'utf8')
 
 describe('coding Agent configuration navigation', () => {
-  it('adds a settings entry for every coding Agent card', () => {
+  it('keeps native coding Agent cards out of the OEM Agent Manager', () => {
     const manager = readClientFile('views/hermes/AgentManagerView.vue')
 
-    expect(manager).toContain(':data-testid="`agent-settings-${agent.id}`"')
-    expect(manager).toContain("name: 'codingAgent.config'")
-    expect(manager).toContain("params: { agentId: agent.id, section: agentMetadata(agent.id)?.config.settings || agentMetadata(agent.id)?.config.memory ? 'settings' : 'mcp' }")
+    expect(manager).toContain('data-testid="agent-card-hermes"')
+    expect(manager).not.toContain(':data-testid="`agent-settings-${agent.id}`"')
+    expect(manager).not.toContain('v-for="agent in codingAgents"')
   })
 
   it('shows skills, MCP, and settings in the Agent configuration sidebar', () => {

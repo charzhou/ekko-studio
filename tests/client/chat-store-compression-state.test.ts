@@ -701,7 +701,7 @@ describe('chat store compression state', () => {
     ])
   })
 
-  it('keeps persisted Hermes background dispatch rows on the existing recovery path', async () => {
+  it('keeps persisted AFY Studio background dispatch rows on the existing recovery path', async () => {
     chatApi.resumeSession.mockImplementationOnce((sessionId: string, onResumed: (data: any) => void) => {
       onResumed({
         session_id: sessionId,
@@ -739,7 +739,7 @@ describe('chat store compression state', () => {
     ])
   })
 
-  it('restores a persisted Hermes background result as a clickable child stream', async () => {
+  it('restores a persisted AFY Studio background result as a clickable child stream', async () => {
     chatApi.resumeSession.mockImplementationOnce((sessionId: string, onResumed: (data: any) => void) => {
       onResumed({
         session_id: sessionId,
@@ -761,8 +761,8 @@ describe('chat store compression state', () => {
             task_index: 0,
             task_count: 1,
             goal: 'Inspect the task',
-            summary: 'Hermes inspection completed.',
-            output: 'Hermes inspection completed.',
+            summary: 'AFY Studio inspection completed.',
+            output: 'AFY Studio inspection completed.',
           }),
           tool_call_id: 'delegate-call-1',
           tool_name: 'delegate_task',
@@ -784,12 +784,12 @@ describe('chat store compression state', () => {
         toolName: 'delegate_task',
         toolCallId: 'subagent:hermes-child',
         toolStatus: 'done',
-        toolPreview: expect.stringContaining('Hermes inspection completed.'),
+        toolPreview: expect.stringContaining('AFY Studio inspection completed.'),
       }),
     ])
     expect(store.getSubagentStream('session-1', 'hermes-child')).toEqual(expect.objectContaining({
       status: 'completed',
-      summary: 'Hermes inspection completed.',
+      summary: 'AFY Studio inspection completed.',
     }))
   })
 

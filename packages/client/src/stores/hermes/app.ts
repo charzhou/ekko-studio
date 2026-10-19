@@ -13,7 +13,7 @@ import {
   type ModelVisibility,
   type ModelVisibilityRule,
 } from '@/api/hermes/system'
-import { checkHealth, triggerUpdate } from '@/api/studio/system'
+import { checkHealth } from '@/api/studio/system'
 import { hasApiKey } from '@/api/client'
 import { clampSidebarWidth, SIDEBAR_DEFAULT_WIDTH } from '@/utils/sidebar-width'
 
@@ -63,31 +63,12 @@ export const useAppStore = defineStore('app', () => {
   let modelsLoadPromise: Promise<void> | null = null
   let modelsLastRequestedAt = 0
 
-  async function doUpdate(): Promise<boolean> {
-    updating.value = true
-    try {
-      const res = await triggerUpdate()
-      if (res.success) {
-        updateAvailable.value = false
-        await checkConnection()
-      }
-      return res.success
-    } catch (err) {
-      console.error('Failed to update Hermes Web UI:', err)
-      return false
-    } finally {
-      updating.value = false
-    }
-  }
-
   async function checkConnection() {
     try {
       const res = await checkHealth()
       connected.value = res.status === 'ok'
       if (res.webui_version) serverVersion.value = res.webui_version
       clientOutdated.value = !!res.webui_version && res.webui_version !== WEB_UI_VERSION
-      if (res.webui_latest) latestVersion.value = res.webui_latest
-      updateAvailable.value = !!res.webui_update_available
       if (res.node_version) nodeVersion.value = res.node_version
       isDocker.value = !!res.is_docker
     } catch {
@@ -379,7 +360,6 @@ export const useAppStore = defineStore('app', () => {
     updateAvailable,
     clientOutdated,
     updating,
-    doUpdate,
     reloadClient,
     modelGroups,
     profileModelGroups,

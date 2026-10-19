@@ -37,9 +37,8 @@ const MINIMAX_VIDEO_REGIONS = {
   },
 } as const
 type MiniMaxVideoRegion = keyof typeof MINIMAX_VIDEO_REGIONS
-const APIKEY_IMAGE_PROVIDER = 'fun-codex'
-const APIKEY_IMAGE_MODEL = 'gpt-image-2'
-const APIKEY_IMAGE_TO_IMAGE_MODEL = 'gpt-5.4-mini'
+const DEFAULT_IMAGE_MODEL = 'gpt-image-2'
+const DEFAULT_IMAGE_TO_IMAGE_MODEL = 'gpt-5.4-mini'
 const MAX_IMAGE_BYTES = 25 * 1024 * 1024
 const MINIMAX_MAX_IMAGE_BYTES = 20 * 1024 * 1024
 const DEFAULT_POLL_INTERVAL_MS = 5000
@@ -104,7 +103,8 @@ function readJsonFile(path: string): any {
 }
 
 function buildApiUrl(baseUrl: string, pathWithV1: string): string {
-  const base = (baseUrl || 'https://api.apikey.fan/v1').replace(/\/+$/, '')
+  const base = baseUrl.replace(/\/+$/, '')
+  if (!base) throw new Error('Configure an image provider URL first')
   const apiPath = pathWithV1.startsWith('/') ? pathWithV1 : `/${pathWithV1}`
   if (!apiPath.startsWith('/v1/')) return `${base}${apiPath}`
 
@@ -141,8 +141,7 @@ function requestedApiKeyImageProviderName(body: any): string {
  * a profile pointed at a different image API could not be reached at all. The
  * values now come from the `auxiliary` section of the profile's config.yaml —
  * the same place every other per-task model lives — and the constants stay as
- * the last resort, so a profile that configures nothing behaves exactly as it
- * did before.
+ * model defaults. An image provider must be configured explicitly.
  */
 type AuxiliaryImageSettings = { provider: string; model: string; timeoutMs?: number }
 
@@ -173,7 +172,6 @@ function resolveApiKeyImageProvider(
 ): { provider: ApiKeyImageProvider | null; attemptedName: string } {
   const requestedName = normalizeCustomProviderName(providerName)
     || normalizeCustomProviderName(configuredProviderName)
-    || APIKEY_IMAGE_PROVIDER
   const customProviders = getCompatibleCustomProviders(hermesConfig)
   const requestedKey = canonicalCustomProviderName(requestedName)
   const provider = customProviders.find(entry => (
@@ -556,7 +554,7 @@ async function requestApiKeyImage(
       headers: { ...headers, 'Content-Type': 'application/json' },
       signal: AbortSignal.timeout(timeoutMs),
       body: JSON.stringify({
-        model: body.model || models.generation || APIKEY_IMAGE_MODEL,
+        model: body.model || models.generation || DEFAULT_IMAGE_MODEL,
         prompt,
         n,
         size: body.size || '1024x1024',
@@ -571,7 +569,7 @@ async function requestApiKeyImage(
       headers: { ...headers, 'Content-Type': 'application/json' },
       signal: AbortSignal.timeout(timeoutMs),
       body: JSON.stringify({
-        model: body.model || models.edit || provider.model || APIKEY_IMAGE_TO_IMAGE_MODEL,
+        model: body.model || models.edit || provider.model || DEFAULT_IMAGE_TO_IMAGE_MODEL,
         store: false,
         stream: true,
         input: [{
@@ -583,7 +581,7 @@ async function requestApiKeyImage(
         }],
         tools: [{
           type: 'image_generation',
-          model: body.image_model || models.generation || APIKEY_IMAGE_MODEL,
+          model: body.image_model || models.generation || DEFAULT_IMAGE_MODEL,
           size: body.size || '1024x1024',
           quality: body.quality || 'auto',
           output_format: body.output_format || 'png',
@@ -598,7 +596,7 @@ async function requestApiKeyImage(
     const form = new FormData()
     form.append('image', new Blob([imageBytes.buffer], { type: image.mime }), image.name)
     form.append('prompt', prompt)
-    form.append('model', body.model || models.generation || APIKEY_IMAGE_MODEL)
+    form.append('model', body.model || models.generation || DEFAULT_IMAGE_MODEL)
     form.append('n', String(n))
     form.append('quality', body.quality || 'auto')
     form.append('size', body.size || '1024x1024')
@@ -681,10 +679,9 @@ export async function apiKeyImageGenerate(ctx: Context) {
     const resolution = resolveApiKeyImageProvider(hermesConfig, providerName, configuredProvider)
     if (!resolution.provider) {
       ctx.status = 401
-      const isDefaultProvider = canonicalCustomProviderName(resolution.attemptedName) === APIKEY_IMAGE_PROVIDER
       ctx.body = {
-        error: `Missing ${resolution.attemptedName} provider in profile "${profile}" config.yaml.`,
-        code: isDefaultProvider ? 'missing_fun_codex_provider' : 'missing_apikey_image_provider',
+        error: `Configure an image provider in profile "${profile}" before generating images.`,
+        code: 'missing_image_provider',
       }
       return
     }

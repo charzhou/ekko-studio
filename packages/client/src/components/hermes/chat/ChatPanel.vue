@@ -7,7 +7,7 @@ import { usePageLoadingTask } from '@/composables/usePageLoading'
 import { useCodingAgentModels } from '@/composables/useCodingAgentModels'
 import PageHeader from '@/components/layout/PageHeader.vue'
 import HeaderSidebarToggle from '@/components/layout/HeaderSidebarToggle.vue'
-import { AGENT_OPTIONS } from "@/utils/agent-options"
+import { isOemAgentEnabled, isOemSessionRunnable, OEM_AGENT_OPTIONS } from "@/utils/agent-options"
 import { setSessionPinned } from "@/api/studio/sessions";
 import DshSessionPresetSelect from "@/components/coding-agents/dsh/DshSessionPresetSelect.vue";
 import {
@@ -34,6 +34,7 @@ import { useToolPanelStore } from "@/stores/hermes/tool-panel";
 import { useSessionBrowserPrefsStore } from "@/stores/hermes/session-browser-prefs";
 import {
   NSpin,
+  NAlert,
   NButton,
   NDropdown,
   NInput,
@@ -85,7 +86,7 @@ import {
 
 const props = withDefaults(defineProps<{
   standalone?: boolean;
-  contentMode?: "chat" | "connections" | "agents" | "models";
+  contentMode?: "chat" | "agents" | "models";
   initialComposerText?: string;
   composerPersistDraft?: boolean;
 }>(), {
@@ -98,7 +99,6 @@ const props = withDefaults(defineProps<{
 provide('hermesWorkspaceFilePreview', true);
 
 const FilesPanel = defineAsyncComponent(async () => (await import('./FilesPanel.vue')).default);
-const ConnectionsPanel = defineAsyncComponent(async () => (await import('@/components/hermes/connections/ConnectionsPanel.vue')).default);
 const AgentManagerPanel = defineAsyncComponent(async () => (await import('@/views/hermes/AgentManagerView.vue')).default);
 const ModelsPanel = defineAsyncComponent(async () => (await import('@/views/hermes/ModelsView.vue')).default);
 const WorkspaceDiffPreview = defineAsyncComponent(async () => (await import('@/components/hermes/files/WorkspaceDiffPreview.vue')).default);
@@ -916,9 +916,9 @@ const NEW_CHAT_AGENT_STORAGE_KEY = "hermes_new_chat_agent_v1";
 function loadNewChatAgent(): "hermes" | ChatCodingAgentId {
   try {
     const saved = localStorage.getItem(NEW_CHAT_AGENT_STORAGE_KEY);
-    return AGENT_OPTIONS.find(option => option.value === saved)?.value || AGENT_OPTIONS[0].value;
+    return OEM_AGENT_OPTIONS.find(option => option.value === saved)?.value || OEM_AGENT_OPTIONS[0].value;
   } catch {
-    return AGENT_OPTIONS[0].value;
+    return OEM_AGENT_OPTIONS[0].value;
   }
 }
 let preferredNewChatAgent = loadNewChatAgent();
@@ -1044,7 +1044,7 @@ function getFolderName(path: string | null): string {
 
 const mostRecentDefaultWorkspace = computed(() => {
   if (defaultWorkspaces.value.length === 0) return null;
-  
+
   // 从最近使用记录中找第一个默认工作区
   const recent = [...recentWorkspaces.value].sort((a, b) => b.lastUsed - a.lastUsed);
   for (const entry of recent) {
@@ -1052,13 +1052,13 @@ const mostRecentDefaultWorkspace = computed(() => {
       return entry.path;
     }
   }
-  
+
   // 如果没有使用记录，返回第一个默认工作区
   return defaultWorkspaces.value[0];
 });
 
 const newChatAgentAvailability = ref<AgentAvailabilitySnapshot | null>(null);
-const newChatAgentOptions = computed(() => AGENT_OPTIONS.filter(option =>
+const newChatAgentOptions = computed(() => OEM_AGENT_OPTIONS.filter(option =>
   agentInstallationState(newChatAgentAvailability.value, option.value) === "installed",
 ));
 
@@ -1175,7 +1175,7 @@ const { catalog: activeSessionNativeCatalog } = useCodingAgentModels(
     const id = chatStore.activeSession?.codingAgentId || chatStore.activeSession?.agent || "codex";
     return (agentMetadata(id)?.id || id) as CodingAgentId;
   },
-  () => !showNewChatPage.value && activeSessionUsesGlobalCodingAgentConfig.value,
+  () => !showNewChatPage.value && isOemSessionRunnable(chatStore.activeSession) && activeSessionUsesGlobalCodingAgentConfig.value,
 );
 const activeSessionNativeReasoningEfforts = computed(() => {
   return nativeCatalogModel(activeSessionNativeCatalog.value?.models, chatStore.activeSession?.model || "")?.reasoningEfforts;
@@ -1329,7 +1329,7 @@ async function refreshNewChatAgentAvailability(sequence: number) {
     if (!isCurrentNewChatOptionsLoad(sequence)) return;
     newChatAgentAvailability.value = availability;
     newChatAgent.value = newChatAgentOptions.value.find(option => option.value === preferredNewChatAgent)?.value
-      || newChatAgentOptions.value[0]?.value || AGENT_OPTIONS[0].value;
+      || newChatAgentOptions.value[0]?.value || OEM_AGENT_OPTIONS[0].value;
   } catch {
     if (isCurrentNewChatOptionsLoad(sequence) && !newChatAgentAvailability.value) {
       message.error(t("codingAgents.loadFailed"));
@@ -1420,7 +1420,7 @@ function handleNewChatProfileChange(value: string) {
 }
 
 async function submitNewChat(text: string, attachments?: Attachment[]): Promise<boolean> {
-  if (!canConfirmNewChat.value || !showNewChatPage.value) return false;
+  if (!canConfirmNewChat.value || !showNewChatPage.value || !isOemAgentEnabled(newChatAgent.value)) return false;
   const sequence = newChatOptionsLoadSequence;
   newChatLoading.value = true;
   let deployment: AgentDeploymentController | null = null;
@@ -1431,14 +1431,14 @@ async function submitNewChat(text: string, attachments?: Attachment[]): Promise<
         if (agentInstallationState(status, "hermes") === "not-installed") {
           showNewChatPage.value = false;
           if (isSuperAdmin.value) {
-            await router.push({ name: "hermes.agentManager", query: { runtime: "install" } });
+            await router.push({ name: "hermes.agentManager" });
           } else {
-            message.warning(t("codingAgents.installRequired", { agent: "Hermes" }));
+            message.warning(t("codingAgents.installRequired", { agent: "AFY Studio" }));
           }
           return false;
         }
       } catch (error) {
-        console.warn("Failed to read Hermes Agent availability before creating a chat:", error);
+        console.warn("Failed to read AFY Studio Agent availability before creating a chat:", error);
       }
     }
 
@@ -1448,7 +1448,7 @@ async function submitNewChat(text: string, attachments?: Attachment[]): Promise<
         // Reuse the server inventory; probing every CLI's version delays creation.
         const status = await fetchAgentAvailabilitySnapshot();
         if (agentInstallationState(status, agentId) !== "installed") {
-          const agentName = newChatAgentOptions.value.find(option => option.value === agentId)?.label || agentId;
+          const agentName = 'AFY Studio';
           message.warning(t("codingAgents.installRequired", { agent: agentName }));
           showNewChatPage.value = false;
           await router.push({ name: "hermes.agentManager" });
@@ -2489,7 +2489,7 @@ function handleSessionModelSelect(selection: { model: string; provider: string }
       <SidebarResizeHandle />
       <div v-if="showSessions" class="page-sidebar-top">
         <PageSidebarNav
-          :active="contentMode === 'connections' ? 'connections' : contentMode === 'agents' ? 'agents' : contentMode === 'models' ? 'models' : chatStore.runtimeMode === 'global_agent' ? 'global' : 'chat'"
+          :active="contentMode === 'agents' ? 'agents' : contentMode === 'models' ? 'models' : chatStore.runtimeMode === 'global_agent' ? 'global' : 'chat'"
           :primary-label="t('chat.newChat')"
           @primary="openNewChatPage"
         >
@@ -3021,11 +3021,8 @@ function handleSessionModelSelect(selection: { model: string; provider: string }
       class="chat-main"
       :class="{ 'chat-main--sidebar-collapsed': !pageSidebarExpanded }"
     >
-      <ConnectionsPanel
-        v-if="contentMode === 'connections'"
-      />
       <AgentManagerPanel
-        v-else-if="contentMode === 'agents'"
+        v-if="contentMode === 'agents'"
       />
       <ModelsPanel
         v-else-if="contentMode === 'models'"
@@ -3243,10 +3240,15 @@ function handleSessionModelSelect(selection: { model: string; provider: string }
               :approval-portal-to-body="showRealtimeVoice"
               scroll-scope="chat"
             />
+            <NAlert v-if="!isOemSessionRunnable(chatStore.activeSession)" type="info" :bordered="false">
+              {{ t('oem.hermesOnly') }}
+            </NAlert>
             <ChatInput
               ref="chatInputRef"
+              :send-disabled="!isOemSessionRunnable(chatStore.activeSession)"
               :model-label="activeSessionModelLabel"
-              :model-disabled="activeSessionUsesGlobalCodingAgentConfig"
+              :model-disabled="!isOemSessionRunnable(chatStore.activeSession) || activeSessionUsesGlobalCodingAgentConfig"
+              :reasoning-effort-disabled="!isOemSessionRunnable(chatStore.activeSession)"
               :native-reasoning-efforts="activeSessionUsesGlobalCodingAgentConfig ? activeSessionNativeReasoningEfforts : undefined"
               :native-effort-choices="activeSessionUsesGlobalCodingAgentConfig ? activeSessionNativeEffortChoices : undefined"
               :model-expanded="showSessionModelPicker && !sessionModelIsDraft && sessionModelSessionId === chatStore.activeSessionId"

@@ -29,9 +29,6 @@ const requiredPaths = [
   'runtimeVersions.dataDirectoryEnvDescription',
   'runtimeVersions.dataDirectoryEnvInstructions',
   'runtimeVersions.dataDirectoryEnvWindows',
-  'runtimeVersions.dataDirectoryEnvMacos',
-  'runtimeVersions.dataDirectoryEnvLinux',
-  'runtimeVersions.dataDirectoryEnvDocker',
   'runtimeVersions.dataDirectoryEnvRestart',
 ]
 

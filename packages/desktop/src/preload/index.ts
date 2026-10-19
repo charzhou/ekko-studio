@@ -15,7 +15,7 @@ function desktopWindowKind(): DesktopWindowKind {
 
 // Set by the main process when the desktop points at a remote Web UI
 // deployment instead of the bundled local server.
-const REMOTE_SERVER_MODE = process.argv.includes('--hermes-remote-mode')
+const REMOTE_SERVER_MODE = false
 
 contextBridge.exposeInMainWorld('hermesDesktop', {
   ...(!REMOTE_SERVER_MODE && process.platform === 'darwin' ? { computerUsePermissions: {

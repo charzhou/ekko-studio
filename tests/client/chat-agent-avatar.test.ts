@@ -2,23 +2,23 @@ import { describe, expect, it } from 'vitest'
 import { chatSessionAgentAvatar } from '@/utils/chat-agent-avatar'
 
 describe('single chat Agent avatars', () => {
-  it('shows Ekko before the session loads while preserving legacy Hermes sessions', () => {
+  it('shows AFY Studio before the session loads while preserving legacy AFY Studio sessions', () => {
     for (const session of [null, undefined]) {
       expect(chatSessionAgentAvatar(session)).toEqual({
-        label: 'Ekko',
+        label: 'AFY Studio',
         src: '/coding-agents/ekko-agent.png',
       })
     }
     expect(chatSessionAgentAvatar({ source: 'cli' })).toEqual({
-      label: 'Hermes',
-      src: '/coding-agents/hermes.png',
+      label: 'AFY Studio',
+      src: '/logo.png',
     })
   })
 
   it.each([
-    ['Hermes', { agent: 'hermes' }, '/coding-agents/hermes.png'],
-    ['Ekko', { agent: 'ekko-agent' }, '/coding-agents/ekko-agent.png'],
-    ['Ekko', { agent: 'ekko_agent' }, '/coding-agents/ekko-agent.png'],
+    ['AFY Studio', { agent: 'hermes' }, '/logo.png'],
+    ['AFY Studio', { agent: 'ekko-agent' }, '/coding-agents/ekko-agent.png'],
+    ['AFY Studio', { agent: 'ekko_agent' }, '/coding-agents/ekko-agent.png'],
     ['Claude', { agent: 'claude' }, '/coding-agents/claude-code.svg'],
     ['Claude', { codingAgentId: 'claude-code' }, '/coding-agents/claude-code.svg'],
     ['Codex', { codingAgentId: 'codex' }, '/coding-agents/codex-openai.png'],

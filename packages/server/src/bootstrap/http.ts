@@ -1,5 +1,3 @@
-import { setupMobileTerminal } from '../modules/hermes/sockets/mobile-terminal'
-import { getSessionMetadata as getTerminalSessionMetadata } from '../modules/studio/public/sessions'
 import Koa from 'koa'
 import type { Context } from 'koa'
 import cors from '@koa/cors'
@@ -13,18 +11,12 @@ import { initLoginLimiter } from '../modules/studio/services/auth/login-limiter'
 import { createShutdownHandler } from './lifecycle'
 import { setupTerminalWebSocket } from '../modules/hermes/sockets/terminal'
 import { setupKanbanEventsWebSocket } from '../modules/hermes/sockets/kanban-events'
-import { startVersionCheck } from './health'
 import { registerRoutes } from './routes'
-import { dshPluginUi } from '../modules/coding-agents/services'
 import './chat-agent-runtime-adapter'
 import './skill-files-adapter'
 import { setGroupChatServer } from '../modules/studio/routes/group-chat'
 import { setChatRunServer } from '../modules/studio/public/chat-run'
 import { GroupChatServer } from '../modules/studio/public/group-chat'
-import {
-  getGroupAgentOutboundRelayManager,
-  GroupAgentRelayServer,
-} from '../modules/studio/services/group-chat/agent-relay'
 import { ChatRunSocket } from '../modules/studio/sockets/chat-run'
 import { startChatWebhookDispatcher } from '../modules/studio/services/webhooks'
 import { getAgentBridgeManager, startAgentBridgeManager } from '../modules/hermes/services/bridge'
@@ -32,24 +24,7 @@ import { HermesSkillInjector } from '../modules/hermes/services/skills/injector'
 import { injectBundledMcpServer } from '../modules/hermes/services/mcp/studio-autoinject'
 import { ensureProfileGatewaysRunning } from '../modules/hermes/services/gateway/autostart'
 import { runRegisteredStartupTasks } from './startup-tasks'
-import { refreshConfiguredProviderModelCatalogsInBackground } from '../modules/hermes/services/providers/model-catalog-cache'
-import { refreshModelCatalog } from '../modules/studio/public/model-catalog'
-import {
-  scanLanDevices,
-  selectLanIPv4Address,
-  startLanDiscoveryResponder,
-  stopLanDiscoveryResponder,
-} from './lan-discovery'
-import { getLanPeerSocketManager, getLanPeerSocketPath } from './lan-peer'
 import { startGlobalAgentServer } from '../modules/studio/public/global-agent'
-import { startLocalAppRelayServer } from '../modules/studio/services/app-relay/server'
-import {
-  hasPendingCloudAppConnectionRevocations,
-  listAppConnections,
-} from '../modules/studio/repositories/app-connections-store'
-import { ensureAppRelayHostClient } from '../modules/studio/services/app-relay/connection'
-import { setupGlobalEkkoAgent } from './ekko'
-import { injectManagedEkkoMcpServers } from '../modules/ekko/services/mcp'
 import { WorkflowSocketServer } from '../modules/studio/sockets/workflow'
 import { PetStateSocketServer } from '../modules/studio/sockets/pet-state'
 import { logger } from '../modules/studio/public/logging'
@@ -64,12 +39,6 @@ import {
 } from '../modules/studio/middleware/security'
 import type { AdditionalShutdownStep, ShutdownHandler } from './lifecycle'
 import { createCodexProxyRequestBodyParser, createRequestBodyParser } from '../modules/studio/middleware/request-body-parser'
-import {
-  getCodingAgentsStatus,
-  migratePersistedPiRuntimeMcpConfigs,
-  restorePersistedCodexProxyTargets,
-  restorePersistedPiProxyTargets,
-} from './coding-agents'
 import { isAuthorizedCodexProxyRequest } from '../modules/coding-agents/services/codex/proxy'
 import {
   configurePreferredHermesRuntime,
@@ -94,7 +63,6 @@ let groupChatServer: GroupChatServer | null = null
 let chatRunServer: any = null
 let workflowSocketServer: WorkflowSocketServer | null = null
 let petStateSocketServer: PetStateSocketServer | null = null
-let groupAgentRelayServer: GroupAgentRelayServer | null = null
 let agentBridgeManager: any = null
 let desktopShutdownHandler: ShutdownHandler | null = null
 let shutdownRequested = false
@@ -315,24 +283,6 @@ async function startRuntimeServicesAfterListen(hermesAvailable: boolean): Promis
   }
 }
 
-function startLanDiscovery(): void {
-  const discoverySocket = startLanDiscoveryResponder({ httpPort: config.port })
-  let initialScanStarted = false
-  const runInitialScan = () => {
-    if (initialScanStarted) return
-    initialScanStarted = true
-    void scanLanDevices().catch(err => logger.warn(err, '[lan-discovery] initial scan failed'))
-  }
-
-  if (discoverySocket) {
-    discoverySocket.once('listening', runInitialScan)
-    const fallbackTimer = setTimeout(runInitialScan, 500)
-    fallbackTimer.unref?.()
-  } else {
-    runInitialScan()
-  }
-}
-
 function recordLockedHermesSelection(selection: HermesRuntimeSelection): void {
   if (selection.source === 'none' || !selection.path) {
     const activationError = readActiveVersionManifest()?.runtimeActivationError || ''
@@ -373,7 +323,7 @@ function recordLockedHermesSelection(selection: HermesRuntimeSelection): void {
 
 export async function bootstrap() {
   bootstrapReady = false
-  console.log(`hermes-web-ui v${APP_VERSION} starting...`)
+  console.log(`AFY Studio v${APP_VERSION} starting...`)
   try {
     await runRegisteredStartupTasks()
   } catch {
@@ -396,10 +346,8 @@ export async function bootstrap() {
   }
   console.log(`[bootstrap] Hermes source=${hermesSelection.source} version=${hermesSelection.version || '-'} path=${hermesSelection.path || '-'} python=${hermesSelection.pythonPath || '-'} root=${hermesSelection.agentRoot || '-'}`)
   if (lockedDesktopSelection) recordLockedHermesSelection(hermesSelection)
-  updateAgentStatus('ekko-agent', { version: APP_VERSION })
   const inventoryResults = await Promise.allSettled([
     ...(!lockedDesktopSelection ? [getRuntimeVersionStatus({ includeRemote: false })] : []),
-    getCodingAgentsStatus(),
   ])
   for (const result of inventoryResults) {
     if (result.status === 'rejected') {
@@ -440,54 +388,6 @@ export async function bootstrap() {
     console.warn('[bootstrap] failed to inject bundled MCP server:', err instanceof Error ? err.message : err)
   }
 
-  try {
-    const migratedPiMcpConfigs = await migratePersistedPiRuntimeMcpConfigs()
-    if (migratedPiMcpConfigs > 0) {
-      console.log(`[bootstrap] migrated ${migratedPiMcpConfigs} persisted Pi MCP runtime config(s) to proxy mode`)
-    }
-  } catch (err) {
-    logger.warn(err, '[bootstrap] failed to migrate persisted Pi MCP runtime configs')
-  }
-
-  try {
-    const restoredCodexProxyTargets = await restorePersistedCodexProxyTargets()
-    if (restoredCodexProxyTargets > 0) {
-      console.log(`[bootstrap] restored ${restoredCodexProxyTargets} persisted Codex/Grok proxy target(s)`)
-    }
-  } catch (err) {
-    logger.warn(err, '[bootstrap] failed to restore persisted Codex/Grok proxy targets')
-  }
-
-  try {
-    const restoredPiProxyTargets = await restorePersistedPiProxyTargets()
-    if (restoredPiProxyTargets > 0) {
-      console.log(`[bootstrap] restored ${restoredPiProxyTargets} persisted Pi proxy target(s)`)
-    }
-  } catch (err) {
-    logger.warn(err, '[bootstrap] failed to restore persisted Pi proxy targets')
-  }
-
-  try {
-    const ekkoSetup = setupGlobalEkkoAgent()
-    try {
-      const injection = injectManagedEkkoMcpServers(ekkoSetup)
-      const changed = injection.targets.filter(target => target.status === 'injected' || target.status === 'updated')
-      if (changed.length > 0) {
-        logger.info({
-          serverNames: injection.serverNames,
-          targets: changed,
-        }, '[bootstrap] Studio MCP servers injected into Ekko config')
-      }
-    } catch (err) {
-      logger.warn(err, '[bootstrap] failed to inject Studio MCP servers into Ekko config')
-      console.warn('[bootstrap] failed to inject Studio MCP servers into Ekko config:', err instanceof Error ? err.message : err)
-    }
-    console.log('[bootstrap] ekko-agent setup complete')
-  } catch (err) {
-    logger.error(err, '[bootstrap] ekko-agent setup failed; continuing with Ekko unavailable')
-    console.error('[bootstrap] ekko-agent setup failed; continuing without Ekko:', err instanceof Error ? err.message : err)
-  }
-
   agentBridgeManager = getAgentBridgeManager()
   if (!isDesktopRuntime()) {
     await startRuntimeServicesBeforeListen(hermesAgentAvailable)
@@ -498,8 +398,8 @@ export async function bootstrap() {
   // Initialize all web-ui SQLite tables
   const { initAllStores } = await import('../modules/studio/infrastructure/database/init')
   initAllStores()
-  // Refresh once on every startup; context and cost lookups can use the disk cache immediately.
-  void refreshModelCatalog(true)
+  // AFY Studio only reads a previously cached model catalog; startup never
+  // contacts a hosted catalog service.
   const { interruptOrphanedTaskPlans } = await import('../modules/studio/repositories/task-plan-store')
   interruptOrphanedTaskPlans()
   startChatWebhookDispatcher()
@@ -511,7 +411,6 @@ export async function bootstrap() {
   // authenticated request here so the proxy can remove historical image data
   // before dispatching to any provider API mode.
   app.use(createCodexProxyRequestBodyParser(isAuthorizedCodexProxyRequest))
-  app.use(dshPluginUi.middleware)
   // Raise body limits above the default 1mb: profile avatars and MiMo voice-clone
   // reference audio are posted as base64 data URLs before reaching handlers.
   app.use(createRequestBodyParser())
@@ -554,8 +453,6 @@ export async function bootstrap() {
   bootstrapReady = true
   console.log('[bootstrap] web UI shell ready')
 
-  const closeDshPluginUi = dshPluginUi.attach(servers)
-  additionalShutdownSteps.push({ name: 'DSH plugin UI transport', close: closeDshPluginUi })
   const terminalWebSocket = setupTerminalWebSocket(servers)
   if (terminalWebSocket) {
     additionalShutdownSteps.push({
@@ -570,58 +467,22 @@ export async function bootstrap() {
     close: () => kanbanEventsWebSocket.close(),
     forceClose: () => kanbanEventsWebSocket.forceClose(),
   })
-  const lanPeerSocketManager = getLanPeerSocketManager()
-  lanPeerSocketManager.setupServer(servers)
-  additionalShutdownSteps.push({
-    name: 'LAN peer WebSocket and child runtimes',
-    close: () => lanPeerSocketManager.shutdown(),
-    forceClose: () => lanPeerSocketManager.forceClose(),
-  })
-  console.log('[bootstrap] terminal + kanban + LAN peer websocket setup')
-
-  const loopbackBaseUrl = getLoopbackBaseUrl(server)
-
   // Group chat Socket.IO (must be after server is created)
   const activeGroupChatServer = new GroupChatServer(servers)
   groupChatServer = activeGroupChatServer
   setGroupChatServer(activeGroupChatServer)
-  groupAgentRelayServer = new GroupAgentRelayServer(activeGroupChatServer.getIO(), activeGroupChatServer)
-  additionalShutdownSteps.push({
-    name: 'Group agent relay',
-    close: () => groupAgentRelayServer?.shutdown(),
-  })
+  // Remote group-agent relay is excluded from the AFY Studio distribution.
 
   // Chat run Socket.IO — shares the same Server instance, just adds /chat-run namespace
   chatRunServer = new ChatRunSocket(activeGroupChatServer.getIO())
   setChatRunServer(chatRunServer)
   activeGroupChatServer.setChatRunService(chatRunServer)
   chatRunServer.init()
-  const mobileTerminal = setupMobileTerminal(activeGroupChatServer.getIO(), context => {
-    if (context.source === 'single') {
-      const session = getTerminalSessionMetadata(context.sourceId)
-      return session ? { profile: session.profile, workspace: session.workspace || '' } : null
-    }
-    const room = activeGroupChatServer.getStorage().getRoom(context.sourceId)
-    return room ? { profile: context.profile, workspace: room.workspace || '' } : null
-  })
-  additionalShutdownSteps.push({ name: 'Mobile terminal PTY sessions', close: () => mobileTerminal.close() })
-  startLocalAppRelayServer(activeGroupChatServer.getIO(), { localBaseUrl: loopbackBaseUrl })
-  console.log('[bootstrap] local App relay server ready')
-  if (
-    listAppConnections().some(connection => connection.connection_type === 'cloud')
-    || hasPendingCloudAppConnectionRevocations()
-  ) {
-    void ensureAppRelayHostClient().catch(err => logger.warn(err, '[app-relay] cloud host restore failed'))
-  }
-  const groupAgentOutboundRelayManager = getGroupAgentOutboundRelayManager(
-    () => activeGroupChatServer.getChatRunService(),
-  )
-  additionalShutdownSteps.push({
-    name: 'Group agent outbound relay',
-    close: () => groupAgentOutboundRelayManager.shutdown(),
-  })
-  void groupAgentOutboundRelayManager.restore()
-
+  // The global-agent namespace is local-only. Its remote device and MCU
+  // operations are unavailable in the OEM build, while browser and local API
+  // operations remain available to the local workspace.
+  const loopbackBaseUrl = getLoopbackBaseUrl(server)
+  startGlobalAgentServer(activeGroupChatServer.getIO(), { localBaseUrl: loopbackBaseUrl })
   // A process restart loses in-memory scheduler, approval, and runner ownership.
   // Persist a fail-closed terminal state before exposing workflow sockets, then abort
   // any surviving session runners through the now-registered ChatRun service.
@@ -648,8 +509,6 @@ export async function bootstrap() {
   petStateSocketServer = new PetStateSocketServer(activeGroupChatServer.getIO())
   petStateSocketServer.init()
 
-  startGlobalAgentServer(activeGroupChatServer.getIO(), { localBaseUrl: loopbackBaseUrl })
-  console.log('[bootstrap] global agent server ready')
 
   // Session deleter — periodically drain pending session deletes
   const { SessionDeleter } = await import('../modules/hermes/services/history/session-deleter')
@@ -670,27 +529,18 @@ export async function bootstrap() {
         writeBadUpgradeRequest(socket)
         return
       }
-      if (!dshPluginUi.handlesUpgrade(req) &&
-        url.pathname !== '/api/hermes/terminal' &&
+      if (url.pathname !== '/api/hermes/terminal' &&
         url.pathname !== '/api/hermes/kanban/events' &&
-        url.pathname !== getLanPeerSocketPath() &&
         !url.pathname.startsWith('/socket.io/')) {
         socket.destroy()
       }
     })
   })
 
-  const selectedLanAddress = selectLanIPv4Address('')
-  const localIp = selectedLanAddress === '127.0.0.1' ? 'localhost' : selectedLanAddress
+  const localIp = 'localhost'
   console.log(`Server: http://localhost:${config.port} (LAN: http://${localIp}:${config.port})`)
   console.log(`Log: ${config.appHome}/logs/server.log`)
   logger.info('Server: http://localhost:%d (LAN: http://%s:%d)', config.port, localIp, config.port)
-  startLanDiscovery()
-  additionalShutdownSteps.push({
-    name: 'LAN discovery responder',
-    close: stopLanDiscoveryResponder,
-  })
-  refreshConfiguredProviderModelCatalogsInBackground('bootstrap')
 
   if (isDesktopRuntime()) {
     await startRuntimeServicesAfterListen(hermesAgentAvailable)
@@ -714,12 +564,11 @@ export async function bootstrap() {
     agentBridgeManager,
     additionalShutdownSteps,
   )
-  startVersionCheck()
   console.log('[bootstrap] startup complete')
 }
 
 bootstrap().catch((error) => {
-  console.error('FATAL: Failed to start Hermes Web UI')
+  console.error('FATAL: Failed to start AFY Studio')
   console.error(error)
   logger.fatal(error, 'Fatal error during bootstrap')
   void shutdownAfterFatal('bootstrap-error')

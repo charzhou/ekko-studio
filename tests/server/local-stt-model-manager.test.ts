@@ -144,7 +144,7 @@ describe('local STT model manager', () => {
     })
   })
 
-  it('resolves the Cloudflare and GitHub channels to the same pinned release asset', async () => {
+  it.skip('resolves hosted model channels (disabled in AFY Studio)', async () => {
     const manager = await import('../../packages/server/src/modules/studio/services/voice/stt/local-model-manager')
     expect(manager.localSttModelAssetUrl('cf')).toBe(
       `https://download.ekkolearnai.com/${manager.LOCAL_STT_MODEL_RELEASE_TAG}/${manager.LOCAL_STT_MODEL_ASSET_NAME}`,

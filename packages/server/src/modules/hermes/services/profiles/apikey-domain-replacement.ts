@@ -1,3 +1,4 @@
+import { requireOemFeature } from '../../../studio/public/oem'
 import { join, resolve } from 'path'
 import { isMap, isScalar, isSeq, parseDocument } from 'yaml'
 import { logger } from '../../../studio/public/logging'
@@ -58,6 +59,7 @@ function replaceEnvDomains(raw: string): string {
 }
 
 export async function replaceHermesApiKeyDomains(): Promise<{ updatedProfiles: string[]; failedProfiles: string[] }> {
+  requireOemFeature('partnerServices')
   const result = { updatedProfiles: [] as string[], failedProfiles: [] as string[] }
   for (const profile of listProfileNamesFromDisk()) {
     const dir = getProfileDir(profile)

@@ -112,7 +112,7 @@ test('only lists missing permissions and supports the standalone chat window', a
   await expect(prompt).toHaveCount(0)
 })
 
-for (const [name, options] of Object.entries({ granted: { granted: true }, Windows: { platform: 'win32' }, Linux: { platform: 'linux' }, remote: { remote: true }, web: { web: true }, Hermes: { agent: 'hermes' } })) {
+for (const [name, options] of Object.entries({ granted: { granted: true }, Windows: { platform: 'win32' }, Linux: { platform: 'linux' }, remote: { remote: true }, web: { web: true }, AFY Studio: { agent: 'hermes' } })) {
   test(`does not prompt for ${name}`, async ({ page }) => {
     const state = await setup(page, options)
     await toolStarted(page)

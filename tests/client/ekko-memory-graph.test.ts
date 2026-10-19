@@ -59,9 +59,9 @@ describe('Ekko memory graph', () => {
 
   it('chains shared-source and shared-entity groups instead of creating cliques', () => {
     const nodes = [
-      memory('a', { sourceMessageIds: ['m1'], entities: ['Hermes'], createdAt: '2026-01-01T00:00:00.000Z' }),
-      memory('b', { sourceMessageIds: ['m1'], entities: ['Hermes'], createdAt: '2026-01-02T00:00:00.000Z' }),
-      memory('c', { sourceMessageIds: ['m1'], entities: ['Hermes'], createdAt: '2026-01-03T00:00:00.000Z' }),
+      memory('a', { sourceMessageIds: ['m1'], entities: ['AFY Studio'], createdAt: '2026-01-01T00:00:00.000Z' }),
+      memory('b', { sourceMessageIds: ['m1'], entities: ['AFY Studio'], createdAt: '2026-01-02T00:00:00.000Z' }),
+      memory('c', { sourceMessageIds: ['m1'], entities: ['AFY Studio'], createdAt: '2026-01-03T00:00:00.000Z' }),
     ]
     const edges = buildEkkoMemoryGraphEdges(nodes)
 

@@ -28,6 +28,7 @@ vi.mock('child_process', () => ({
 }))
 
 import { getCodingAgentStatus, getCodingAgentDefinition, prepareCodingAgentLaunch, installCodingAgent } from '../../packages/server/src/bootstrap/coding-agents'
+import { OEM_DISABLED_MESSAGE } from '../../packages/server/src/modules/studio/public/oem'
 
 const originalPlatform = Object.getOwnPropertyDescriptor(process, 'platform')
 const originalArch = Object.getOwnPropertyDescriptor(process, 'arch')!
@@ -65,8 +66,7 @@ describe('coding agent Windows command execution', () => {
   it('blocks Qoder on Windows ARM64 before installing a package or preparing a launch', async () => {
     Object.defineProperty(process, 'arch', { value: 'arm64' })
     await expect(prepareCodingAgentLaunch('qoder', { mode: 'global' })).rejects.toThrow('Windows ARM64')
-    const result = await installCodingAgent('qoder')
-    expect(result).toMatchObject({ success: false, code: 'coding_agent_environment_unavailable', message: expect.stringContaining('Windows ARM64') })
+    await expect(installCodingAgent('qoder')).rejects.toThrow(OEM_DISABLED_MESSAGE)
     expect(execState.calls.some(call => call.args.includes('install'))).toBe(false)
   })
 

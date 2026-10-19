@@ -9,6 +9,7 @@ import {
 import { codingAgentRunManager } from '../../../../packages/server/src/modules/coding-agents/services/runtime/run-manager'
 import { getAgentUpdateManager } from '../../../../packages/server/src/modules/coding-agents/services/update-manager'
 import { AgentUpdatePolicy } from '../../../../packages/server/src/modules/coding-agents/services/update-policy'
+import { OEM_DISABLED_MESSAGE } from '../../../../packages/server/src/modules/studio/public/oem'
 
 describe('Cursor CLI install policy', () => {
   afterEach(() => {
@@ -17,20 +18,16 @@ describe('Cursor CLI install policy', () => {
 
   it('does not call npm when installing cursor', async () => {
     resetCodingAgentNpmInvocationCount()
-    await installCodingAgent('cursor')
+    await expect(installCodingAgent('cursor')).rejects.toThrow(OEM_DISABLED_MESSAGE)
     expect(getCodingAgentNpmInvocationCount()).toBe(0)
   })
 
   it('reports Cursor update checks as unsupported instead of current', async () => {
-    const result = await checkUpdateAgent('cursor')
-    expect(result.success).toBe(false)
-    expect(result.updateAvailable).toBe(false)
-    expect(result.latestVersion).toBe('')
+    await expect(checkUpdateAgent('cursor')).rejects.toThrow(OEM_DISABLED_MESSAGE)
     // Inspect the policy without starting background npm checks for other agents.
     const start = vi.spyOn(AgentUpdatePolicy.prototype, 'start').mockImplementation(() => {})
     try {
-      const policy = await getAgentUpdateManager()
-      expect(policy.snapshot().cursor?.autoUpdateSupported).toBe(false)
+      await expect(getAgentUpdateManager()).rejects.toThrow(OEM_DISABLED_MESSAGE)
     } finally {
       start.mockRestore()
     }

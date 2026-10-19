@@ -3,12 +3,10 @@ import { computed } from 'vue'
 import { NTooltip } from 'naive-ui'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
-import { isStoredSuperAdmin } from '@/api/client'
 import { useSessionSearch } from '@/composables/useSessionSearch'
-import DesktopUpdateDownloadTab from './DesktopUpdateDownloadTab.vue'
 import { useNavigationRail } from '@/composables/useNavigationRail'
 
-type ActiveSection = 'chat' | 'history' | 'connections' | 'agents' | 'models' | 'usage' | 'apiRelay' | 'group' | 'global' | 'workflow'
+type ActiveSection = 'chat' | 'history' | 'agents' | 'models' | 'usage' | 'group' | 'global' | 'workflow'
 
 const props = defineProps<{
   active: ActiveSection
@@ -22,7 +20,6 @@ const emit = defineEmits<{
 const { t } = useI18n()
 const router = useRouter()
 const { openSessionSearch } = useSessionSearch()
-const canManageAgents = computed(() => isStoredSuperAdmin())
 const hasNavigationRail = useNavigationRail()
 
 const primaryText = computed(() => props.primaryLabel || t('chat.newChat'))
@@ -37,15 +34,6 @@ function openHistory() {
   void router.push({ name: 'hermes.history' })
 }
 
-function openConnections() {
-  if (props.active === 'connections') return
-  void router.push({ name: 'hermes.connections' })
-}
-
-function openAgentManager() {
-  if (props.active === 'agents') return
-  void router.push({ name: 'hermes.agentManager' })
-}
 
 function openModels() {
   if (props.active === 'models') return
@@ -67,15 +55,10 @@ function openWorkflow() {
   void router.push({ name: 'hermes.workflow' })
 }
 
-function openApiRelay() {
-  if (props.active === 'apiRelay') return
-  void router.push({ name: 'hermes.apiRelay' })
-}
 </script>
 
 <template>
   <div class="page-sidebar-nav" :class="{ 'page-sidebar-nav--compact': hasNavigationRail }">
-    <DesktopUpdateDownloadTab />
     <div class="page-sidebar-tabs" role="tablist" aria-label="Chat actions">
       <div class="page-sidebar-search-row">
         <button
@@ -120,54 +103,6 @@ function openApiRelay() {
       <button
         v-if="!hasNavigationRail"
         class="page-sidebar-tab"
-        :class="{ active: active === 'connections' }"
-        type="button"
-        :aria-current="active === 'connections' ? 'page' : undefined"
-        @click="openConnections"
-      >
-        <svg
-          width="15"
-          height="15"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="1.8"
-          stroke-linecap="round"
-          stroke-linejoin="round"
-          aria-hidden="true"
-        >
-          <path d="M3 4h14a1 1 0 0 1 1 1v4M3 4a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h9M7 16v4M5 20h7M15 9h6a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1h-6a1 1 0 0 1-1-1V10a1 1 0 0 1 1-1M17 18h2" />
-        </svg>
-        <span>{{ t('sidebar.connections') }}</span>
-      </button>
-      <button
-        v-if="canManageAgents && !hasNavigationRail"
-        class="page-sidebar-tab"
-        :class="{ active: active === 'agents' }"
-        type="button"
-        :aria-current="active === 'agents' ? 'page' : undefined"
-        @click="openAgentManager"
-      >
-        <svg
-          width="17"
-          height="17"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="1.8"
-          stroke-linecap="round"
-          stroke-linejoin="round"
-          aria-hidden="true"
-        >
-          <path d="M12 8V4H8" />
-          <rect x="4" y="8" width="16" height="12" rx="3" />
-          <path d="M2 14h2M20 14h2M9 13v2M15 13v2" />
-        </svg>
-        <span>{{ t('sidebar.agentManager') }}</span>
-      </button>
-      <button
-        v-if="!hasNavigationRail"
-        class="page-sidebar-tab"
         :class="{ active: active === 'models' }"
         type="button"
         :aria-current="active === 'models' ? 'page' : undefined"
@@ -197,10 +132,7 @@ function openApiRelay() {
         </svg>
         <span>{{ t('sidebar.usage') }}</span>
       </button>
-      <button v-if="!hasNavigationRail" class="page-sidebar-tab" :class="{ active: active === 'apiRelay' }" type="button" :aria-current="active === 'apiRelay' ? 'page' : undefined" @click="openApiRelay">
-        <img class="api-relay-logo" src="/relay-logo.png" width="18" height="18" alt="" aria-hidden="true" />
-        <span>{{ t('sidebar.apiRelay') }}</span>
-      </button>
+
     </div>
     <div v-if="!hasNavigationRail" class="conversation-switch conversation-switch--four" role="tablist" aria-label="Conversation type">
       <NTooltip trigger="hover" placement="top">

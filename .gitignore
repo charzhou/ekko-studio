@@ -58,3 +58,8 @@ packages/client/src/**/*.js
 # Local npm release tarballs
 /release/npm/
 /release/tos/
+
+# Local browser verification artifacts
+/playwright-output/
+/output/playwright/
+/.playwright-cli/

@@ -95,7 +95,7 @@ export async function uploadFiles(targetDir: string, files: File[], profile?: st
   if (token) headers['Authorization'] = `Bearer ${token}`
   const explicitProfile = normalizeProfile(profile)
   const profileName = explicitProfile || getActiveProfileName()
-  if (profileName && !explicitProfile) headers['X-Hermes-Profile'] = profileName
+  if (profileName && !explicitProfile) headers['X-AFY Studio-Profile'] = profileName
 
   const res = await fetch(url, { method: 'POST', headers, body: formData })
   if (!res.ok) {
@@ -117,7 +117,7 @@ export async function uploadRuntimeFiles(files: File[]): Promise<{ name: string;
   const token = getApiKey()
   if (token) headers.Authorization = `Bearer ${token}`
   const profileName = getActiveProfileName()
-  if (profileName) headers['X-Hermes-Profile'] = profileName
+  if (profileName) headers['X-AFY Studio-Profile'] = profileName
 
   const res = await fetch(`${base}/api/studio/uploads`, { method: 'POST', headers, body: formData })
   if (!res.ok) {

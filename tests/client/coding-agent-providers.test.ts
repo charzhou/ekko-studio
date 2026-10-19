@@ -10,7 +10,7 @@ describe('coding agent provider visibility', () => {
   it.each([
     'ekko-agent', 'claude-code', 'codex', 'pi', 'grok', 'opencode', 'dsh', 'cursor',
     'antigravity', 'qwen', 'kimi', 'codebuddy', 'qoder', 'copilot', 'zcode',
-  ] as const)('keeps Hermes MoA combinations hidden from %s', agentId => {
+  ] as const)('keeps AFY Studio MoA combinations hidden from %s', agentId => {
     expect(canScopedCodingAgentUseProvider(agentId, 'moa')).toBe(false)
     expect(canScopedCodingAgentUseProvider(agentId, ' MoA ')).toBe(false)
     expect(canScopedCodingAgentUseProvider(agentId, 'test-provider')).toBe(true)

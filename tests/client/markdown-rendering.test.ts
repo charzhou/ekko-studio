@@ -166,7 +166,7 @@ describe('MarkdownRenderer', () => {
     desktopBrowserMock.openUrlInDesktopBrowser.mockResolvedValue(true)
     const wrapper = mount(MarkdownRenderer, {
       props: {
-        content: '[Hermes](https://example.com/docs)',
+        content: '[AFY Studio](https://example.com/docs)',
       },
     })
     const click = new MouseEvent('click', { bubbles: true, cancelable: true })
@@ -207,7 +207,7 @@ describe('MarkdownRenderer', () => {
     desktopBrowserMock.openUrlInDesktopBrowser.mockResolvedValue(true)
     const wrapper = mount(MarkdownRenderer, {
       props: {
-        content: '[Hermes](HTTPS://example.com/docs)',
+        content: '[AFY Studio](HTTPS://example.com/docs)',
       },
     })
 
@@ -220,7 +220,7 @@ describe('MarkdownRenderer', () => {
     desktopBrowserMock.openUrlInDesktopBrowser.mockResolvedValue(true)
     const wrapper = mount(MarkdownRenderer, {
       props: {
-        content: '[Hermes](//example.com/docs)',
+        content: '[AFY Studio](//example.com/docs)',
       },
     })
 
@@ -234,7 +234,7 @@ describe('MarkdownRenderer', () => {
     const open = vi.spyOn(window, 'open').mockImplementation(() => null)
     const wrapper = mount(MarkdownRenderer, {
       props: {
-        content: '[Hermes](https://example.com/docs)',
+        content: '[AFY Studio](https://example.com/docs)',
       },
     })
 
@@ -249,7 +249,7 @@ describe('MarkdownRenderer', () => {
     const open = vi.spyOn(window, 'open').mockImplementation(() => null)
     const wrapper = mount(MarkdownRenderer, {
       props: {
-        content: '[Hermes](https://example.com/docs)',
+        content: '[AFY Studio](https://example.com/docs)',
       },
     })
 
@@ -273,7 +273,7 @@ describe('MarkdownRenderer', () => {
     const open = vi.spyOn(window, 'open').mockImplementation(() => null)
     const wrapper = mount(MarkdownRenderer, {
       props: {
-        content: '[Hermes](https://example.com/docs)',
+        content: '[AFY Studio](https://example.com/docs)',
       },
     })
 

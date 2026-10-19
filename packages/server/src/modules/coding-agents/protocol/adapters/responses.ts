@@ -16,114 +16,7 @@ const RESPONSES_TOOL_OUTPUT_FORWARD_LIMIT = 32 * 1024
 const RESPONSES_TOOL_OUTPUT_HEAD_BYTES = 24 * 1024
 const RESPONSES_TOOL_OUTPUT_TAIL_BYTES = 7 * 1024
 
-const HERMES_STUDIO_MCP_TOOLS = [
-  {
-    name: 'ekko_studio_lan_devices_list',
-    description: 'List known LAN and remote devices from Hermes Web UI, including pairing and online status.',
-    inputSchema: inputSchema(),
-  },
-  {
-    name: 'ekko_studio_lan_devices_scan',
-    description: 'Refresh LAN device discovery cache and return known devices with pairing and online status.',
-    inputSchema: inputSchema(),
-  },
-  {
-    name: 'ekko_studio_lan_peer_connect',
-    description: 'Connect to a paired LAN device by device id.',
-    inputSchema: inputSchema({ device_id: { type: 'string' } }, ['device_id']),
-  },
-  {
-    name: 'ekko_studio_lan_peer_connections',
-    description: 'List active LAN peer socket connections.',
-    inputSchema: inputSchema(),
-  },
-  {
-    name: 'ekko_studio_lan_peer_disconnect',
-    description: 'Disconnect an active LAN peer socket connection.',
-    inputSchema: inputSchema({ connection_id: { type: 'string' } }, ['connection_id']),
-  },
-  {
-    name: 'ekko_studio_lan_terminal_create',
-    description: 'Create an interactive terminal on a connected LAN peer.',
-    inputSchema: inputSchema({
-      connection_id: { type: 'string' },
-      shell: { type: 'string' },
-      cols: { type: 'number' },
-      rows: { type: 'number' },
-    }, ['connection_id']),
-  },
-  {
-    name: 'ekko_studio_lan_terminal_list',
-    description: 'List interactive terminals tracked for a connected LAN peer, including IDs that can be read or closed.',
-    inputSchema: inputSchema({ connection_id: { type: 'string' } }, ['connection_id']),
-  },
-  {
-    name: 'ekko_studio_lan_terminal_input',
-    description: 'Write input to an interactive terminal on a connected LAN peer.',
-    inputSchema: inputSchema({
-      connection_id: { type: 'string' },
-      terminal_id: { type: 'string' },
-      data: { type: 'string' },
-    }, ['connection_id', 'terminal_id', 'data']),
-  },
-  {
-    name: 'ekko_studio_lan_terminal_read',
-    description: 'Read buffered terminal output from an interactive terminal.',
-    inputSchema: inputSchema({
-      connection_id: { type: 'string' },
-      terminal_id: { type: 'string' },
-    }, ['connection_id', 'terminal_id']),
-  },
-  {
-    name: 'ekko_studio_lan_terminal_resize',
-    description: 'Resize an interactive terminal on a connected LAN peer.',
-    inputSchema: inputSchema({
-      connection_id: { type: 'string' },
-      terminal_id: { type: 'string' },
-      cols: { type: 'number' },
-      rows: { type: 'number' },
-    }, ['connection_id', 'terminal_id', 'cols', 'rows']),
-  },
-  {
-    name: 'ekko_studio_lan_terminal_close',
-    description: 'Close an interactive terminal on a connected LAN peer.',
-    inputSchema: inputSchema({
-      connection_id: { type: 'string' },
-      terminal_id: { type: 'string' },
-    }, ['connection_id', 'terminal_id']),
-  },
-  {
-    name: 'ekko_studio_lan_command_exec',
-    description: 'Run a command on a connected LAN peer using command plus args, without shell string execution.',
-    inputSchema: inputSchema({
-      connection_id: { type: 'string' },
-      command: { type: 'string' },
-      args: { type: 'array', items: { type: 'string' } },
-      cwd: { type: 'string' },
-      timeout_ms: { type: 'number' },
-    }, ['connection_id', 'command']),
-  },
-  {
-    name: 'ekko_studio_lan_file_download',
-    description: 'Download a file from a connected LAN peer remote path to a local path on this machine.',
-    inputSchema: inputSchema({
-      connection_id: { type: 'string' },
-      remote_path: { type: 'string' },
-      local_path: { type: 'string' },
-      timeout_ms: { type: 'number' },
-    }, ['connection_id', 'remote_path', 'local_path']),
-  },
-  {
-    name: 'ekko_studio_lan_file_upload',
-    description: 'Upload a local file path from this machine to a connected LAN peer remote path.',
-    inputSchema: inputSchema({
-      connection_id: { type: 'string' },
-      local_path: { type: 'string' },
-      remote_path: { type: 'string' },
-      timeout_ms: { type: 'number' },
-    }, ['connection_id', 'local_path', 'remote_path']),
-  },
-]
+const HERMES_STUDIO_MCP_TOOLS: Array<{ name: string; description: string; inputSchema: Record<string, unknown> }> = []
 
 const HERMES_STUDIO_SPLIT_MCP_TOOLS = new Map<string, Array<{
   name: string
@@ -133,7 +26,7 @@ const HERMES_STUDIO_SPLIT_MCP_TOOLS = new Map<string, Array<{
   ['mcp__ekko_studio_api', [
     {
       name: 'ekko_studio_api_openapi_get',
-      description: 'Return the compact Ekko Studio API module index or filtered endpoint documentation. Call without filters first, then filter by tag, path, or method.',
+      description: 'Return the compact AFY Studio API module index or filtered endpoint documentation. Call without filters first, then filter by tag, path, or method.',
       inputSchema: inputSchema({
         path: { type: 'string', description: 'Optional exact endpoint path filter.' },
         method: { type: 'string', enum: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'HEAD'] },
@@ -143,7 +36,7 @@ const HERMES_STUDIO_SPLIT_MCP_TOOLS = new Map<string, Array<{
     },
     {
       name: 'ekko_studio_api_request',
-      description: 'Call a documented Ekko Studio API endpoint using its relative path and structured JSON fields.',
+      description: 'Call a documented AFY Studio API endpoint using its relative path and structured JSON fields.',
       inputSchema: inputSchema({
         method: { type: 'string', enum: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'HEAD'] },
         path: { type: 'string', description: 'Relative /api/... or /health path. Full URLs are rejected.' },
@@ -158,15 +51,11 @@ const HERMES_STUDIO_SPLIT_MCP_TOOLS = new Map<string, Array<{
   ]],
   ['mcp__ekko_studio_browser', [categoryToolset(
     'ekko_studio_browser_toolset',
-    'Discover and invoke Ekko Studio Desktop browser operations. Covers tabs and leases, navigation, accessibility snapshots, interaction, screenshots, and console logs.',
-  )]],
-  ['mcp__ekko_studio_devices', [categoryToolset(
-    'ekko_studio_devices_toolset',
-    'Discover and invoke Ekko Studio LAN and remote-device operations. Covers discovery, peer connections, terminals, structured commands, and file transfer.',
+    'Discover and invoke AFY Studio Desktop browser operations. Covers tabs and leases, navigation, accessibility snapshots, interaction, screenshots, and console logs.',
   )]],
   ['mcp__ekko_studio_use', [categoryToolset(
     'ekko_studio_use_toolset',
-    'Discover and invoke high-level Ekko Studio operations for explicit user-requested runs, sessions, usage, profiles, models, providers, workers, and workflows.',
+    'Discover and invoke high-level AFY Studio operations for explicit user-requested runs, sessions, usage, profiles, models, providers, workers, and workflows.',
   )]],
 ])
 
@@ -203,7 +92,7 @@ function inputSchema(properties: Record<string, unknown> = {}, required: string[
     properties: {
       token: {
         type: 'string',
-        description: 'Optional Hermes Web UI bearer token. Usually omit this and pass profile so the MCP server can read the temporary profile token.',
+        description: 'Optional AFY Studio bearer token. Usually omit this and pass profile so the MCP server can read the temporary profile token.',
       },
       profile: {
         type: 'string',
@@ -376,7 +265,7 @@ function utf8Tail(text: string, maxBytes: number): string {
 function truncateResponsesToolOutputText(output: string): string {
   const originalBytes = utf8ByteLength(output)
   if (originalBytes <= RESPONSES_TOOL_OUTPUT_FORWARD_LIMIT) return output
-  const marker = `[Hermes Web UI: coding-agent tool output truncated before provider request; original_chars=${output.length}; original_bytes=${originalBytes}]`
+  const marker = `[AFY Studio: coding-agent tool output truncated before provider request; original_chars=${output.length}; original_bytes=${originalBytes}]`
   const markerOverhead = utf8ByteLength(marker) + 4
   const contentBudget = Math.max(0, RESPONSES_TOOL_OUTPUT_FORWARD_LIMIT - markerOverhead)
   const tailBytes = Math.min(RESPONSES_TOOL_OUTPUT_TAIL_BYTES, Math.floor(contentBudget / 4))
@@ -405,7 +294,7 @@ function inlineResponseImageDataUrl(part: any): string {
 function historicalImageOmission(originalBytes: number): any {
   return {
     type: 'input_text',
-    text: `[Hermes Web UI: historical inline image omitted before provider request; original_bytes=${originalBytes}]`,
+    text: `[AFY Studio: historical inline image omitted before provider request; original_bytes=${originalBytes}]`,
   }
 }
 

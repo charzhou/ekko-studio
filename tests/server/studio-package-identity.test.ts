@@ -27,15 +27,14 @@ async function loadWithPackages(installedName: string, callerName: string) {
 }
 
 describe('installed Studio package identity', () => {
-  it.each(['ekko-studio', 'hermes-web-ui'])('checks %s even when launched from the other package directory', async name => {
+  it.each(['ekko-studio', 'hermes-web-ui'])('reads %s identity even when launched from the other package directory', async name => {
     const otherName = name === 'ekko-studio' ? 'hermes-web-ui' : 'ekko-studio'
     const { readStudioPackageInfo, StudioHealthService } = await loadWithPackages(name, otherName)
     expect(readStudioPackageInfo()).toMatchObject({ name, version: '1.0.0' })
-    vi.stubEnv('HERMES_WEB_UI_DISABLE_UPDATE_CHECK', '')
-    const fetchMock = vi.fn().mockResolvedValue({ ok: true, json: async () => ({ version: '1.0.1' }) })
+    const fetchMock = vi.fn()
     vi.stubGlobal('fetch', fetchMock)
     await new StudioHealthService({} as any).checkLatestVersion()
-    expect(fetchMock).toHaveBeenCalledWith(`https://registry.npmjs.org/${name}/latest`, expect.any(Object))
+    expect(fetchMock).not.toHaveBeenCalled()
   })
 
   it('does not check the registry for an unrelated working-directory package', async () => {

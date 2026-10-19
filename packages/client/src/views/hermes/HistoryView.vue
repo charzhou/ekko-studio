@@ -100,7 +100,7 @@ async function loadHermesSessions() {
     sourceLoading.value = {}
     hermesSessionsLoaded.value = true
   } catch (err) {
-    console.error('Failed to load Hermes sessions:', err)
+    console.error('Failed to load AFY Studio sessions:', err)
   } finally {
     if (requestId === hermesSessionsRequestId) {
       hermesSessionsLoading.value = false

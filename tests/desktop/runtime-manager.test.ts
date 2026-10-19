@@ -1,5 +1,4 @@
 import {
-  createReadStream,
   existsSync,
   lstatSync,
   mkdirSync,
@@ -9,10 +8,8 @@ import {
   symlinkSync,
   writeFileSync,
 } from 'node:fs'
-import { createServer, type Server } from 'node:http'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import * as tar from 'tar'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 const mockElectronApp = vi.hoisted(() => ({
@@ -29,7 +26,6 @@ vi.mock('electron', () => ({
 const originalEnv = { ...process.env }
 const originalPlatform = Object.getOwnPropertyDescriptor(process, 'platform')
 const tempDirs: string[] = []
-const servers: Server[] = []
 
 function tempDir(prefix: string): string {
   const dir = mkdtempSync(join(tmpdir(), prefix))
@@ -86,48 +82,6 @@ function setPlatform(platform: NodeJS.Platform): void {
   Object.defineProperty(process, 'platform', { value: platform })
 }
 
-async function createRuntimeArchive(options: {
-  invalidSchema2Source?: boolean
-  standardWindowsVenv?: boolean
-} = {}): Promise<string> {
-  const source = tempDir('hermes-runtime-source-')
-  const archive = join(tempDir('hermes-runtime-archive-'), 'hermes-runtime-test.tar.gz')
-  createRuntimeFiles(source, options)
-  if (options.invalidSchema2Source) {
-    writeFileSync(join(source, 'runtime-manifest.json'), JSON.stringify({
-      schema: 2,
-      platform: `${process.platform === 'win32' ? 'win' : process.platform === 'darwin' ? 'mac' : process.platform}-${process.arch}`,
-      hermesAgentVersion: '0.17.0',
-      hermesSource: {
-        repository: 'https://github.com/NousResearch/hermes-agent.git',
-        ref: 'v2026.7.30',
-        commit: 'cc4cab2f592e60a197e796506de9168f74baf3ea',
-        installMethod: 'git',
-      },
-      asset: { name: 'hermes-runtime-test.tar.gz' },
-    }))
-  }
-  await tar.c({ gzip: true, cwd: source, file: archive }, ['.'])
-  return archive
-}
-
-async function serveFile(file: string): Promise<string> {
-  const server = createServer((request, response) => {
-    if (request.url !== '/hermes-runtime-test.tar.gz') {
-      response.writeHead(404)
-      response.end()
-      return
-    }
-    response.writeHead(200, { 'content-type': 'application/gzip' })
-    createReadStream(file).pipe(response)
-  })
-  servers.push(server)
-  await new Promise<void>(resolve => server.listen(0, '127.0.0.1', resolve))
-  const address = server.address()
-  if (!address || typeof address === 'string') throw new Error('test server did not bind to a port')
-  return `http://127.0.0.1:${address.port}/hermes-runtime-test.tar.gz`
-}
-
 describe('desktop runtime manager', () => {
   beforeEach(() => {
     vi.resetModules()
@@ -143,63 +97,46 @@ describe('desktop runtime manager', () => {
     process.env = { ...originalEnv }
     if (originalPlatform) Object.defineProperty(process, 'platform', originalPlatform)
     vi.resetModules()
-    await Promise.all(servers.splice(0).map(server => new Promise<void>(resolve => server.close(() => resolve()))))
     for (const dir of tempDirs.splice(0)) {
       rmSync(dir, { recursive: true, force: true })
     }
   })
 
-  it('downloads through a unique temp file instead of reusing a stale runtime .download path', async () => {
-    const archive = await createRuntimeArchive()
-    process.env.HERMES_DESKTOP_RUNTIME_URL = await serveFile(archive)
 
-    const { runtimePlatformKey } = await import('../../packages/desktop/src/main/runtime-paths')
-    const staleDownloadPath = join(
-      process.env.HERMES_WEB_UI_HOME!,
-      'desktop-runtime',
-      'hermes',
-      '0.17.0',
-      'hermes-runtime-test.tar.gz.download',
-    )
-    mkdirSync(staleDownloadPath, { recursive: true })
 
-    const { ensureDesktopRuntime } = await import('../../packages/desktop/src/main/runtime-manager')
-    await ensureDesktopRuntime()
-
-    const runtimeRoot = join(
-      process.env.HERMES_WEB_UI_HOME!,
-      'desktop-runtime',
-      'hermes',
-      '0.17.0',
-      runtimePlatformKey(),
-    )
-    expect(existsSync(staleDownloadPath)).toBe(true)
-    expect(existsSync(join(runtimeRoot, 'runtime-manifest.json'))).toBe(true)
-    expect(existsSync(join(process.env.HERMES_WEB_UI_HOME!, 'desktop-runtime', 'active-version.json'))).toBe(true)
+  it('ignores every runtime download override and does not perform network IO', async () => {
+    process.env.HERMES_DESKTOP_RUNTIME_URL = 'https://runtime.example.com/runtime.tar.gz'
+    process.env.HERMES_DESKTOP_RUNTIME_MANIFEST_URL = 'https://runtime.example.com/manifest.json'
+    process.env.HERMES_DESKTOP_RUNTIME_FORCE_UPDATE = 'true'
+    process.env.HERMES_DESKTOP_RUNTIME_SOURCE = 'github'
+    const fetchMock = vi.fn()
+    vi.stubGlobal('fetch', fetchMock)
+    try {
+      const { ensureDesktopRuntime } = await import('../../packages/desktop/src/main/runtime-manager')
+      await expect(ensureDesktopRuntime(undefined, 'cf')).rejects.toThrow('Automatic runtime downloads are disabled')
+      await expect(ensureDesktopRuntime(undefined, 'github')).rejects.toThrow('Automatic runtime downloads are disabled')
+      expect(fetchMock).not.toHaveBeenCalled()
+    } finally {
+      vi.unstubAllGlobals()
+    }
   })
 
-  it('rebases the Windows venv home while extracting an archive', async () => {
-    setPlatform('win32')
-    const archive = await createRuntimeArchive({ standardWindowsVenv: true })
-    process.env.HERMES_DESKTOP_RUNTIME_URL = await serveFile(archive)
-
+  it('accepts an existing local runtime while download overrides are set', async () => {
     const { runtimePlatformKey } = await import('../../packages/desktop/src/main/runtime-paths')
-    const { ensureDesktopRuntime } = await import('../../packages/desktop/src/main/runtime-manager')
-    await ensureDesktopRuntime()
-
-    const runtimeRoot = join(
-      process.env.HERMES_WEB_UI_HOME!,
-      'desktop-runtime',
-      'hermes',
-      '0.17.0',
-      runtimePlatformKey(),
-    )
-    const venvRoot = join(runtimeRoot, 'python', 'venv')
-    expect(existsSync(join(venvRoot, 'Scripts', 'hermes.cmd'))).toBe(true)
-    expect(existsSync(join(venvRoot, 'Scripts', 'hermes.exe'))).toBe(false)
-    expect(readFileSync(join(venvRoot, 'pyvenv.cfg'), 'utf-8')).toContain(
-      `home = ${join(runtimeRoot, 'python', 'base')}`,
-    )
+    const runtimeRoot = join(process.env.HERMES_WEB_UI_HOME!, 'desktop-runtime', 'hermes', '0.17.0', runtimePlatformKey())
+    createRuntimeFiles(runtimeRoot)
+    process.env.HERMES_DESKTOP_RUNTIME_URL = 'https://runtime.example.com/runtime.tar.gz'
+    process.env.HERMES_DESKTOP_RUNTIME_FORCE_UPDATE = 'true'
+    const fetchMock = vi.fn()
+    vi.stubGlobal('fetch', fetchMock)
+    try {
+      const { ensureDesktopRuntime, isDesktopRuntimeReady } = await import('../../packages/desktop/src/main/runtime-manager')
+      expect(isDesktopRuntimeReady()).toBe(true)
+      await ensureDesktopRuntime(undefined, 'github')
+      expect(fetchMock).not.toHaveBeenCalled()
+    } finally {
+      vi.unstubAllGlobals()
+    }
   })
 
   it('repairs a cached Windows venv home even when the command wrapper already exists', async () => {
@@ -266,14 +203,6 @@ describe('desktop runtime manager', () => {
     expect(existsSync(join(scriptsRoot, 'hermes-acp.cmd'))).toBe(true)
   })
 
-  it('rejects schema 2 runtime archives that omit the updateable Git checkout', async () => {
-    const archive = await createRuntimeArchive({ invalidSchema2Source: true })
-    process.env.HERMES_DESKTOP_RUNTIME_URL = await serveFile(archive)
-
-    const { ensureDesktopRuntime } = await import('../../packages/desktop/src/main/runtime-manager')
-
-    await expect(ensureDesktopRuntime()).rejects.toThrow(/updateable Hermes source files/)
-  })
 
   it('does not persist a development Web UI override as the active download directory', async () => {
     const home = process.env.HERMES_WEB_UI_HOME!

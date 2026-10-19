@@ -14,19 +14,6 @@ const { t } = useI18n()
           <strong>{{ t('runtimeVersions.dataDirectoryEnvWindows') }}</strong>
           <code>[Environment]::SetEnvironmentVariable("HERMES_HOME", "$HOME\.hermes", "User")</code>
         </div>
-        <div class="data-directory-env-platform">
-          <strong>{{ t('runtimeVersions.dataDirectoryEnvMacos') }}</strong>
-          <code>launchctl setenv HERMES_HOME "$HOME/.hermes"</code>
-          <code>echo 'export HERMES_HOME="$HOME/.hermes"' &gt;&gt; ~/.zshrc</code>
-        </div>
-        <div class="data-directory-env-platform">
-          <strong>{{ t('runtimeVersions.dataDirectoryEnvLinux') }}</strong>
-          <code>echo 'export HERMES_HOME="$HOME/.hermes"' &gt;&gt; ~/.profile</code>
-        </div>
-        <div class="data-directory-env-platform">
-          <strong>{{ t('runtimeVersions.dataDirectoryEnvDocker') }}</strong>
-          <code>HERMES_HOME=/home/agent/.hermes</code>
-        </div>
       </div>
       <p class="data-directory-env-restart">
         {{ t('runtimeVersions.dataDirectoryEnvRestart') }}

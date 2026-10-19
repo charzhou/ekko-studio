@@ -27,7 +27,7 @@ describe('Studio crash isolation wiring', () => {
     expect(listen).toBeGreaterThan(-1)
     expect(ready).toBeGreaterThan(listen)
     expect(recovery).toBeGreaterThan(ready)
-    expect(versionCheck).toBeGreaterThan(recovery)
+    expect(versionCheck).toBe(-1)
   })
 
   it('reuses the Desktop-locked Hermes status during bootstrap', () => {

@@ -1,3 +1,4 @@
+import { OEM_FEATURES, OEM_DISABLED_MESSAGE, requireOemFeature } from '../../../studio/public/oem'
 import { createHash } from 'crypto'
 import { accessSync, constants, createReadStream, createWriteStream, existsSync, mkdirSync, readFileSync, readdirSync, statSync, writeFileSync, type Dirent } from 'fs'
 import { get as httpGet } from 'http'
@@ -12,10 +13,10 @@ import { detectHermesHome } from './path'
 import { cleanupRuntimePath, removeRuntimePath, renameRuntimePath } from './runtime-filesystem'
 
 const ACTIVE_VERSION_FILE = 'active-version.json'
-const DEFAULT_REMOTE_MANIFEST_URL = 'https://api.ekkostudio.xyz/api/studio/versions'
-const FALLBACK_REMOTE_MANIFEST_URL = 'https://ekkostudio.xyz/versions.json'
-const DEFAULT_DOWNLOAD_BASE_URL = 'https://download.ekkolearnai.com'
-const DEFAULT_GITHUB_REPO = 'EKKOLearnAI/ekko-studio'
+const DEFAULT_REMOTE_MANIFEST_URL = ''
+const FALLBACK_REMOTE_MANIFEST_URL = ''
+const DEFAULT_DOWNLOAD_BASE_URL = ''
+const DEFAULT_GITHUB_REPO = ''
 
 export interface ActiveVersionManifest {
   schema: number
@@ -469,6 +470,7 @@ async function fetchVersionManifest(url: string): Promise<StudioVersionManifest>
 }
 
 async function fetchRemoteVersions(): Promise<{ manifest: StudioVersionManifest | null; error: string }> {
+  if (!OEM_FEATURES.updates) return { manifest: null, error: OEM_DISABLED_MESSAGE }
   const primaryUrl = process.env.HERMES_WEB_UI_VERSION_MANIFEST_URL?.trim() || DEFAULT_REMOTE_MANIFEST_URL
   try {
     return { manifest: await fetchVersionManifest(primaryUrl), error: '' }
@@ -500,7 +502,7 @@ export async function getRuntimeVersionStatus(
   options: RuntimeVersionStatusOptions = {},
 ): Promise<RuntimeVersionStatus> {
   const probeRuntime = options.probeRuntime !== false
-  const includeRemote = probeRuntime && options.includeRemote !== false
+  const includeRemote = OEM_FEATURES.updates && probeRuntime && options.includeRemote !== false
   const active = probeRuntime ? readActiveVersionManifest() : null
   const installedRuntimes = probeRuntime ? listInstalledRuntimeVersions(active) : []
   const [{ manifest, error }, agentVersion, cliInstallations] = await Promise.all([
@@ -519,10 +521,8 @@ export async function getRuntimeVersionStatus(
     active,
     platform: runtimePlatformKey(),
     activeVersionPath: probeRuntime ? activeVersionPath() : '',
-    remoteManifestUrl: probeRuntime
-      ? process.env.HERMES_WEB_UI_VERSION_MANIFEST_URL?.trim() || DEFAULT_REMOTE_MANIFEST_URL
-      : '',
-    remoteError: error,
+    remoteManifestUrl: '',
+    remoteError: OEM_FEATURES.updates ? error : OEM_DISABLED_MESSAGE,
     hermes: {
       activeVersion: probeRuntime ? active?.hermesRuntimeVersion || '' : '',
       agentVersion,
@@ -637,6 +637,7 @@ async function sha256File(file: string): Promise<string> {
 }
 
 export async function downloadRuntimeVersion(version: string, source: VersionDownloadSource, onProgress?: DownloadProgressHandler): Promise<InstalledRuntimeVersion> {
+  requireOemFeature('updates')
   const cleanVersion = version.trim()
   if (!cleanVersion) throw new Error('Runtime version is required')
 
@@ -699,6 +700,7 @@ export async function downloadRuntimeVersion(version: string, source: VersionDow
 }
 
 export async function downloadWebUiVersion(version: string, source: VersionDownloadSource, onProgress?: DownloadProgressHandler): Promise<InstalledWebUiVersion> {
+  requireOemFeature('updates')
   const cleanVersion = version.trim().replace(/^v/, '')
   if (!cleanVersion) throw new Error('Web UI version is required')
 
@@ -968,10 +970,12 @@ function createDownloadJob(
 }
 
 export function startRuntimeVersionDownload(version: string, source: VersionDownloadSource): VersionDownloadJob {
+  requireOemFeature('updates')
   return createDownloadJob('runtime', source, version, (cleanVersion, onProgress) => downloadRuntimeVersion(cleanVersion, source, onProgress))
 }
 
 export function startWebUiVersionDownload(version: string, source: VersionDownloadSource): VersionDownloadJob {
+  requireOemFeature('updates')
   return createDownloadJob('webui', source, version, (cleanVersion, onProgress) => downloadWebUiVersion(cleanVersion, source, onProgress))
 }
 

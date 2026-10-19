@@ -1,58 +1,50 @@
-import { readFileSync } from 'node:fs'
-import { join, resolve } from 'node:path'
-import { describe, expect, it } from 'vitest'
-import { isWindowsUpdaterLockError, pendingUpdateDirectories } from '../../packages/desktop/src/main/updater-helpers'
+import { EventEmitter } from 'node:events'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 
-describe('desktop updater helpers', () => {
-  it('detects Squirrel locked-exe update failures', async () => {
-    expect(isWindowsUpdaterLockError(new Error('Failed to uninstall old application files. Please try running the installer again.: 2'))).toBe(true)
-    expect(isWindowsUpdaterLockError(new Error('Squirrel update failed with code 2'))).toBe(true)
-    expect(isWindowsUpdaterLockError(new Error('network timeout'))).toBe(false)
+const mocks = vi.hoisted(() => ({
+  check: vi.fn(), download: vi.fn(), install: vi.fn(), feed: vi.fn(), dialog: vi.fn(),
+}))
+vi.mock('electron', () => ({ dialog: { showMessageBox: mocks.dialog } }))
+vi.mock('electron-updater', async () => ({
+  autoUpdater: Object.assign(new EventEmitter(), {
+    checkForUpdates: mocks.check, downloadUpdate: mocks.download,
+    quitAndInstall: mocks.install, setFeedURL: mocks.feed,
+  }),
+}))
+
+afterEach(() => {
+  vi.clearAllMocks()
+  vi.unstubAllGlobals()
+  vi.unstubAllEnvs()
+})
+
+describe('AFY Studio disabled desktop updater', () => {
+  it.each(['true', 'false'])('never checks, downloads or installs even with the legacy auto-update flag %s', async flag => {
+    vi.stubEnv('HERMES_DESKTOP_ENABLE_AUTO_UPDATE', flag)
+    const fetchMock = vi.fn()
+    vi.stubGlobal('fetch', fetchMock)
+    const updater = await import('../../packages/desktop/src/main/updater')
+    const beforeInstall = vi.fn()
+    updater.initAutoUpdater({ beforeQuitAndInstall: beforeInstall })
+    await updater.checkForDesktopUpdates(false)
+    await updater.checkForDesktopUpdates(true)
+    expect(updater.downloadDesktopUpdate()).toMatchObject({ status: 'idle', version: '' })
+    expect(updater.cancelDesktopUpdateDownload()).toMatchObject({ status: 'idle' })
+    expect(await updater.installDesktopUpdate()).toMatchObject({ status: 'idle' })
+    for (const mock of [...Object.values(mocks), fetchMock, beforeInstall]) expect(mock).not.toHaveBeenCalled()
   })
 
-  it('includes local and roaming pending update cache directories', async () => {
-    const local = 'C:\\Users\\A\\AppData\\Local'
-    const roaming = 'C:\\Users\\A\\AppData\\Roaming'
-    expect(pendingUpdateDirectories({
-      appDataPath: roaming,
-      localAppData: local,
-      appName: 'Ekko Studio',
-    })).toEqual(expect.arrayContaining([
-      join(local, 'Ekko Studio-updater', 'pending'),
-      join(local, 'ekko-studio-updater', 'pending'),
-      join(local, 'Hermes Studio-updater', 'pending'),
-      join(local, 'hermes-studio-updater', 'pending'),
-      join(roaming, 'hermes-studio-updater', 'pending'),
-    ]))
-  })
-
-  it('checks on startup and from the tray without forcing an update', () => {
-    const updaterSource = readFileSync(resolve('packages/desktop/src/main/updater.ts'), 'utf-8')
-    const mainSource = readFileSync(resolve('packages/desktop/src/main/index.ts'), 'utf-8')
-
-    expect(mainSource).toContain('checkForDesktopUpdates(true)')
-    expect(updaterSource).toContain('checkForDesktopUpdates(false)')
-    expect(updaterSource).toContain('autoUpdater.autoDownload = false')
-    expect(updaterSource).toContain('autoUpdater.autoInstallOnAppQuit = true')
-    expect(updaterSource).toContain("buttons: [t('update.download'), t('update.later')]")
-    expect(updaterSource).toContain('if (response === 0) downloadDesktopUpdate()')
-    expect(updaterSource).not.toContain('setInterval(')
-  })
-
-  it('gracefully stops the current app before starting a downloaded update', () => {
-    const updaterSource = readFileSync(resolve('packages/desktop/src/main/updater.ts'), 'utf-8')
-    const mainSource = readFileSync(resolve('packages/desktop/src/main/index.ts'), 'utf-8')
-
-    expect(mainSource).toContain('async function prepareAppShutdown(): Promise<void>')
-    expect(mainSource).toContain('await stopWebUiServer().catch(() => undefined)')
-    expect(mainSource).toContain('beforeQuitAndInstall: prepareAppShutdown,')
-    expect(mainSource).toContain('try {\n      await prepareAppShutdown()\n    } finally {\n      appLifecycle.finalizeExit(0)')
-
-    const prepareCurrentInstance = updaterSource.indexOf('await options.beforeQuitAndInstall?.()')
-    const stopOtherInstances = updaterSource.indexOf('await stopOtherWindowsAppInstances()', prepareCurrentInstance)
-    const startInstaller = updaterSource.indexOf('autoUpdater.quitAndInstall()', stopOtherInstances)
-    expect(prepareCurrentInstance).toBeGreaterThan(-1)
-    expect(stopOtherInstances).toBeGreaterThan(prepareCurrentInstance)
-    expect(startInstaller).toBeGreaterThan(stopOtherInstances)
+  it('ignores update events and returns independent legacy state snapshots', async () => {
+    const updater = await import('../../packages/desktop/src/main/updater')
+    const { autoUpdater } = await import('electron-updater')
+    const changed = vi.fn()
+    updater.initAutoUpdater({ onStateChange: changed })
+    autoUpdater.emit('update-available', { version: '99.0.0' })
+    autoUpdater.emit('update-downloaded', { version: '99.0.0' })
+    const state = updater.getDesktopUpdateState()
+    state.status = 'installing'
+    expect(updater.getDesktopUpdateState()).toMatchObject({ status: 'idle', version: '' })
+    expect(changed).not.toHaveBeenCalled()
+    expect(mocks.install).not.toHaveBeenCalled()
   })
 })

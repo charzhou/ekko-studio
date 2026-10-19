@@ -134,11 +134,15 @@ describe('packaged desktop Web UI', () => {
     expect(config.indexOf('node-pty/build/Release/pty.node')).toBeGreaterThan(buildExclusion)
   })
 
-  it('uses the electron-builder 26 desktop entry schema for deb packages', () => {
+  it('configures Windows-only AFY packaging without release feed overrides', () => {
     const script = readFileSync(resolve('packages/desktop/scripts/electron-builder.mjs'), 'utf8')
-
-    expect(script).toContain('--config.linux.desktop.entry.Name=Ekko Studio')
-    expect(script).not.toContain('--config.linux.desktop.Name=Ekko Studio')
+    const config = readFileSync(resolve('packages/desktop/electron-builder.yml'), 'utf8')
+    expect(script).toContain('Windows only')
+    expect(config).toContain('productName: AFY Studio')
+    expect(config).toContain('win:')
+    expect(config).not.toContain('mac:')
+    expect(config).not.toContain('linux:')
+    expect(config).toContain('publish: null')
   })
 
   it('accepts a package containing the server and target native dependencies', async () => {

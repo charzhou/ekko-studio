@@ -95,6 +95,24 @@ describe('chat store session.command fanout', () => {
     setActivePinia(createPinia())
   })
 
+  it.each([
+    { source: 'builtin_agent', agent: 'ekko-agent' },
+    { source: 'coding_agent', agent: 'codex', codingAgentId: 'codex' },
+    { source: 'workflow', agent: 'cursor', codingAgentId: 'cursor' },
+  ] as const)('keeps retired $agent history readable without submitting a new run', async (identity) => {
+    const store = useChatStore()
+    const previousMessage = { id: 'answer', role: 'assistant', content: 'Saved answer', timestamp: 1 }
+    const session = { ...makeSession(), ...identity, messages: [previousMessage] } as Session
+    store.sessions = [session]
+    store.activeSessionId = session.id
+    store.activeSession = store.sessions[0]
+
+    expect(await store.sendMessage('Run another turn')).toBe(false)
+    expect(store.messages).toEqual([previousMessage])
+    expect(store.activeSession).toMatchObject(identity)
+    expect(chatApi.startRunViaSocket).not.toHaveBeenCalled()
+  })
+
   it('does not replace a live transcript when a pending selection hydration is cancelled', async () => {
     const store = useChatStore()
     const session = makeSession()
@@ -172,16 +190,15 @@ describe('chat store session.command fanout', () => {
     expect(store.messages.map(m => m.content)).toEqual(['keep', 'next question', 'next answer'])
   })
 
-  it.each(['context', 'usage', 'status', 'compact'])('sends Ekko /%s as a built-in command with compatible transport', async command => {
+  it.each(['context', 'usage', 'status', 'compact'])('does not execute retired Ekko /%s commands', async command => {
     const store = useChatStore()
     const session = { ...makeSession(), source: 'coding_agent', agent: 'ekko-agent', codingAgentId: 'ekko-agent' as const, codingAgentMode: 'scoped' as const, model: 'gpt-test', provider: 'openai' }
     store.sessions = [session]
     store.activeSessionId = session.id
     store.activeSession = session
-    await store.sendMessage(`/${command}`)
-    expect(store.messages[0]).toMatchObject({ role: 'command', content: `/${command}`, queued: false })
-    expect(chatApi.startRunViaSocket.mock.calls[0]?.[0]).toMatchObject({ source: 'builtin_agent', agent_id: 'ekko-agent', mode: 'scoped', input: `/${command}` })
-    expect(chatApi.startRunViaSocket.mock.calls[0]?.[0]).not.toHaveProperty('coding_agent_id')
+    expect(await store.sendMessage(`/${command}`)).toBe(false)
+    expect(store.messages).toEqual([])
+    expect(chatApi.startRunViaSocket).not.toHaveBeenCalled()
     expect(store.isStreaming).toBe(false)
   })
 

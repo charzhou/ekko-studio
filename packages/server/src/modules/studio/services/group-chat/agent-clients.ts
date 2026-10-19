@@ -1505,7 +1505,7 @@ export class AgentClient implements GroupAgentExecutor {
                     return { ...block, text: `${routedPrefix}\n\nOriginal message: ${text || msg.content}` }
                 })
                 : `${routedPrefix}\n\nOriginal message: ${stripMentionRoutingTokens(msg.content, this.name) || msg.content}`
-            const runPrompt = 'When calling Hermes Web UI endpoints from tools or skills, include the current Hermes profile as the X-Hermes-Profile header if the endpoint supports profile-scoped behavior.'
+            const runPrompt = 'When calling AFY Studio endpoints from tools or skills, include the current Hermes profile as the X-Hermes-Profile header if the endpoint supports profile-scoped behavior.'
             instructions = `${instructions}\n\n${runPrompt}`
             groupPlan = mcpCapabilities.interaction ? this.chatRunService?.beginGroupTaskPlanRun?.(sessionId, this.profile, runMessageId,
                 () => this.replySessionIsCurrent(roomId, sessionId, replyInterruptVersion),

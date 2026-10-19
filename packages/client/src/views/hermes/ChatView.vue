@@ -26,15 +26,14 @@ const routeProfile = computed(() => {
 })
 
 const isStandaloneChat = computed(() => route.meta?.standaloneChat === true)
-type ChatContentMode = 'chat' | 'connections' | 'agents' | 'models'
+type ChatContentMode = 'chat' | 'agents' | 'models'
 
 const contentMode = computed<ChatContentMode>(() => {
-  if (route.name === 'hermes.connections') return 'connections'
   if (route.name === 'hermes.agentManager') return 'agents'
   if (route.name === 'hermes.models') return 'models'
   return 'chat'
 })
-const productTitle = 'Ekko Studio'
+const productTitle = 'AFY Studio'
 const initializing = ref(true)
 const routeLoading = ref(false)
 let routeLoadSequence = 0

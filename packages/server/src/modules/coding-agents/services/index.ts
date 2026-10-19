@@ -23,6 +23,7 @@ import { promisify } from 'util'
 import { parse as parseToml, stringify as stringifyToml } from 'smol-toml'
 import { getWebUiHome } from '../../studio/public/config'
 import { getProfileDir, PROVIDER_ENV_MAP, readConfigYamlForProfile, safeReadFile } from '../../studio/public/profile-config'
+import { requireOemFeature } from '../../studio/public/oem'
 import { getCompatibleCustomProviders } from '../../studio/contracts/provider-compat'
 import { registerClaudeCodeProxyTarget } from './claude-code/proxy'
 import { registerCodexProxyTarget, restoreCodexProxyTarget } from './codex/proxy'
@@ -1179,7 +1180,7 @@ function inheritClaudeSettings(existingContent: string | null | undefined = ''):
     if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return {}
     const inherited = { ...parsed } as Record<string, unknown>
     // Scoped Coding Agent runs authenticate exclusively through the selected
-    // Ekko Studio profile proxy. Never inherit native Claude login/provider
+    // AFY Studio profile proxy. Never inherit native Claude login/provider
     // routing, otherwise a stale OAuth session can override the profile.
     delete inherited.apiKeyHelper
     delete inherited.awsAuthRefresh
@@ -2693,6 +2694,7 @@ async function resolveCodexToolSearchConfig(): Promise<{ toolSearch: boolean; al
 const CURSOR_CLI_INSTALL_URL = 'https://cursor.com/install'
 
 export async function checkUpdateAgent(id: string): Promise<CodingAgentUpdateResult> {
+  requireOemFeature('updates')
   const tool = getCodingAgentDefinition(id)
   if (!tool) {
     const err = new Error('Unknown coding agent')
@@ -2726,6 +2728,7 @@ export async function checkUpdateAgent(id: string): Promise<CodingAgentUpdateRes
 }
 
 export async function installCodingAgent(id: string): Promise<CodingAgentMutationResult> {
+  requireOemFeature('updates')
   const tool = getCodingAgentDefinition(id)
   if (!tool) {
     const err = new Error('Unknown coding agent')

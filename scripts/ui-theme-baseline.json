@@ -16,9 +16,6 @@
       "unowned-background | .node-warning-bar | background-color: #fef3c7": 1,
       "literal-color | .node-warning-bar | border-bottom: var(--border-width, 1px) solid #fde68a": 1
     },
-    "packages/client/src/components/hermes/ApiRelayUsageCard.vue": {
-      "unowned-background | .relay-usage-sources li | background: $bg-secondary": 1
-    },
     "packages/client/src/components/hermes/HermesDataDirectoryHint.vue": {
       "unowned-background | .data-directory-env-platform code | background: var(--hover-color)": 1
     },
@@ -537,16 +534,6 @@
       "literal-color | <script> | background: #8eac9b": 1,
       "unowned-background | <script> | background: #8eac9b": 1
     },
-    "packages/client/src/components/hermes/connections/AppConnectionsPanel.vue": {
-      "unowned-background | .app-download-meta span | background: $bg-secondary": 1,
-      "unowned-background | .app-platform-icon | background: $bg-secondary": 1,
-      "literal-color | .download-tag-qr | background: #ffffff": 1,
-      "unowned-background | .download-tag-qr | background: #ffffff": 1,
-      "literal-color | .connection-qr | background: #ffffff": 1,
-      "unowned-background | .connection-qr | background: #ffffff": 1,
-      "literal-color | .connection-qr-expired | background: rgba(255, 255, 255, 0.72)": 1,
-      "unowned-background | .connection-qr-expired | background: rgba(255, 255, 255, 0.72)": 1
-    },
     "packages/client/src/components/hermes/files/DocxFilePreview.vue": {
       "literal-color | .docx-stage | background: rgba(127, 127, 127, 0.08)": 1,
       "unowned-background | .docx-stage | background: rgba(127, 127, 127, 0.08)": 1
@@ -655,7 +642,6 @@
       "literal-color | .modal-backdrop | background: rgba(0, 0, 0, 0.4)": 1,
       "unowned-background | .modal-backdrop | background: rgba(0, 0, 0, 0.4)": 1,
       "literal-color | .modal | box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12)": 1,
-      "literal-color | .agent-pairing-header-button strong | color: #fff": 1,
       "literal-color | .summary-config-required | color: #d97706": 1,
       "literal-color | .summary-config-required | background: rgba(217, 119, 6, 0.1)": 1,
       "unowned-background | .summary-config-required | background: rgba(217, 119, 6, 0.1)": 1,
@@ -940,9 +926,6 @@
     "packages/client/src/components/layout/SidebarAccountControls.vue": {
       "unowned-background | .docker-update-modal .docker-command | background: $code-bg": 1
     },
-    "packages/client/src/components/layout/VersionManagementModal.vue": {
-      "unowned-background | .runtime-update-note code | background: var(--hover-color)": 1
-    },
     "packages/client/src/i18n/locales/ar.ts": {
       "unowned-background | <script> | background: صورة الخلفية": 1
     },
@@ -1112,19 +1095,6 @@
       "unowned-background | .agent-logo | background: rgba(255, 255, 255, 0.92)": 1,
       "literal-color | .agent-update-error | color: #c44": 1
     },
-    "packages/client/src/views/hermes/ApiRelayView.vue": {
-      "unowned-background | .api-relay-features span | background: $bg-secondary": 1
-    },
-    "packages/client/src/views/hermes/DevicesView.vue": {
-      "literal-color | .pairing-code-dialog | box-shadow: 0 12px 30px rgba(0, 0, 0, 0.24)": 1
-    },
-    "packages/client/src/views/hermes/GroupChatLinkView.vue": {
-      "unowned-background | .group-chat-link-view | background: $bg-primary": 1,
-      "literal-color | .link-card | box-shadow: 0 22px 70px rgba(0, 0, 0, 0.16)": 1,
-      "unowned-background | .requesting-origin | background: $bg-primary": 1,
-      "unowned-background | .agent-config-form | background: $bg-primary": 1,
-      "unowned-background | .manual-agent-preview | background: $bg-primary": 1
-    },
     "packages/client/src/views/hermes/HistoryView.vue": {
       "literal-color | .session-backdrop | background: rgba(0, 0, 0, 0.4)": 1,
       "unowned-background | .session-backdrop | background: rgba(0, 0, 0, 0.4)": 1,
@@ -1181,13 +1151,6 @@
       "unowned-background | .petdex-view | background: var(--bg-primary)": 1,
       "literal-color | .pet-preview | background: linear-gradient(45deg, rgba(127, 127, 127, 0.08) 25%, transparent 25%), linear-gradient(-45deg, rgba(127, 127, 127, 0.08) 25%, transparent 25%), linear-gradient(45deg, transparent 75%, rgba(127, 127, 127, 0.08) 75%), linear-gradient(-45deg, transparent 75%, rgba(127, 127, 127, 0.08) 75%)": 1,
       "unowned-background | .pet-preview | background: linear-gradient(45deg, rgba(127, 127, 127, 0.08) 25%, transparent 25%), linear-gradient(-45deg, rgba(127, 127, 127, 0.08) 25%, transparent 25%), linear-gradient(45deg, transparent 75%, rgba(127, 127, 127, 0.08) 75%), linear-gradient(-45deg, transparent 75%, rgba(127, 127, 127, 0.08) 75%)": 1
-    },
-    "packages/client/src/views/hermes/SharedGroupChatView.vue": {
-      "literal-color | .agent-link-warning, .agent-link-error | background: rgba(208, 48, 80, 0.1)": 1,
-      "unowned-background | .agent-link-warning, .agent-link-error | background: rgba(208, 48, 80, 0.1)": 1,
-      "literal-color | .agent-link-status.is-connected | background: rgba(54, 173, 106, 0.1)": 1,
-      "unowned-background | .agent-link-status.is-connected | background: rgba(54, 173, 106, 0.1)": 1,
-      "literal-color | .invite-card | box-shadow: 0 24px 70px rgba(0, 0, 0, 0.14)": 1
     },
     "packages/client/src/views/hermes/SkillsUsageView.vue": {
       "unowned-background | .floating-tooltip | background: $bg-secondary": 1,

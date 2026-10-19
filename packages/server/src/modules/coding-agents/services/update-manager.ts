@@ -3,6 +3,7 @@ import { AgentUpdatePolicy } from './update-policy'
 import { getCodingAgentDefinitions, checkUpdateAgent, installCodingAgent } from './index'
 import { codingAgentRunManager } from './runtime/run-manager'
 import { lockAgentUpdate, agentPreparing, agentActivityRevision } from './update-lock'
+import { requireOemFeature } from '../../studio/public/oem'
 const policy = new AgentUpdatePolicy(config.appHome, {
  ids:()=>getCodingAgentDefinitions().map(v=>v.id),
  check:checkUpdateAgent,
@@ -24,16 +25,19 @@ function loadPolicy(): Promise<void> {
 }
 // Manual checking publishes the shared result but must not start auto-install.
 export async function checkAgentUpdateAndPublish(id: string) {
+  requireOemFeature('updates')
   await loadPolicy()
   return policy.checkNow(id)
 }
 let started: Promise<void>|null=null
 export async function getAgentUpdateManager():Promise<AgentUpdatePolicy>{
+ requireOemFeature('updates')
  if(!started)started=loadPolicy().then(()=>policy.start())
  await started;return policy
 }
 
 export async function installAgentAndPublish(id: string) {
+  requireOemFeature('updates')
   await loadPolicy()
   return policy.installAndRefresh(id, async () => {
     const release = lockAgentUpdate(id)

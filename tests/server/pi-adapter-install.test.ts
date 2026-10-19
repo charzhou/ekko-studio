@@ -2,6 +2,7 @@ import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'fs'
 import { tmpdir } from 'os'
 import { dirname, join } from 'path'
 import { afterEach, expect, it, vi } from 'vitest'
+import { OEM_DISABLED_MESSAGE } from '../../packages/server/src/modules/studio/public/oem'
 
 const execution = vi.hoisted(() => {
   const run = vi.fn()
@@ -48,8 +49,7 @@ it.each([
   })
   const { installCodingAgent, prepareCodingAgentLaunch } = await import('../../packages/server/src/bootstrap/coding-agents')
   if (action === 'install') {
-    const result = await installCodingAgent('pi')
-    expect(result.success).toBe(true)
+    await expect(installCodingAgent('pi')).rejects.toThrow(OEM_DISABLED_MESSAGE)
   } else {
     await Promise.all([
       prepareCodingAgentLaunch('pi', { profile: 'default', provider: 'test', model: 'test-model' }),
@@ -59,7 +59,7 @@ it.each([
     await prepareCodingAgentLaunch('pi', { profile: 'default', provider: 'test', model: 'test-model' })
   }
   const installs = execution.run.mock.calls.filter(([, args]) => args.includes('install'))
-  expect(installs.some(([, args]) => args.includes('@earendil-works/pi-coding-agent'))).toBe(action === 'install')
-  expect(installs.filter(([, args]) => args.includes('pi-mcp-adapter'))).toHaveLength(hasUserAdapter ? 0 : 1)
+  expect(installs.some(([, args]) => args.includes('@earendil-works/pi-coding-agent'))).toBe(false)
+  expect(installs.filter(([, args]) => args.includes('pi-mcp-adapter'))).toHaveLength(action === 'install' ? 0 : (hasUserAdapter ? 0 : 1))
   expect(readFileSync(settingsPath, 'utf-8')).toBe(settings)
 })

@@ -512,7 +512,7 @@ describe('hermes-web-ui MCP server', () => {
     } finally { server.closeAllConnections(); await new Promise<void>(resolve => server.close(() => resolve())) }
   })
 
-  it('exposes the curated Ekko Studio use catalog through one compact category tool', async () => {
+  it('exposes the curated AFY Studio use catalog through one compact category tool', async () => {
     const server = createServer((req, res) => {
       res.setHeader('content-type', 'application/json')
       if (req.url === '/api/studio/chat-run/runs') {
@@ -944,7 +944,7 @@ describe('hermes-web-ui MCP server', () => {
     expect(list.result.tools[0].description).toContain('internal delegation')
 
     const catalog = JSON.parse((await waitForRpc(responses, 32)).result.content[0].text)
-    expect(catalog).toMatchObject({ toolset: 'use', operation_count: 29 })
+    expect(catalog).toMatchObject({ toolset: 'use', operation_count: 25 })
     expect(catalog.operations.map((tool: any) => tool.name)).toEqual(expect.arrayContaining([
       'ekko_studio_use_chat_run',
       'ekko_studio_use_sessions_count',
@@ -952,10 +952,6 @@ describe('hermes-web-ui MCP server', () => {
       'ekko_studio_use_session_context',
       'ekko_studio_use_provider_add',
       'ekko_studio_use_worker_status',
-      'ekko_studio_use_mobile_location',
-      'ekko_studio_use_mobile_calendar',
-      'ekko_studio_use_mobile_reminders',
-      'ekko_studio_use_mobile_health',
       'ekko_studio_use_workflows_list',
       'ekko_studio_use_workflow_rerun_node',
     ]))
@@ -981,35 +977,9 @@ describe('hermes-web-ui MCP server', () => {
     }
     const gatewaySessionCount = JSON.parse((await waitForRpc(responses, 35)).result.content[0].text)
     expect(gatewaySessionCount.count).toBe(7)
-    const mobileLocation = JSON.parse((await waitForRpc(responses, 136)).result.content[0].text)
-    expect(mobileLocation).toMatchObject({
-      ok: true,
-      status: 'success',
-      location: {
-        latitude: 31.2304,
-        longitude: 121.4737,
-        coordinateSystem: 'wgs84',
-      },
-      body: {
-        session_id: 'session-1',
-        purpose: 'Find nearby restaurants',
-        accuracy: 'coarse',
-        timeout_ms: 10000,
-      },
-    })
-
-    const mobileCalendar = JSON.parse((await waitForRpc(responses, 36)).result.content[0].text)
-    expect(mobileCalendar).toMatchObject({
-      ok: true,
-      status: 'success',
-      body: {
-        capability: 'calendar',
-        session_id: 'studio-codex-session',
-        action: 'list',
-        purpose: 'Verify calendar access',
-        limit: 20,
-      },
-    })
+    for (const id of [136, 36]) {
+      expect((await waitForRpc(responses, id)).result.isError).toBe(true)
+    }
     const chatRun = JSON.parse((await waitForRpc(responses, 3)).result.content[0].text)
     expect(chatRun.body).toMatchObject({ input: 'hello', session_id: 'session-1', include_events: true })
     const sessions = JSON.parse((await waitForRpc(responses, 4)).result.content[0].text)
@@ -1138,92 +1108,19 @@ describe('hermes-web-ui MCP server', () => {
     await new Promise<void>(resolve => server.close(() => resolve()))
   })
 
-  it('filters exposed tools by MCP toolset argument', async () => {
-    const server = createServer((req, res) => {
-      if (req.url === '/api/devices') {
-        res.setHeader('content-type', 'application/json')
-        res.end(JSON.stringify({ devices: [{ id: 'device-1' }] }))
-        return
-      }
-      res.statusCode = 404
-      res.end('{}')
-    })
-    await new Promise<void>(resolve => server.listen(0, '127.0.0.1', resolve))
-    const address = server.address()
-    if (!address || typeof address === 'string') throw new Error('expected TCP server address')
-
+  it('does not advertise or execute retired device tools, including aliases', async () => {
     const responses = new Map<number, any>()
-    child = spawn(process.execPath, ['bin/ekko-studio-mcp.mjs', 'devices'], {
-      cwd: process.cwd(),
-      env: {
-        ...process.env,
-        HERMES_WEB_UI_URL: `http://127.0.0.1:${address.port}`,
-      },
-    })
-    child.stdout.on('data', (chunk) => {
+    child = spawn(process.execPath, ['bin/ekko-studio-mcp.mjs', 'devices'], { cwd: process.cwd(), env: process.env })
+    child.stdout.on('data', chunk => {
       for (const line of String(chunk).trim().split('\n')) {
-        if (!line) continue
-        const message = JSON.parse(line)
-        responses.set(message.id, message)
+        if (line) { const response = JSON.parse(line); responses.set(response.id, response) }
       }
     })
-
-    writeRpc(child, 1, 'initialize', {})
-    writeRpc(child, 2, 'tools/list')
-    writeRpc(child, 3, 'tools/call', {
-      name: 'ekko_studio_api_request',
-      arguments: { path: '/health' },
-    })
-    writeRpc(child, 4, 'tools/call', {
-      name: 'hermes_lan_devices_list',
-      arguments: {},
-    })
-    writeRpc(child, 5, 'tools/call', {
-      name: 'ekko_studio_devices_toolset',
-      arguments: { action: 'list' },
-    })
-    writeRpc(child, 6, 'tools/call', {
-      name: 'ekko_studio_devices_toolset',
-      arguments: {
-        action: 'call',
-        tool: 'ekko_studio_lan_devices_list',
-        arguments: {},
-      },
-    })
-
-    const initialized = await waitForRpc(responses, 1)
-    expect(initialized.result.serverInfo).toMatchObject({ toolset: 'devices' })
-    expect(initialized.result.instructions).toContain('interactive terminal lifecycle')
-
-    const list = await waitForRpc(responses, 2)
-    expectProviderSafeToolNames('ekko-studio-devices', list.result.tools)
-    expect(list.result.tools).toHaveLength(1)
-    expect(list.result.tools[0].name).toBe('ekko_studio_devices_toolset')
-    expect(list.result.tools[0].description).toContain('remote file upload/download')
-
-    const catalog = JSON.parse((await waitForRpc(responses, 5)).result.content[0].text)
-    expect(catalog).toMatchObject({ toolset: 'devices', operation_count: 14 })
-    expect(catalog.operations.map((tool: any) => tool.name)).toEqual(expect.arrayContaining([
-      'ekko_studio_lan_devices_list',
-      'ekko_studio_lan_command_exec',
-      'ekko_studio_lan_terminal_create',
-      'ekko_studio_lan_terminal_read',
-      'ekko_studio_lan_file_download',
-      'ekko_studio_lan_file_upload',
-    ]))
-
-    const hiddenCall = await waitForRpc(responses, 3)
-    expect(hiddenCall.result.isError).toBe(true)
-    expect(hiddenCall.result.content[0].text).toContain("active 'devices' MCP toolset")
-
-    const legacyDevicesCall = await waitForRpc(responses, 4)
-    const legacyDevicesPayload = JSON.parse(legacyDevicesCall.result.content[0].text)
-    expect(legacyDevicesPayload.devices[0].id).toBe('device-1')
-
-    const gatewayDevicesCall = await waitForRpc(responses, 6)
-    const gatewayDevicesPayload = JSON.parse(gatewayDevicesCall.result.content[0].text)
-    expect(gatewayDevicesPayload.devices[0].id).toBe('device-1')
-
-    await new Promise<void>(resolve => server.close(() => resolve()))
+    writeRpc(child, 1, 'tools/list')
+    writeRpc(child, 2, 'tools/call', { name: 'hermes_lan_devices_list', arguments: {} })
+    writeRpc(child, 3, 'tools/call', { name: 'ekko_studio_devices_toolset', arguments: { action: 'list' } })
+    expect((await waitForRpc(responses, 1)).result.tools).toEqual([])
+    expect((await waitForRpc(responses, 2)).result.isError).toBe(true)
+    expect((await waitForRpc(responses, 3)).result.isError).toBe(true)
   })
 })

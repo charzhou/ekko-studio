@@ -1,4 +1,4 @@
-import { requireAdmin, requireSuperAdmin } from '../../studio/public/auth'
+import { requireSuperAdmin } from '../../studio/public/auth'
 import Router from '@koa/router'
 import * as ctrl from '../controllers/agents'
 import { models } from '../controllers/models'
@@ -22,12 +22,8 @@ codingAgentRoutes.post('/api/coding-agents/dsh/web-plugins', requireSuperAdmin, 
 codingAgentRoutes.post('/api/coding-agents/dsh/ui-session', requireSuperAdmin, plugins.openUi)
 codingAgentRoutes.delete('/api/coding-agents/dsh/ui-session/:id', requireSuperAdmin, plugins.closeUi)
 
-codingAgentRoutes.get('/api/coding-agents/update-policies', requireAdmin, ctrl.updatePolicies)
-codingAgentRoutes.put('/api/coding-agents/:id/update-policy', requireAdmin, ctrl.setUpdatePolicy)
 codingAgentRoutes.get('/api/coding-agents', ctrl.status)
 codingAgentRoutes.get('/api/coding-agents/models', models)
-codingAgentRoutes.post('/api/coding-agents/:id/install', ctrl.install)
-codingAgentRoutes.post('/api/coding-agents/:id/check-update', ctrl.checkUpdate)
 codingAgentRoutes.post('/api/coding-agents/:id/launch/prepare', ctrl.prepareLaunch)
 codingAgentRoutes.post('/api/coding-agents/:id/launch/native', ctrl.nativeLaunch)
 codingAgentRoutes.post('/api/coding-agents/:id/runs', ctrl.startRun)

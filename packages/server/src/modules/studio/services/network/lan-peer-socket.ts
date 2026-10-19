@@ -1,3 +1,4 @@
+import { requireOemFeature } from '../../public/oem'
 import WebSocket, { WebSocketServer, type RawData } from 'ws'
 import type { Server as HttpServer, IncomingMessage } from 'http'
 import type { Duplex } from 'stream'

@@ -48,23 +48,5 @@ describe('api docs controller', () => {
     }
     expect(ctx.body.paths['/api/studio/sessions/hermes'].get.parameters.find((parameter: any) => parameter.name === 'source').schema).toEqual({ type: 'string' })
 
-    for (const path of [
-      '/api/studio/update/preview/prepare',
-      '/api/studio/update/preview/start',
-    ]) {
-      expect(ctx.body.paths[path].post.requestBody).toEqual({
-        required: true,
-        content: {
-          'application/json': {
-            schema: {
-              type: 'object',
-              properties: {
-                tag: { type: 'string' },
-              },
-            },
-          },
-        },
-      })
-    }
   })
 })

@@ -7,6 +7,8 @@ vi.mock('@/composables/useComputerUsePermissionPrompt', () => ({ notifyComputerU
 
 const chatApi = vi.hoisted(() => ({
   startRunViaSocket: vi.fn(),
+  resumeSession: vi.fn(),
+  registerSessionHandlers: vi.fn(),
   socketEmit: vi.fn(),
 }))
 const sessionsApi = vi.hoisted(() => ({
@@ -19,8 +21,8 @@ const sessionsApi = vi.hoisted(() => ({
 
 vi.mock('@/api/studio/chat', () => ({
   startRunViaSocket: chatApi.startRunViaSocket,
-  resumeSession: vi.fn(),
-  registerSessionHandlers: vi.fn(),
+  resumeSession: chatApi.resumeSession,
+  registerSessionHandlers: chatApi.registerSessionHandlers,
   unregisterSessionHandlers: vi.fn(),
   getChatRunSocket: vi.fn(() => ({ emit: chatApi.socketEmit })),
   respondToolApproval: vi.fn(),
@@ -95,7 +97,13 @@ describe('chat store reasoning/tool boundaries', () => {
     store.sessions = [session]
     store.activeSessionId = session.id
     store.activeSession = session
-    await store.sendMessage('use the desktop')
+    const sent = await store.sendMessage('use the desktop')
+    if (agent === 'ekko-agent') {
+      expect(sent).toBe(false)
+      expect(chatApi.startRunViaSocket).not.toHaveBeenCalled()
+      expect(notifyComputerUseStarted).not.toHaveBeenCalled()
+      return
+    }
     const onEvent = chatApi.startRunViaSocket.mock.calls[0][1] as (event: RunEvent) => void
     onEvent({ event: 'tool.started', session_id: session.id, tool: 'computer_use', arguments: '{"action":"call","tool":"list_apps"}' })
     if (agent === 'ekko-agent') expect(notifyComputerUseStarted).toHaveBeenCalledWith('computer_use', { action: 'call', tool: 'list_apps' })
@@ -271,7 +279,7 @@ describe('chat store reasoning/tool boundaries', () => {
           tool_calls: [{
             id: 'item_2',
             type: 'function',
-            function: { name: 'Web Search', arguments: '{"query":"Hermes"}' },
+            function: { name: 'Web Search', arguments: '{"query":"AFY Studio"}' },
           }],
           timestamp: 3,
           finish_reason: 'tool_calls',
@@ -306,14 +314,14 @@ describe('chat store reasoning/tool boundaries', () => {
         toolCallId: 'item_2',
         runMarker: 'run-b',
         toolName: 'Web Search',
-        toolArgs: '{"query":"Hermes"}',
+        toolArgs: '{"query":"AFY Studio"}',
         reasoning: 'reasoning for run B',
         toolResult: 'result B',
       }),
     ])
   })
 
-  it('keeps repeated coding-agent tool ids separate across live runs', async () => {
+  it('renders reattached legacy history: keeps repeated coding-agent tool ids separate across live runs', async () => {
     const store = useChatStore()
     const session = makeSession()
     session.source = 'coding_agent'
@@ -335,9 +343,17 @@ describe('chat store reasoning/tool boundaries', () => {
     store.activeSessionId = 'session-1'
     store.activeSession = session
 
-    await store.sendMessage('run another command')
-
-    const onEvent = chatApi.startRunViaSocket.mock.calls[0][1] as (event: RunEvent) => void
+    chatApi.resumeSession.mockImplementationOnce((id, callback) => {
+      callback({ session_id: id, isWorking: true, events: [] })
+      return {}
+    })
+    await store.switchSession(session.id)
+    const handlers = chatApi.registerSessionHandlers.mock.calls.at(-1)![1]
+    const onEvent = (event: RunEvent) => {
+      const key = ({ 'run.started': 'onRunStarted', 'tool.started': 'onToolStarted', 'tool.completed': 'onToolCompleted', 'run.completed': 'onRunCompleted' } as Record<string, string>)[event.event]
+      handlers[key](event)
+    }
+    expect(chatApi.startRunViaSocket).not.toHaveBeenCalled()
     onEvent({ event: 'run.started', session_id: 'session-1', run_marker: 'run-b' })
     onEvent({
       event: 'tool.started',
@@ -672,7 +688,7 @@ describe('chat store reasoning/tool boundaries', () => {
     ])
   })
 
-  it('settles running coding-agent tools when the run completes without a tool.completed event', async () => {
+  it('renders reattached legacy history: settles running coding-agent tools when the run completes without a tool.completed event', async () => {
     const store = useChatStore()
     const session = makeSession()
     session.source = 'coding_agent'
@@ -682,9 +698,17 @@ describe('chat store reasoning/tool boundaries', () => {
     store.activeSessionId = 'session-1'
     store.activeSession = session
 
-    await store.sendMessage('run pwd')
-
-    const onEvent = chatApi.startRunViaSocket.mock.calls[0][1] as (event: RunEvent) => void
+    chatApi.resumeSession.mockImplementationOnce((id, callback) => {
+      callback({ session_id: id, isWorking: true, events: [] })
+      return {}
+    })
+    await store.switchSession(session.id)
+    const handlers = chatApi.registerSessionHandlers.mock.calls.at(-1)![1]
+    const onEvent = (event: RunEvent) => {
+      const key = ({ 'run.started': 'onRunStarted', 'tool.started': 'onToolStarted', 'tool.completed': 'onToolCompleted', 'run.completed': 'onRunCompleted' } as Record<string, string>)[event.event]
+      handlers[key](event)
+    }
+    expect(chatApi.startRunViaSocket).not.toHaveBeenCalled()
     onEvent({ event: 'run.started', session_id: 'session-1' })
     onEvent({
       event: 'tool.started',
@@ -729,7 +753,7 @@ describe('chat store reasoning/tool boundaries', () => {
     ].join('\n'))
   })
 
-  it('queues active coding agent follow-up messages without command styling', async () => {
+  it('blocks retired backend execution: queues active coding agent follow-up messages without command styling', async () => {
     const store = useChatStore()
     const session = makeSession()
     session.source = 'coding_agent'
@@ -739,37 +763,9 @@ describe('chat store reasoning/tool boundaries', () => {
     store.activeSessionId = 'session-1'
     store.activeSession = session
 
-    await store.sendMessage('first input')
-    const onEvent = chatApi.startRunViaSocket.mock.calls[0][1] as (event: RunEvent) => void
-    onEvent({
-      event: 'agent.event',
-      session_id: 'session-1',
-      source: 'coding_agent',
-      kind: 'status',
-      text: 'Input sent to coding agent.',
-    })
-    expect(store.messages).toHaveLength(1)
-
-    onEvent({ event: 'run.started', session_id: 'session-1' })
-
-    await store.sendMessage('/not-a-hermes-command')
-
-    expect(chatApi.startRunViaSocket).toHaveBeenCalledTimes(2)
-    expect(store.queuedUserMessages.get('session-1')).toEqual([
-      expect.objectContaining({
-        role: 'user',
-        content: '/not-a-hermes-command',
-        queued: true,
-        systemType: undefined,
-      }),
-    ])
-    expect(store.messages).toEqual([
-      expect.objectContaining({
-        role: 'user',
-        content: 'first input',
-        queued: false,
-      }),
-    ])
+    expect(await store.sendMessage('first input')).toBe(false)
+    expect(chatApi.startRunViaSocket).not.toHaveBeenCalled()
+    expect(store.activeSession).toEqual(session)
   })
 
   it('queues unknown slash commands in bridge sessions as normal user input', async () => {
@@ -862,7 +858,7 @@ describe('chat store reasoning/tool boundaries', () => {
     ])
   })
 
-  it('starts global coding-agent runs without provider credentials', async () => {
+  it('blocks retired backend execution: starts global coding-agent runs without provider credentials', async () => {
     const store = useChatStore()
     const session = makeSession()
     session.source = 'coding_agent'
@@ -879,23 +875,12 @@ describe('chat store reasoning/tool boundaries', () => {
     store.activeSessionId = 'session-1'
     store.activeSession = session
 
-    await store.sendMessage('use global codex auth')
-
-    const body = chatApi.startRunViaSocket.mock.calls[0][0]
-    expect(body).toEqual(expect.objectContaining({
-      source: 'coding_agent',
-      coding_agent_id: 'codex',
-      mode: 'global',
-    }))
-    expect(body.provider).toBeUndefined()
-    expect(body.model).toBe('native-selected')
-    expect(body.baseUrl).toBeUndefined()
-    expect(body.apiKey).toBeUndefined()
-    expect(body.apiMode).toBeUndefined()
-    expect(body.reasoning_effort).toBe('high')
+    expect(await store.sendMessage('use global codex auth')).toBe(false)
+    expect(chatApi.startRunViaSocket).not.toHaveBeenCalled()
+    expect(store.activeSession).toEqual(session)
   })
 
-  it('sends the hidden API mode when starting a scoped Ekko run', async () => {
+  it('blocks retired backend execution: sends the hidden API mode when starting a scoped Ekko run', async () => {
     const store = useChatStore()
     const session = makeSession()
     session.source = 'coding_agent'
@@ -910,16 +895,9 @@ describe('chat store reasoning/tool boundaries', () => {
     store.activeSessionId = 'session-1'
     store.activeSession = session
 
-    await store.sendMessage('check the weather')
-
-    expect(chatApi.startRunViaSocket.mock.calls[0][0]).toEqual(expect.objectContaining({
-      source: 'builtin_agent',
-      agent_id: 'ekko-agent',
-      mode: 'scoped',
-      provider: 'custom:fun-codex',
-      model: 'gpt-5.5',
-      apiMode: 'codex_responses',
-    }))
+    expect(await store.sendMessage('check the weather')).toBe(false)
+    expect(chatApi.startRunViaSocket).not.toHaveBeenCalled()
+    expect(store.activeSession).toEqual(session)
   })
 
   it('clears stale coding-agent runtime credentials when switching providers', async () => {
@@ -1014,7 +992,7 @@ describe('chat store reasoning/tool boundaries', () => {
     expect(session.apiMode).toBe('chat_completions')
   })
 
-  it('sends the selected workspace when starting a coding-agent run', async () => {
+  it('blocks retired backend execution: sends the selected workspace when starting a coding-agent run', async () => {
     const store = useChatStore()
     const session = makeSession()
     session.source = 'coding_agent'
@@ -1031,17 +1009,12 @@ describe('chat store reasoning/tool boundaries', () => {
     store.activeSessionId = 'session-1'
     store.activeSession = session
 
-    await store.sendMessage('use this project')
-
-    expect(chatApi.startRunViaSocket.mock.calls[0][0]).toEqual(expect.objectContaining({
-      source: 'coding_agent',
-      coding_agent_id: 'claude-code',
-      mode: 'scoped',
-      workspace: '/workspace/project-a',
-    }))
+    expect(await store.sendMessage('use this project')).toBe(false)
+    expect(chatApi.startRunViaSocket).not.toHaveBeenCalled()
+    expect(store.activeSession).toEqual(session)
   })
 
-  it('keeps a local stream controller for active coding-agent runs', async () => {
+  it('blocks retired backend execution: keeps a local stream controller for active coding-agent runs', async () => {
     const abort = vi.fn()
     chatApi.startRunViaSocket.mockReturnValue({ abort })
     const store = useChatStore()
@@ -1053,15 +1026,9 @@ describe('chat store reasoning/tool boundaries', () => {
     store.activeSessionId = 'session-1'
     store.activeSession = session
 
-    await store.sendMessage('long running task')
-    const onEvent = chatApi.startRunViaSocket.mock.calls[0][1] as (event: RunEvent) => void
-    onEvent({ event: 'run.started', session_id: 'session-1' })
-
-    store.stopStreaming()
-
-    expect(abort).toHaveBeenCalledTimes(1)
-    expect(chatApi.socketEmit).not.toHaveBeenCalled()
-    expect(store.abortState).toEqual(expect.objectContaining({ aborting: true }))
+    expect(await store.sendMessage('long running task')).toBe(false)
+    expect(chatApi.startRunViaSocket).not.toHaveBeenCalled()
+    expect(store.activeSession).toEqual(session)
   })
 
   it('keeps a session in the local list when server deletion fails', async () => {

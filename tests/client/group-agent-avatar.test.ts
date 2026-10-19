@@ -14,7 +14,7 @@ describe('group agent avatars', () => {
   })
 
   it('falls back to the matching single-chat agent icon', () => {
-    expect(defaultGroupAgentAvatar('hermes').dataUrl).toBe('/coding-agents/hermes.png')
+    expect(defaultGroupAgentAvatar('hermes').dataUrl).toBe('/logo.png')
     expect(defaultGroupAgentAvatar('ekko').dataUrl).toBe('/coding-agents/ekko-agent.png')
     expect(defaultGroupAgentAvatar('codex').dataUrl).toBe('/coding-agents/codex-openai.png')
     expect(defaultGroupAgentAvatar('claude').dataUrl).toBe('/coding-agents/claude-code.svg')

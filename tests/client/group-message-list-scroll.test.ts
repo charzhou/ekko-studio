@@ -140,8 +140,8 @@ describe('GroupMessageList scroll behavior', () => {
     const avatars = wrapper.findAll('.empty-agent-avatar img')
 
     expect(avatars.map(avatar => avatar.attributes('alt'))).toEqual([
-      'Hermes',
-      'Ekko',
+      'AFY Studio',
+      'AFY Studio',
       'Codex',
       'Claude',
       'Pi',

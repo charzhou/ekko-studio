@@ -158,7 +158,6 @@ const assistantBody = computed(() => parsedThinking.value.body || props.message.
 function resolveGroupImageUrl(path: string): string {
     return getGroupChatAttachmentUrl({
         roomId: props.message.roomId || groupChatStore.currentRoomId || '',
-        inviteCode: groupChatStore.inviteGuest ? groupChatStore.activeInviteCode || undefined : undefined,
     }, path)
 }
 const contentBlocks = computed(() => {
@@ -189,9 +188,6 @@ const renderedAttachments = computed(() => {
         const normalizedPath = normalizeLocalFilePath(path)
         const attachmentUrl = getGroupChatAttachmentUrl({
             roomId: props.message.roomId || groupChatStore.currentRoomId || '',
-            inviteCode: groupChatStore.inviteGuest
-                ? groupChatStore.activeInviteCode || undefined
-                : undefined,
         }, normalizedPath, name)
         return [{
             id: `${props.message.id}_attachment_${index}`,

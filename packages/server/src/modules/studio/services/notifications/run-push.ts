@@ -1,3 +1,4 @@
+import { OEM_FEATURES } from '../../public/oem'
 import { notificationPreview } from './notification-preview'
 import { chatCompletionText } from './chat-completion-text'
 import { listAppConnections } from '../../repositories/app-connections-store'
@@ -20,6 +21,7 @@ const PUSH_EVENTS: Record<string, 'completion' | 'failure' | 'approval' | 'inter
 export function createRunPushConsumer(send: typeof fetch = (...args) => fetch(...args)) {
   const attempted = new Set<string>()
   return async (event: BusinessEvent): Promise<void> => {
+    if (!OEM_FEATURES.cloudServices) return
     const kind = PUSH_EVENTS[event.type], payload = event.payload
     if (!kind || payload.replayed === true || payload.restored === true || payload.background_snapshot === true) return
     if (event.type.startsWith('chat.') && ['group_chat', 'workflow'].includes(event.source)) return

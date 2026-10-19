@@ -71,7 +71,7 @@ describe('stt api wrappers', () => {
         headers: expect.objectContaining({
           Authorization: 'Bearer jwt-token',
           'Content-Type': 'application/json',
-          'X-Hermes-Profile': 'research',
+          'X-AFY Studio-Profile': 'research',
         }),
       }),
     )
@@ -105,7 +105,7 @@ describe('stt api wrappers', () => {
       expect.objectContaining({
         headers: expect.objectContaining({
           Authorization: 'Bearer jwt-token',
-          'X-Hermes-Profile': 'research',
+          'X-AFY Studio-Profile': 'research',
         }),
       }),
     )
@@ -497,7 +497,7 @@ describe('stt api wrappers', () => {
         method: 'POST',
         headers: expect.objectContaining({
           Authorization: 'Bearer jwt-token',
-          'X-Hermes-Profile': 'research',
+          'X-AFY Studio-Profile': 'research',
         }),
       }),
     )

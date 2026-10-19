@@ -278,7 +278,7 @@ describe('ChatRunSocket reports when the run started', () => {
   })
 })
 
-describe('group run MCP credential lifecycle', () => {
+describe('internal group run MCP credential compatibility lifecycle', () => {
   beforeEach(() => {
     vi.restoreAllMocks()
     handleCodingAgentRunMock.mockReset()
@@ -286,7 +286,7 @@ describe('group run MCP credential lifecycle', () => {
 
   it.each(['run.completed', 'run.failed', 'abort.completed'])('issues a fresh credential without a socket user and revokes it on %s', async terminal => {
     const { ChatRunSocket } = await import('../../packages/server/src/modules/studio/sockets/chat-run')
-    const { io } = makeServerHarness()
+    const { io, socket } = makeServerHarness()
     const server = new ChatRunSocket(io as any)
     const sessionId = `group-${terminal}`
     let runtimeData: any
@@ -297,10 +297,12 @@ describe('group run MCP credential lifecycle', () => {
       return { runId: 'native-runtime' } as any
     })
     let current = true
-    const pending = server.runAndWait({
+    // Exercise the retained internal dispatcher, not the closed product entry.
+    ;(socket.data as any).groupRunIsCurrent = () => current
+    const pending = (server as any).handleRun(socket, {
       session_id: sessionId, coding_agent_id: 'codex', source: 'group_chat', session_source: 'group_chat',
       group_room_id: 'room', group_agent_id: 'worker', input: 'Show progress', mode: 'global',
-    }, { profile: 'research', groupRunIsCurrent: () => current })
+    }, 'research')
     try {
       await vi.waitFor(() => expect(runtimeData?.studio_mcp_token_file).toBeTruthy())
       const credential = JSON.parse(readFileSync(runtimeData.studio_mcp_token_file, 'utf8'))
@@ -323,7 +325,7 @@ describe('group run MCP credential lifecycle', () => {
 
   it('cleans up a credential if native launch fails', async () => {
     const { ChatRunSocket } = await import('../../packages/server/src/modules/studio/sockets/chat-run')
-    const { io } = makeServerHarness()
+    const { io, socket } = makeServerHarness()
     const server = new ChatRunSocket(io as any)
     let file = ''
     handleCodingAgentRunMock.mockImplementation(async (_nsp: any, _socket: any, data: any) => {
@@ -331,10 +333,8 @@ describe('group run MCP credential lifecycle', () => {
       expect(existsSync(file)).toBe(true)
       throw new Error('native launch failed')
     })
-    const result = await server.runAndWait({ session_id: 'failed-group', input: 'Work', coding_agent_id: 'codex',
-      source: 'group_chat', group_room_id: 'room', group_agent_id: 'worker', mode: 'global' }, { profile: 'research' })
-    expect(result.ok).toBe(false)
-    expect(result.error).toBe('native launch failed')
+    await expect((server as any).handleRun(socket, { session_id: 'failed-group', input: 'Work', coding_agent_id: 'codex',
+      source: 'group_chat', group_room_id: 'room', group_agent_id: 'worker', mode: 'global' }, 'research')).rejects.toThrow('native launch failed')
     expect(existsSync(file)).toBe(false)
   })
 
@@ -357,5 +357,26 @@ describe('group run MCP credential lifecycle', () => {
     } finally {
       server.emitExternalEvent('identity-group', 'run.completed', {})
     }
+  })
+})
+
+
+describe('Hermes-only group run product boundary', () => {
+  it.each(['codex', 'ekko-agent', 'claude-code'])('rejects %s before creating run state or MCP credentials', async agent => {
+    const { ChatRunSocket } = await import('../../packages/server/src/modules/studio/sockets/chat-run')
+    const { io } = makeServerHarness()
+    const server = new ChatRunSocket(io as any)
+    const issue = vi.spyOn(runMcpCredentials, 'issue')
+    handleCodingAgentRunMock.mockClear()
+    handleBridgeRunMock.mockClear()
+    const sessionId = `rejected-group-${agent}`
+    await expect(server.runAndWait({ session_id: sessionId, input: 'Work', coding_agent_id: agent as any,
+      source: 'group_chat', group_room_id: 'room', group_agent_id: 'worker', mode: 'global' },
+    { profile: 'research' })).rejects.toMatchObject({ code: 'agent_disabled', status: 410 })
+    expect(issue).not.toHaveBeenCalled()
+    expect((server as any).sessionMap.has(sessionId)).toBe(false)
+    expect(handleCodingAgentRunMock).not.toHaveBeenCalled()
+    expect(handleBridgeRunMock).not.toHaveBeenCalled()
+    issue.mockRestore()
   })
 })

@@ -13,7 +13,7 @@ describe('native runtime catalog and client selection', () => {
     expect(isGlobalOnlyCodingAgent(id)).toBe(id === 'qoder')
     expect(AGENT_OPTIONS.find(agent => agent.value === id)?.label).toBe(agentMetadata(id)?.name)
     expect(GROUP_AGENT_OPTIONS.find(agent => agent.value === id)).toBeDefined()
-    expect(chatSessionAgentAvatar({ source: 'coding_agent', agent: id }).src).toBe(new URL(agentMetadata(id)!.icon).pathname)
+    expect(chatSessionAgentAvatar({ source: 'coding_agent', agent: id }).src).toBe(agentMetadata(id)!.icon)
     expect(sessionAgentFields({ source: 'coding_agent', agent: id, agent_mode: 'global' } as any)).toMatchObject({ codingAgentId: id, codingAgentMode: 'global' })
     const entered = nextCodingAgentMode({ previousAgent: 'codex', nextAgent: id, agentMode: 'scoped' })
     expect(entered).toEqual(id === 'qoder' ? { agentMode: 'global', priorAgentMode: 'scoped' } : { agentMode: 'scoped', priorAgentMode: undefined })
@@ -23,7 +23,7 @@ describe('native runtime catalog and client selection', () => {
   it('declares manual installation and unsupported editors without advertising fake capabilities', () => {
     for (const id of NATIVE_CODING_AGENT_IDS) {
       const agent = agentMetadata(id)!
-      expect(agent.icon).toMatch(/^https:\/\/ekkostudio.xyz\/coding-agents\//)
+      expect(agent.icon).toMatch(/^\/coding-agents\//)
       expect(agent.capabilities).toEqual({ context: false, compact: false, serverManagedAuth: false })
       expect(agent.config.skillsWritable).toBe(false)
       expect(agent.installation.method).toBe(id === 'zcode' ? 'manual' : 'npm')

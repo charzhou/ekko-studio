@@ -281,7 +281,7 @@ describe('MessageList session scroll position', () => {
     wrapper.unmount()
   })
 
-  it('shows Ekko while the session is pending, then displays the loaded Agent', async () => {
+  it('shows AFY Studio while the session is pending, then displays the loaded Agent', async () => {
     const chatStore = useChatStore()
     chatStore.activeSessionId = 'pending-session'
     chatStore.activeSession = null
@@ -289,7 +289,7 @@ describe('MessageList session scroll position', () => {
     await flushSessionScroll()
 
     expect(wrapper.get('.empty-logo').attributes('src')).toBe('/coding-agents/ekko-agent.png')
-    expect(wrapper.get('.empty-logo').attributes('alt')).toBe('Ekko')
+    expect(wrapper.get('.empty-logo').attributes('alt')).toBe('AFY Studio')
     expect(wrapper.get('.empty-state p').text()).toBe('chat.emptyStateAgent')
 
     chatStore.activeSession = {
@@ -307,16 +307,16 @@ describe('MessageList session scroll position', () => {
 
   it.each([
     {
-      runtime: 'Hermes',
+      runtime: 'AFY Studio',
       session: { source: 'global_agent', agent: 'hermes' },
-      logo: '/coding-agents/hermes.png',
-      alt: 'Hermes',
+      logo: '/logo.png',
+      alt: 'AFY Studio',
     },
     {
-      runtime: 'Ekko',
+      runtime: 'AFY Studio',
       session: { source: 'global_agent', agent: 'ekko-agent', codingAgentId: 'ekko-agent' },
       logo: '/coding-agents/ekko-agent.png',
-      alt: 'Ekko',
+      alt: 'AFY Studio',
     },
   ])('renders the $runtime logo for an empty Global Agent session', async ({ session, logo, alt }) => {
     const chatStore = useChatStore()
@@ -337,8 +337,8 @@ describe('MessageList session scroll position', () => {
   })
 
   it.each([
-    ['Hermes', { agent: 'hermes' }, '/coding-agents/hermes.png'],
-    ['Ekko', { agent: 'ekko-agent', codingAgentId: 'ekko-agent' }, '/coding-agents/ekko-agent.png'],
+    ['AFY Studio', { agent: 'hermes' }, '/logo.png'],
+    ['AFY Studio', { agent: 'ekko-agent', codingAgentId: 'ekko-agent' }, '/coding-agents/ekko-agent.png'],
     ['Claude', { source: 'coding_agent', agent: 'claude', codingAgentId: 'claude-code' }, '/coding-agents/claude-code.svg'],
     ['Codex', { source: 'coding_agent', agent: 'codex', codingAgentId: 'codex' }, '/coding-agents/codex-openai.png'],
     ['Pi', { source: 'coding_agent', agent: 'pi', codingAgentId: 'pi' }, '/coding-agents/pi.svg'],

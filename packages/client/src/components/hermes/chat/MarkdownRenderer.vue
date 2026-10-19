@@ -262,13 +262,13 @@ const renderedHtml = computed(() => {
   html = html.replace(/<(h[1-6])([^>]*)>/g, (match, tag, attrs) => {
     headingCounter++
     const id = `${prefix}heading-${headingCounter}`
-    
+
     // Check if id attribute already exists
     if (attrs.includes('id=')) {
       // Replace existing id
       return match.replace(/id="[^"]*"/, `id="${id}"`).replace(/id='[^']*'/, `id="${id}"`)
     }
-    
+
     // Add new id
     if (attrs.trim() === '') {
       return `<${tag} id="${id}">`

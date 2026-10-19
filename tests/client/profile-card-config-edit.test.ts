@@ -70,7 +70,7 @@ describe('ProfileCard config edit affordance', () => {
     })
   })
 
-  it('hides the Hermes Profile switch action when Hermes is unavailable', () => {
+  it('hides the AFY Studio Profile switch action when AFY Studio is unavailable', () => {
     const wrapper = mount(ProfileCard, {
       props: {
         profile: {
@@ -93,7 +93,7 @@ describe('ProfileCard config edit affordance', () => {
     expect(wrapper.find('[data-testid="switch-hermes-profile"]').exists()).toBe(false)
   })
 
-  it('shows the Hermes Profile switch action when a Hermes executable is available', () => {
+  it('shows the AFY Studio Profile switch action when a AFY Studio executable is available', () => {
     const wrapper = mount(ProfileCard, {
       props: {
         profile: {

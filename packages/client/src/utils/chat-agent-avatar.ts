@@ -1,5 +1,5 @@
 export interface ChatAgentAvatar {
-  label: 'Hermes' | 'Ekko' | 'Claude' | 'Codex' | 'Pi' | 'Grok' | 'OpenCode' | 'DeepSeek Harness' | 'Cursor' | 'Antigravity' | 'Qwen Code' | 'Kimi Code' | 'CodeBuddy' | 'Qoder' | 'GitHub Copilot' | 'ZCode'
+  label: 'AFY Studio' | 'AFY Studio' | 'Claude' | 'Codex' | 'Pi' | 'Grok' | 'OpenCode' | 'DeepSeek Harness' | 'Cursor' | 'Antigravity' | 'Qwen Code' | 'Kimi Code' | 'CodeBuddy' | 'Qoder' | 'GitHub Copilot' | 'ZCode'
   src: string
 }
 
@@ -10,8 +10,8 @@ interface ChatAgentSessionIdentity {
 }
 
 const AGENT_AVATARS = {
-  hermes: { label: 'Hermes', src: '/coding-agents/hermes.png' },
-  'ekko-agent': { label: 'Ekko', src: '/coding-agents/ekko-agent.png' },
+  hermes: { label: 'AFY Studio', src: '/logo.png' },
+  'ekko-agent': { label: 'AFY Studio', src: '/coding-agents/ekko-agent.png' },
   'claude-code': { label: 'Claude', src: '/coding-agents/claude-code.svg' },
   codex: { label: 'Codex', src: '/coding-agents/codex-openai.png' },
   pi: { label: 'Pi', src: '/coding-agents/pi.svg' },

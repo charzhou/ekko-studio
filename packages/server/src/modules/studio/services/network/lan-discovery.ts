@@ -1,3 +1,4 @@
+import { OEM_FEATURES } from '../../public/oem'
 import dgram from 'dgram'
 import { networkInterfaces } from 'os'
 import type { LanDeviceInfo, LanEndpointKind, PublicSystemInfo } from '../../contracts/devices'
@@ -69,7 +70,7 @@ function envFlagDisabled(name: string): boolean {
 }
 
 export function isLanDiscoveryEnabled(): boolean {
-  return !envFlagDisabled('HERMES_LAN_DISCOVERY_ENABLED')
+  return OEM_FEATURES.hardware && !envFlagDisabled('HERMES_LAN_DISCOVERY_ENABLED')
 }
 
 function parsePortList(value: string | undefined): number[] {

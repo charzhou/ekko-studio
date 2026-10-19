@@ -90,32 +90,6 @@ function getNodeBinDir() {
   return dirname(process.execPath)
 }
 
-function getNpmBin() {
-  return join(getNodeBinDir(), process.platform === 'win32' ? 'npm.cmd' : 'npm')
-}
-
-function getCurrentNodeEnv() {
-  return {
-    ...process.env,
-    PATH: [getNodeBinDir(), process.env.PATH].filter(Boolean).join(delimiter),
-    npm_node_execpath: process.execPath,
-  }
-}
-
-function getGlobalCliScript() {
-  // .cmd files cannot be executed directly by execFileSync on Windows.
-  const npmCli = join(getNodeBinDir(), 'node_modules', 'npm', 'bin', 'npm-cli.js')
-  const command = process.platform === 'win32' ? process.execPath : getNpmBin()
-  const args = process.platform === 'win32' ? [npmCli, 'root', '-g'] : ['root', '-g']
-  const root = execFileSync(command, args, {
-    encoding: 'utf-8',
-    stdio: ['pipe', 'pipe', 'pipe'],
-    env: getCurrentNodeEnv(),
-  }).trim()
-  // Resolve inside this package; a global command shim may belong to the other name.
-  return join(root, PACKAGE_NAME, 'bin', 'hermes-web-ui.mjs')
-}
-
 function getWindowsShell() {
   const systemRoot = process.env.SystemRoot || 'C:\\Windows'
   const candidates = [
@@ -128,24 +102,6 @@ function getWindowsShell() {
   }
 
   return 'cmd.exe'
-}
-
-function quoteForWindowsCommand(value) {
-  return `"${value.replace(/"/g, '""')}"`
-}
-
-function spawnCli(command, args, options) {
-  if (process.platform === 'win32') {
-    const lowerCommand = String(command).toLowerCase()
-    if (!lowerCommand.endsWith('.cmd') && !lowerCommand.endsWith('.bat')) {
-      return spawn(command, args, options)
-    }
-
-    const commandLine = `${quoteForWindowsCommand(command)} ${args.map(arg => String(arg)).join(' ')}`
-    return spawn(getWindowsShell(), ['/d', '/s', '/c', commandLine], options)
-  }
-
-  return spawn(command, args, options)
 }
 
 function getPortFromArgs() {
@@ -176,17 +132,6 @@ function getRunningPort() {
   } catch {}
 
   return null
-}
-
-function getUpdatePort() {
-  const argPort = getPortFromArgs()
-  if (argPort !== null) return argPort
-
-  const runningPort = getRunningPort()
-  if (runningPort !== null) return runningPort
-
-  if (process.env.PORT && !isNaN(process.env.PORT)) return parseInt(process.env.PORT)
-  return DEFAULT_PORT
 }
 
 function getPort() {
@@ -673,8 +618,6 @@ Commands:
   status             Show server status
   clear-login-locks  Delete the login IP lock file
   reset-default-login Create or reset the default login (${DEFAULT_USERNAME} / ${DEFAULT_PASSWORD})
-  update             Update to latest version and restart
-  upgrade            Alias for update
   version            Show version number
 
 Options:
@@ -748,61 +691,7 @@ Options:
 }
 
 function doUpdate() {
-  if (!['ekko-studio', 'hermes-web-ui'].includes(PACKAGE_NAME)) {
-    throw new Error(`Unsupported Studio npm package: ${PACKAGE_NAME}`)
-  }
-  console.log(`  ⬆ Updating ${PACKAGE_NAME}...`)
-
-  const npm = getNpmBin()
-  try {
-    console.log('  🧹 Cleaning npm cache...')
-    execFileSync(npm, ['cache', 'clean', '--force'], {
-      stdio: 'inherit',
-      env: getCurrentNodeEnv(),
-    })
-  } catch (err) {
-    console.log(`  ⚠ Failed to clean npm cache, continuing update: ${err?.message || err}`)
-  }
-
-  runUpdateInstall(npm)
-}
-
-function runUpdateInstall(npm) {
-  const child = spawnCli(npm, ['install', '-g', `${PACKAGE_NAME}@latest`], {
-    stdio: 'inherit',
-    windowsHide: true,
-    env: getCurrentNodeEnv(),
-  })
-
-  child.on('error', (err) => {
-    console.log(`  ✗ Update failed: ${err.message}`)
-    process.exit(1)
-  })
-
-  child.on('exit', (code) => {
-    if (code === 0) {
-      console.log('  ✓ Update complete, restarting...')
-      const cli = getGlobalCliScript()
-      if (!existsSync(cli)) {
-        console.log(`  ✗ Updated CLI not found: ${cli}`)
-        process.exit(1)
-      }
-
-      const restart = spawn(process.execPath, [cli, ...getRestartArgs(getUpdatePort())], {
-        stdio: 'inherit',
-        windowsHide: true,
-        env: getCurrentNodeEnv(),
-      })
-      restart.on('error', (err) => {
-        console.log(`  ✗ Restart failed: ${err.message}`)
-        process.exit(1)
-      })
-      restart.on('exit', (restartCode) => process.exit(restartCode ?? 1))
-    } else {
-      console.log('  ✗ Update failed')
-      process.exit(code ?? 1)
-    }
-  })
+  throw new Error('Updates and downloads are not available in AFY Studio.')
 }
 
 if (process.argv[1] && realpathSync(resolve(process.argv[1])) === __filename) {

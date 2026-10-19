@@ -101,14 +101,14 @@ describe('MessageList live reasoning', () => {
     vi.useRealTimers()
   })
 
-  it('updates the thinking logo with the active agent and preserves the Ekko animation', async () => {
+  it('updates the thinking logo with the active agent and uses AFY Studio branding', async () => {
     const wrapper = mountMessageList([])
     const chatStore = useChatStore()
     for (const [agent, src] of [
-      ['hermes', '/coding-agents/hermes.png'],
+      ['hermes', '/logo.png'],
       ['codex', '/coding-agents/codex-openai.png'],
       ['claude-code', '/coding-agents/claude-code.svg'],
-      ['ekko-agent', 'thinking.gif'],
+      ['ekko-agent', 'logo.png'],
       ['pi', '/coding-agents/pi.svg'],
     ]) {
       chatStore.activeSession = { ...makeSession([]), agent }
@@ -163,7 +163,7 @@ describe('MessageList live reasoning', () => {
     expect(wrapper.get('.live-reasoning-body').text().startsWith('…')).toBe(false)
   })
 
-  it('shows the insert arrow for Hermes and one-shot coding agents', async () => {
+  it('shows the insert arrow for AFY Studio and one-shot coding agents', async () => {
     const chatStore = useChatStore()
     const session = makeSession([])
     session.source = 'cli'

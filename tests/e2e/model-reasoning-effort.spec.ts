@@ -64,7 +64,7 @@ async function chooseDraftMax(page: import('@playwright/test').Page) {
   await expect(page.locator('.new-chat-page')).toBeVisible()
 }
 
-for (const agent of ['Ekko', 'Hermes', 'Codex']) test(`${agent} new-chat forwards its selected reasoning effort on the first send`, async ({ page }) => {
+for (const agent of ['Ekko', 'AFY Studio', 'Codex']) test(`${agent} new-chat forwards its selected reasoning effort on the first send`, async ({ page }) => {
   await authenticate(page, TEST_ACCESS_KEY, 'research')
   const api = await mockHermesApi(page, { modelGroups: draftGroups })
   await mockChatSocket(page)
@@ -120,7 +120,7 @@ test('new-chat resets unsupported effort on a model switch and preserves the ori
   await mockChatSocket(page)
   await page.goto('/#/hermes/chat')
   await page.getByRole('button', { name: 'New Chat', exact: true }).click()
-  await selectNewChatAgent(page, 'Hermes')
+  await selectNewChatAgent(page, 'AFY Studio')
   await chooseDraftMax(page)
   const draft = page.locator('.new-chat-page')
   await draft.locator('.input-model-button').click()

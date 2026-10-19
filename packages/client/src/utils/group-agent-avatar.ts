@@ -2,7 +2,7 @@ import type { ChatMessage, RoomAgent } from '@/api/studio/group-chat'
 import type { ProfileAvatar } from '@/api/hermes/profiles'
 
 const DEFAULT_AGENT_ICONS: Record<RoomAgent['agent'], string> = {
-    hermes: '/coding-agents/hermes.png',
+    hermes: '/logo.png',
     ekko: '/coding-agents/ekko-agent.png',
     codex: '/coding-agents/codex-openai.png',
     claude: '/coding-agents/claude-code.svg',

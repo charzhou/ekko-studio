@@ -27,7 +27,7 @@ import {
   stopWebUiServer,
 } from './webui-server'
 import { bundledNode, desktopIcon, desktopLinuxTrayIcon, desktopMacTrayIcon, desktopRuntimeVersion, desktopWindowsTrayIcon, runtimeStorageRoot, webuiDir, webUiHome } from './paths'
-import { cancelDesktopUpdateDownload, checkForDesktopUpdates, downloadDesktopUpdate, getDesktopUpdateState, initAutoUpdater, installDesktopUpdate } from './updater'
+import { cancelDesktopUpdateDownload, downloadDesktopUpdate, getDesktopUpdateState, installDesktopUpdate } from './updater'
 import { DESKTOP_UPDATE_STATE_CHANNEL, type DesktopUpdateState } from './updater-types'
 import { t } from './desktop-i18n'
 import { resetDesktopDefaultLogin } from './desktop-login-reset'
@@ -41,14 +41,12 @@ import { screenshotEnvironment } from './screenshot-platform'
 import { registerComputerUsePermissionsIpc } from './computer-use-permissions'
 import { groupChatAgentLinkPopupResponse } from './group-chat-agent-popup'
 import { isTrustedDesktopAppUrl, normalizeExternalHttpUrl } from './window-open-policy'
-import { desktopPreloadArguments, remoteReadyTimeoutMs, resolveRemoteServerUrl, waitForRemoteServerReady } from './remote-server'
+import { desktopPreloadArguments } from './remote-server'
 import {
-  ensureDesktopRuntime,
   isDesktopRuntimeReady,
   migratePendingRuntimeRoot,
   repairUpdatedDesktopRuntimeLaunchers,
   writeActiveRuntimeVersion,
-  type RuntimeDownloadSource,
   type RuntimeProgress,
 } from './runtime-manager'
 import { BrowserManager } from './browser/browser-manager'
@@ -84,9 +82,8 @@ let petWindow: BrowserWindow | null = null
 let petWindowLoadPromise: Promise<void> | null = null
 const chatWindows = new Map<string, BrowserWindow>()
 let serverUrl: string | null = null
-// Resolved once at startup so createWindow can flag remote mode into the main
-// window's preload; bootstrap() re-resolves it on every (re)start attempt.
-let activeRemoteServerUrl: string | null = resolveRemoteServerUrl()
+// Remote settings from older installations are ignored by this local edition.
+const activeRemoteServerUrl: string | null = null
 let tray: Tray | null = null
 let appShutdownPromise: Promise<void> | null = null
 let isBootstrapping = false
@@ -458,14 +455,6 @@ function updateTrayMenu() {
       },
     },
     {
-      label: t('tray.checkForUpdates'),
-      click: () => {
-        checkForDesktopUpdates(true).catch(err => {
-          console.error('[tray] update check failed:', err)
-        })
-      },
-    },
-    {
       label: isResettingLogin ? t('loginReset.resetting') : t('tray.resetLogin'),
       enabled: !isResettingLogin && !activeRemoteServerUrl && (!isBootstrapping || !!serverUrl),
       click: () => {
@@ -515,7 +504,7 @@ function createTray() {
         quality: 'best',
       })
   tray = new Tray(icon)
-  tray.setToolTip('Ekko Studio')
+  tray.setToolTip('AFY Studio')
   tray.on('click', () => {
     showMainWindow()
     updateTrayMenu()
@@ -529,7 +518,7 @@ async function createWindow(): Promise<void> {
     height: 820,
     minWidth: 769,
     minHeight: 600,
-    title: 'Ekko Studio',
+    title: 'AFY Studio',
     backgroundColor: '#1a1a1a',
     autoHideMenuBar: true,
     show: false,
@@ -616,7 +605,7 @@ async function createWindow(): Promise<void> {
   if (serverUrl) {
     await mainWindow.loadURL(mainRouteUrl() || serverUrl)
   } else {
-    await mainWindow.loadURL(splashHtml(t('runtime.checking')))
+    await mainWindow.loadURL(splashHtml(t('desktop.startingLocalServices')))
   }
   updateTrayMenu()
 }
@@ -650,7 +639,7 @@ async function openChatWindow(sessionIdInput: unknown, profileInput?: unknown): 
     height: 760,
     minWidth: 620,
     minHeight: 480,
-    title: 'Ekko Studio',
+    title: 'AFY Studio',
     backgroundColor: '#1a1a1a',
     autoHideMenuBar: true,
     show: false,
@@ -775,7 +764,7 @@ function installMicrophonePermissionHandler() {
 function splashHtml(label = t('desktop.startingLocalServices')): string {
   const startingLabel = escapeHtml(label)
   const pageBackground = process.platform === 'win32' ? 'transparent' : '#1a1a1a'
-  const html = `<!doctype html><html><head><meta charset="utf-8"><title>Ekko Studio</title>
+  const html = `<!doctype html><html><head><meta charset="utf-8"><title>AFY Studio</title>
 <style>
   html,body{margin:0;height:100%;background:${pageBackground};color:#e5e5e5;font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif;-webkit-app-region:drag;}
   .surface{height:100%;background:#1a1a1a}
@@ -792,7 +781,7 @@ function splashHtml(label = t('desktop.startingLocalServices')): string {
   @keyframes progress{0%{transform:translateX(-110%)}100%{transform:translateX(360%)}}
   h1{font-weight:500;margin:0;font-size:18px}
 </style></head><body><main class="surface"><div class="wrap">
-<h1>Ekko Studio</h1>
+<h1>AFY Studio</h1>
 <div class="row"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>
 <div id="label" class="label">${startingLabel}</div>
 <div class="progress"><div id="bar" class="bar indeterminate"></div></div>
@@ -823,95 +812,6 @@ function escapeHtml(value: string): string {
     '"': '&quot;',
     "'": '&#39;',
   }[char] || char))
-}
-
-function resolveRuntimeSourceLogo(): string {
-  const candidates = [
-    join(webuiDir(), 'dist', 'client', 'logo.png'),
-    join(webuiDir(), 'packages', 'client', 'public', 'logo.png'),
-    join(webuiDir(), 'logo.png'),
-    desktopIcon(),
-  ]
-  return candidates.find(candidate => existsSync(candidate)) || desktopIcon()
-}
-
-function runtimeSourceLogoDataUri(): string {
-  const logoPath = resolveRuntimeSourceLogo()
-  try {
-    const image = nativeImage.createFromPath(logoPath)
-    if (image.isEmpty()) return ''
-    return image.resize({ width: 68, height: 68, quality: 'best' }).toDataURL()
-  } catch {
-    return ''
-  }
-}
-
-function runtimeSourceHtml(errorMessage?: string): string {
-  const safeError = errorMessage ? escapeHtml(errorMessage) : ''
-  const logoUrl = runtimeSourceLogoDataUri()
-  const pageBackground = process.platform === 'win32' ? 'transparent' : '#191919'
-  const errorBlock = safeError
-    ? `<section class="error" aria-live="polite">
-        <div class="error-title">${escapeHtml(t('desktop.downloadFailed'))}</div>
-        <pre>${safeError}</pre>
-       </section>`
-    : ''
-  const html = `<!doctype html><html><head><meta charset="utf-8"><title>Ekko Studio</title>
-<style>
-  :root{color-scheme:dark}
-  *{box-sizing:border-box}
-  html,body{margin:0;width:100%;height:100%;background:${pageBackground};color:#f1f1f1;font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif;}
-  body{min-height:100%;-webkit-app-region:drag;}
-  .surface{width:100%;height:100%;display:grid;place-items:center;padding:32px;background:#191919}
-  .wrap{width:min(720px,100%);display:flex;flex-direction:column;align-items:center;gap:22px;text-align:center}
-  .brand{display:flex;align-items:center;gap:10px;color:#f6f6f6}
-  .mark{width:34px;height:34px;border-radius:8px;object-fit:contain;display:block}
-  h1{font-weight:560;margin:0;font-size:22px;line-height:1.25}
-  .label{max-width:520px;font-size:14px;line-height:1.6;color:#b9b9b9;margin:0}
-  .actions{width:100%;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
-  button{min-height:86px;border:1px solid #4c4c4c;border-radius:8px;background:#242424;color:#f2f2f2;cursor:pointer;padding:16px;text-align:left;display:flex;flex-direction:column;gap:7px;transition:background .14s ease,border-color .14s ease,transform .14s ease;-webkit-app-region:no-drag}
-  button:hover{background:#2d2d2d;border-color:#747474;transform:translateY(-1px)}
-  button:active{transform:translateY(0)}
-  button:focus-visible{outline:2px solid #dcdcdc;outline-offset:3px}
-  .button-title{font-size:15px;font-weight:650;line-height:1.2}
-  .button-detail{font-size:12px;line-height:1.45;color:#aaaaaa}
-  .error{width:100%;text-align:left;background:#241b1b;border:1px solid #6b3939;border-radius:8px;padding:14px}
-  .error-title{font-size:13px;font-weight:650;color:#ffc3c3;margin-bottom:8px}
-  pre{width:100%;max-height:180px;overflow:auto;white-space:pre-wrap;margin:0;color:#ffaaaa;font:12px/1.5 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;-webkit-app-region:no-drag}
-  @media (max-width:560px){
-    .surface{padding:24px}
-    .actions{grid-template-columns:1fr}
-    button{min-height:78px}
-  }
-</style></head><body><main class="surface"><div class="wrap">
-<div class="brand">${logoUrl ? `<img class="mark" src="${logoUrl}" alt="Ekko Studio">` : ''}<h1>Ekko Studio</h1></div>
-<p class="label">${escapeHtml(t('desktop.selectRuntimeSource'))}</p>
-${errorBlock}
-<div class="actions">
-  <button id="cf">
-    <span class="button-title">${escapeHtml(t('desktop.downloadCloudflareTitle'))}</span>
-    <span class="button-detail">${escapeHtml(t('desktop.downloadCloudflareDetail'))}</span>
-  </button>
-  <button id="github">
-    <span class="button-title">${escapeHtml(t('desktop.downloadGithubTitle'))}</span>
-    <span class="button-detail">${escapeHtml(t('desktop.downloadGithubDetail'))}</span>
-  </button>
-</div>
-<script>
-  document.getElementById('cf')?.addEventListener('click', () => {
-    window.hermesDesktop?.retryBootstrap?.('cf')
-  })
-  document.getElementById('github')?.addEventListener('click', () => {
-    window.hermesDesktop?.retryBootstrap?.('github')
-  })
-</script>
-</div></main></body></html>`
-  return 'data:text/html;charset=utf-8,' + encodeURIComponent(html)
-}
-
-function envRuntimeDownloadSource(): RuntimeDownloadSource | undefined {
-  const source = process.env.HERMES_DESKTOP_RUNTIME_SOURCE?.trim().toLowerCase()
-  return source === 'cf' || source === 'github' ? source : undefined
 }
 
 function formatBytes(bytes: number): string {
@@ -972,7 +872,7 @@ async function installPackagedCommandShims(): Promise<void> {
   for (const result of results) {
     if (result.status === 'rejected') {
       console.warn(
-        `[cli-shim] failed to install Ekko Studio command: `
+        `[cli-shim] failed to install AFY Studio command: `
         + `${result.reason instanceof Error ? result.reason.message : String(result.reason)}`,
       )
       continue
@@ -983,33 +883,9 @@ async function installPackagedCommandShims(): Promise<void> {
   }
 }
 
-async function bootstrap(source?: RuntimeDownloadSource) {
+async function bootstrap() {
   if (isBootstrapping) return
   isBootstrapping = true
-
-  const remoteUrl = resolveRemoteServerUrl()
-  activeRemoteServerUrl = remoteUrl
-  if (remoteUrl) {
-    // Remote mode: the Web UI is served by an external deployment (for
-    // example a Docker container). Skip all local runtime and server
-    // bootstrap work and point the windows straight at it.
-    console.log(`[desktop] remote Web UI mode: ${remoteUrl}`)
-    try {
-      updateSplash({ stage: 'resolve', message: t('desktop.connectingRemoteServices') })
-      await waitForRemoteServerReady(remoteUrl, remoteReadyTimeoutMs())
-      serverUrl = remoteUrl
-      updateTrayMenu()
-      if (mainWindow) await mainWindow.loadURL(mainRouteUrl() || remoteUrl)
-      await loadPetWindowRoute()
-    } catch (err) {
-      console.error(`[desktop] failed to connect to the remote Web UI at ${remoteUrl}:`, err)
-      serverUrl = null
-      await loadServiceFailurePage(err, t('desktop.failedConnectRemote'))
-    } finally {
-      isBootstrapping = false
-    }
-    return
-  }
 
   try {
     const legacyMigration = await migratePendingLegacyWindowsData()
@@ -1020,28 +896,13 @@ async function bootstrap(source?: RuntimeDownloadSource) {
     }
     await migratePendingRuntimeRoot(updateSplash)
     repairUpdatedDesktopRuntimeLaunchers()
-    const selectedSource = source || envRuntimeDownloadSource()
-    const runtimeUrlOverride = !!process.env.HERMES_DESKTOP_RUNTIME_URL?.trim()
-    const manifestOverride = !!process.env.HERMES_DESKTOP_RUNTIME_MANIFEST_URL?.trim()
-    const forceUpdate = !!process.env.HERMES_DESKTOP_RUNTIME_FORCE_UPDATE
-    const runtimeReady = isDesktopRuntimeReady()
-    const needsRuntimeWork = !runtimeReady || forceUpdate || runtimeUrlOverride || manifestOverride
-    const explicitRuntimeRequest = !!selectedSource || forceUpdate || runtimeUrlOverride || manifestOverride
-
-    // Runtime setup is managed in Studio now. A normal desktop launch must
-    // reach the Web UI first so it can detect an existing CLI before offering
-    // the Runtime manager. Preserve explicit automation overrides for builds
-    // and unattended installations.
-    if (needsRuntimeWork && explicitRuntimeRequest) {
-      await ensureDesktopRuntime(updateSplash, selectedSource)
-    }
     if (isDesktopRuntimeReady()) {
       writeActiveRuntimeVersion()
       await installPackagedCommandShims()
     }
   } catch (err) {
     console.error('Failed to prepare Hermes runtime:', err)
-    // Keep Studio available so Runtime recovery can happen from Agent Manager.
+    // A missing Hermes runtime must not block the built-in AFY agent.
   }
 
   try {
@@ -1424,7 +1285,7 @@ ipcMain.handle('hermes-desktop:notify-completion', (_event, payload?: { title?: 
 
   const title = typeof payload?.title === 'string' && payload.title.trim()
     ? payload.title.trim()
-    : 'Ekko Studio'
+    : 'AFY Studio'
   const body = typeof payload?.body === 'string' ? payload.body.trim().slice(0, 240) : ''
   const icon = resolveNotificationIcon(payload?.icon)
   const clickUrl = safeNotificationClickUrl(payload?.clickUrl)
@@ -1459,14 +1320,13 @@ ipcMain.handle('hermes-desktop:notify-completion', (_event, payload?: { title?: 
   notification.show()
   return true
 })
-ipcMain.handle('hermes-desktop:retry-bootstrap', async (_event, source?: RuntimeDownloadSource) => {
+ipcMain.handle('hermes-desktop:retry-bootstrap', async () => {
   if (serverUrl) {
     await mainWindow?.loadURL(mainRouteUrl() || serverUrl)
     return
   }
-  const selectedSource = source === 'cf' || source === 'github' ? source : undefined
-  await mainWindow?.loadURL(splashHtml(t('runtime.downloading')))
-  await bootstrap(selectedSource)
+  await mainWindow?.loadURL(splashHtml(t('desktop.startingLocalServices')))
+  await bootstrap()
 })
 
 function runDesktopApp() {
@@ -1523,16 +1383,6 @@ function runDesktopApp() {
       console.error('[desktop-browser] failed to initialize:', error)
     })
     void bootstrap()
-    initAutoUpdater({
-      beforeQuitAndInstall: prepareAppShutdown,
-      onInstallFailure: async () => {
-        await prepareAppShutdown()
-        app.relaunch()
-        appLifecycle.finalizeExit(0)
-      },
-      onStateChange: broadcastDesktopUpdateState,
-      onShowProgress: showMainWindow,
-    })
     app.on('activate', () => {
       if (!mainWindow || mainWindow.isDestroyed()) {
         void createWindow()
@@ -1542,7 +1392,7 @@ function runDesktopApp() {
     })
   }).catch(error => {
     console.error('[desktop] failed during Electron startup:', error)
-    dialog.showErrorBox('Ekko Studio', String(error instanceof Error ? error.message : error))
+    dialog.showErrorBox('AFY Studio', String(error instanceof Error ? error.message : error))
     quitApp()
   })
 

@@ -92,6 +92,7 @@ class BridgeServer:
                 source,
                 reasoning_effort,
                 background_delegation_enabled,
+                req.get("summary_only") is True,
             )
             if req.get("wait"):
                 timeout = float(req.get("timeout", 0) or 0)

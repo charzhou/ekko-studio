@@ -336,8 +336,8 @@ describe('media controller', () => {
 
     expect(ctx.status).toBe(401)
     expect(ctx.body).toEqual({
-      error: 'Missing missing-images provider in profile "default" config.yaml.',
-      code: 'missing_apikey_image_provider',
+      error: 'Configure an image provider in profile "default" before generating images.',
+      code: 'missing_image_provider',
     })
   })
 

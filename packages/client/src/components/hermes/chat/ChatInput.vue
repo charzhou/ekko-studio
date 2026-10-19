@@ -1046,7 +1046,7 @@ async function handleSend() {
       submitting.value = false
     }
   } else {
-    chatStore.sendMessage(text, files)
+    if (await chatStore.sendMessage(text, files) === false) return
   }
   inputText.value = ''
   saveDraftForActiveSession('')

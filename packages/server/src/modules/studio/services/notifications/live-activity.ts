@@ -1,3 +1,4 @@
+import { OEM_FEATURES } from '../../public/oem'
 import { readAppConfig } from '../config/app-config'
 import { getLiveActivityUsage } from '../../repositories/live-activity-usage'
 import { notificationPreview } from './notification-preview'
@@ -59,9 +60,9 @@ function title(event: BusinessEvent): string {
     const saved = getSession(id)
     const preview = getSessionNotificationPreview(id)
     return notificationPreview({ title: saved?.title || preview?.title }, false).title
-      || bounded(event.chat?.task_plan?.explanation, 40) || 'Ekko Studio 任务' 
+      || bounded(event.chat?.task_plan?.explanation, 40) || 'AFY Studio 任务'
   }
-  return bounded((event.payload.display as Record<string, unknown> | undefined)?.title, 40) || 'Ekko Studio 任务'
+  return bounded((event.payload.display as Record<string, unknown> | undefined)?.title, 40) || 'AFY Studio 任务'
 }
 function ref(event: BusinessEvent, destination: string): string {
   return createHash('sha256').update(`${destination}\0${runKind(event)}\0${subjectId(event)}\0${event.subject.run_id || event.chat?.task_plan?.run_id || event.chat?.task_plan?.plan_id || event.subject.plan_id || event.id}`).digest('hex').slice(0, 32)
@@ -124,7 +125,7 @@ export function createLiveActivityConsumer(send: typeof fetch = (...args) => fet
     const now = Math.floor(Date.now() / 1000)
     const body: Record<string, unknown> = { schema_version: 1, event_id: randomUUID(), event: action,
       destination_id: device.destination_id, activity_ref: state.activity_ref, revision: state.revision,
-      occurred_at: now, expires_at: now + (action === 'end' ? 600 : 120), content_state: event.type === 'chat.push.disabled' ? { title: 'Ekko Studio', status: 'cancelled', currentStep: '', completedSteps: 0, totalSteps: 0 } : { ...content(event, state, action === 'end'), ...displayFields(event, registration, state) } }
+      occurred_at: now, expires_at: now + (action === 'end' ? 600 : 120), content_state: event.type === 'chat.push.disabled' ? { title: 'AFY Studio', status: 'cancelled', currentStep: '', completedSteps: 0, totalSteps: 0 } : { ...content(event, state, action === 'end'), ...displayFields(event, registration, state) } }
     // Supported gateway v1 extension; an explicit false keeps old gateways compatible.
     // Business event time, not dispatch/heartbeat time: heartbeats cannot steal priority.
     if ((await readAppConfig()).liveActivityRelevanceEnabled !== false) {
@@ -176,6 +177,7 @@ export function createLiveActivityConsumer(send: typeof fetch = (...args) => fet
     }
   }
   const consume = async (event: BusinessEvent, heartbeat = false, targetConnectionId?: number): Promise<void> => {
+    if (!OEM_FEATURES.cloudServices) return
     const plan = event.type.endsWith('.plan.updated') ? event.chat?.task_plan : null
     if (!plan && !terminal(event) && !event.type.includes('approval.requested') && !event.type.includes('clarification.requested')) return
     if (!subjectId(event) || event.payload.replayed === true || event.payload.restored === true) return

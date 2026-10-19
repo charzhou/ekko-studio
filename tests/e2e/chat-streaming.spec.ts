@@ -77,18 +77,18 @@ test('sends a chat run and renders streamed Socket.IO response events', async ({
     const socket = (window as any).__PW_CHAT_SOCKET__.latest
     socket.__trigger('run.started', { event: 'run.started', session_id: sid, run_id: 'run-1' })
     socket.__trigger('message.delta', { event: 'message.delta', session_id: sid, run_id: 'run-1', delta: 'Streaming ' })
-    socket.__trigger('message.delta', { event: 'message.delta', session_id: sid, run_id: 'run-1', delta: 'answer from Hermes' })
+    socket.__trigger('message.delta', { event: 'message.delta', session_id: sid, run_id: 'run-1', delta: 'answer from AFY Studio' })
     socket.__trigger('run.completed', {
       event: 'run.completed',
       session_id: sid,
       run_id: 'run-1',
-      output: 'Streaming answer from Hermes',
+      output: 'Streaming answer from AFY Studio',
       inputTokens: 11,
       outputTokens: 7,
     })
   }, run.session_id)
 
-  await expect(page.getByText('Streaming answer from Hermes')).toBeVisible()
+  await expect(page.getByText('Streaming answer from AFY Studio')).toBeVisible()
   await expect(page.getByRole('button', { name: 'Stop' })).toHaveCount(0)
   expect(api.unexpectedRequests).toEqual([])
 })
@@ -182,7 +182,7 @@ test('freezes the current reasoning between the thinking animation and its tool 
 
   await expect(page.locator('.streaming-indicator .thinking-status')).toBeVisible()
   const thinkingAvatar = page.locator('.streaming-indicator .thinking-avatar')
-  await expect(thinkingAvatar).toHaveAttribute('src', '/coding-agents/hermes.png')
+  await expect(thinkingAvatar).toHaveAttribute('src', '/logo.png')
   await expect(thinkingAvatar).toHaveCSS('background-color', 'rgb(255, 255, 255)')
   await expect(thinkingAvatar).toHaveCSS('object-fit', 'contain')
 

@@ -10,85 +10,31 @@ async function openDraft(page: Page, mobile = false) {
   return page.locator('.new-chat-page')
 }
 
-for (const mobile of [false, true]) test(`new chat remembers the configured form on reopen, refresh and after sending (${mobile ? 'mobile' : 'desktop'})`, async ({ page }) => {
-  await page.setViewportSize(mobile ? { width: 390, height: 844 } : { width: 1280, height: 900 })
+for (const mobile of [false, true]) test(`legacy form preferences open and send as AFY Studio (${mobile ? 'mobile' : 'desktop'})`, async ({ page }) => {
+  if (mobile) await page.setViewportSize({ width: 390, height: 844 })
   await authenticate(page, TEST_ACCESS_KEY, 'research')
-  await page.addInitScript(() => localStorage.setItem('hermes_new_chat_agent_v1', 'dsh'))
-  const api = await mockHermesApi(page, {
-    sessionCategories: [{ id: 9, name: 'Work' }],
-    modelGroups: [TEST_MODEL_GROUP, { provider: 'other', label: 'Other Provider', models: ['other-model'] }],
-  })
+  await page.addInitScript(key => localStorage.setItem(key, JSON.stringify({
+    agent: 'dsh', mode: 'global', profile: 'research', provider: 'test-provider', model: 'test-model',
+    categoryId: 9, workspace: '/workspace/Keep', agentPreset: 'minimal', reasoningEffort: 'high',
+  })), storageKey)
+  const api = await mockHermesApi(page, { sessionCategories: [{ id: 9, name: 'Work' }] })
   await mockChatSocket(page)
   await page.goto('/#/hermes/chat')
   let draft = await openDraft(page, mobile)
-  await draft.getByRole('button', { name: 'Chat settings', exact: true }).click()
-  const settings = page.getByRole('dialog', { name: 'Chat settings', exact: true })
-  const field = (name: string) => settings.locator('.new-chat-field').filter({ hasText: new RegExp(`^${name}`) })
-  await field('Profiles').locator('.n-base-selection').click()
-  await page.locator('.n-base-select-option:visible').filter({ hasText: /^default$/ }).click()
-  await settings.getByRole('button', { name: 'Close', exact: true }).click()
-  await draft.getByRole('button', { name: 'Category', exact: true }).click()
-  await page.getByRole('dialog', { name: 'Category', exact: true }).locator('.n-base-selection').click()
-  await page.locator('.n-base-select-option:visible').filter({ hasText: /^Work$/ }).click()
-  await page.keyboard.press('Escape')
-  await draft.locator('.input-model-button').click()
-  const models = page.locator('.model-cascader:visible')
-  await models.locator('.model-cascader-provider').filter({ hasText: 'Other Provider' }).click()
-  await models.locator('.model-cascader-item').filter({ hasText: 'other-model' }).click()
-  const protocol = page.getByRole('dialog').filter({ hasText: 'Protocol' })
-  await protocol.locator('.n-base-selection').click()
-  await page.locator('.n-base-select-option:visible').filter({ hasText: /^Anthropic Messages/ }).click()
-  await protocol.getByRole('button', { name: 'Confirm', exact: true }).click()
-  await draft.getByRole('button', { name: 'Chat settings', exact: true }).click()
-  await field('Base URL').locator('input').fill('https://other.invalid/v1')
-  await field('API Key').locator('input').fill('tab-only-credential')
-  await settings.getByRole('button', { name: 'Close', exact: true }).click()
-  await draft.getByRole('button', { name: 'Workspace', exact: true }).click()
-  const workspace = page.getByRole('dialog').filter({ hasText: 'Set Session Workspace' })
-  await workspace.locator('.folder-picker').getByRole('textbox').fill('/workspace/MyProject')
-  await workspace.getByRole('button', { name: 'OK', exact: true }).click()
-  await draft.getByTestId('dsh-session-preset').getByRole('button').click()
-  await page.locator('.n-dropdown-option:visible').filter({ hasText: /^Minimal mode/ }).click()
-  await draft.locator('.reasoning-effort-button').click()
-  await page.getByRole('slider').focus()
-  await page.keyboard.press('Home')
-  for (let i = 0; i < 5; i++) await page.keyboard.press('ArrowRight')
-  await page.keyboard.press('Escape')
-  await expect(draft.locator('.reasoning-effort-button')).toHaveAttribute('aria-label', /High/)
-  await expect.poll(() => page.evaluate(key => JSON.parse(localStorage.getItem(key) || '{}'), storageKey)).toMatchObject({
-    agent: 'dsh', mode: 'scoped', profile: 'default', provider: 'other', model: 'other-model', categoryId: 9,
-    workspace: '/workspace/MyProject', apiMode: 'anthropic_messages', agentPreset: 'minimal', reasoningEffort: 'high',
-  })
-  expect(await page.evaluate(key => localStorage.getItem(key), storageKey)).not.toContain('tab-only-credential')
-
+  await expect(draft.locator('.agent-card.active')).toHaveAttribute('data-agent', 'hermes')
+  await expect(draft.getByTestId('dsh-session-preset')).toHaveCount(0)
+  await expect(draft.getByRole('radio', { name: 'Global', exact: true })).toHaveCount(0)
+  await expect(draft.getByRole('button', { name: 'Workspace', exact: true })).toHaveAttribute('title', '/workspace/Keep')
+  await expect(draft.locator('.input-model-button')).toContainText('test-model')
   await draft.locator('textarea').focus()
   await page.keyboard.press('Escape')
   draft = await openDraft(page, mobile)
-  await expect(draft.getByTestId('dsh-session-preset').getByRole('button')).toHaveAttribute('data-preset', 'minimal')
-  await expect(draft.locator('.input-model-button')).toContainText('other-model')
-  await page.reload()
-  draft = await openDraft(page, mobile)
-  await expect(draft.locator('.input-model-button')).toContainText('other-model')
-  await expect(draft.locator('.reasoning-effort-button')).toHaveAttribute('aria-label', /High/)
-  await expect(draft.getByRole('button', { name: 'Workspace', exact: true })).toHaveAttribute('title', '/workspace/MyProject')
-  await expect(draft.locator('textarea')).toHaveValue('')
-  await draft.getByRole('button', { name: 'Chat settings', exact: true }).click()
-  await expect(field('Profiles')).toContainText('default')
-  await expect(draft.getByRole('button', { name: 'Category', exact: true })).toHaveAttribute('title', 'Category: Work')
-  await expect(field('Protocol')).toContainText('Anthropic Messages')
-  await expect(field('Base URL').locator('input')).toHaveValue('https://other.invalid/v1')
-  await expect(field('API Key').locator('input')).toHaveValue('tab-only-credential')
-  await settings.getByRole('button', { name: 'Close', exact: true }).click()
+  await expect(draft.locator('.agent-card.active')).toHaveAttribute('data-agent', 'hermes')
   await draft.locator('textarea').fill('Use my remembered form')
   await draft.getByRole('button', { name: 'Send', exact: true }).click()
   await expect.poll(() => page.evaluate(() => (window as any).__PW_CHAT_SOCKET__?.emitted?.find((event: any) => event.event === 'run')?.payload)).toMatchObject({
-    profile: 'default', coding_agent_id: 'dsh', provider: 'other', model: 'other-model', category_id: 9,
-    workspace: '/workspace/MyProject', apiMode: 'anthropic_messages', agent_preset: 'minimal', reasoning_effort: 'high',
-    baseUrl: 'https://other.invalid/v1', apiKey: 'tab-only-credential',
+    source: 'cli', profile: 'research', provider: 'test-provider', model: 'test-model', category_id: 9, workspace: '/workspace/Keep', reasoning_effort: 'high',
   })
-  draft = await openDraft(page, mobile)
-  await expect(draft.locator('.input-model-button')).toContainText('other-model')
-  await expect(draft.getByTestId('dsh-session-preset').getByRole('button')).toHaveAttribute('data-preset', 'minimal')
   expect(api.unexpectedRequests).toEqual([])
 })
 
@@ -96,14 +42,15 @@ test('restoring removed options falls back without losing valid form choices', a
   await authenticate(page, TEST_ACCESS_KEY, 'research')
   await page.addInitScript(key => localStorage.setItem(key, JSON.stringify({
     agent: 'dsh', mode: 'scoped', profile: 'removed-profile', provider: 'removed-provider', model: 'removed-model',
-    categoryId: 999, agentPreset: 'removed-mode', workspace: '/workspace/Keep', apiMode: 'anthropic_messages',
+    categoryId: 999, agentPreset: 'removed-mode', workspace: '/workspace/Keep',
   })), storageKey)
   await mockHermesApi(page)
   await mockChatSocket(page)
   await page.goto('/#/hermes/chat')
   const draft = await openDraft(page)
+  await expect(draft.locator('.agent-card.active')).toHaveAttribute('data-agent', 'hermes')
   await expect(draft.locator('.input-model-button')).toContainText('test-model')
-  await expect(draft.getByTestId('dsh-session-preset').getByRole('button')).toHaveAttribute('data-preset', 'standard')
+  await expect(draft.getByTestId('dsh-session-preset')).toHaveCount(0)
   await expect(draft.getByRole('button', { name: 'Workspace', exact: true })).toHaveAttribute('title', '/workspace/Keep')
   await draft.getByRole('button', { name: 'Chat settings', exact: true }).click()
   const settings = page.getByRole('dialog', { name: 'Chat settings', exact: true })
@@ -114,28 +61,7 @@ test('restoring removed options falls back without losing valid form choices', a
   await expect(draft.getByRole('button', { name: 'Send', exact: true })).toBeEnabled()
 })
 
-test('global mode is remembered without requiring models or showing a protocol override', async ({ page }) => {
-  await authenticate(page, TEST_ACCESS_KEY, 'research')
-  await page.addInitScript(key => localStorage.setItem(key, JSON.stringify({ agent: 'dsh', mode: 'global', profile: 'research', agentPreset: 'minimal' })), storageKey)
-  await mockHermesApi(page, { modelGroups: [] })
-  await mockChatSocket(page)
-  await page.goto('/#/hermes/chat')
-  await page.getByRole('dialog').filter({ hasText: 'No model provider configured' }).getByRole('button', { name: 'Not now', exact: true }).click()
-  const draft = await openDraft(page)
-  await expect(draft.getByRole('radio', { name: 'Global', exact: true })).toHaveAttribute('aria-checked', 'true')
-  await expect(draft.locator('.input-model-button')).toBeEnabled()
-  await expect(draft.locator('.input-model-button')).toHaveText('Agent default model')
-  await expect(draft.locator('.new-chat-config-hint')).toHaveCount(0)
-  await draft.getByRole('button', { name: 'Chat settings', exact: true }).click()
-  const settings = page.getByRole('dialog', { name: 'Chat settings', exact: true })
-  await expect(draft.getByRole('button', { name: 'Category', exact: true })).toBeVisible()
-  await expect(settings.locator('.new-chat-field').filter({ hasText: /^Protocol/ })).toHaveCount(0)
-  await settings.getByRole('button', { name: 'Close', exact: true }).click()
-  await draft.locator('textarea').fill('Use native configuration')
-  await expect(draft.getByRole('button', { name: 'Send', exact: true })).toBeEnabled()
-})
-
-for (const combination of [false, true]) test(`Hermes restores its last ${combination ? 'combination' : 'custom'} model`, async ({ page }) => {
+for (const combination of [false, true]) test(`AFY Studio restores its last ${combination ? 'combination' : 'custom'} model`, async ({ page }) => {
   const provider = combination ? 'moa' : 'test-provider'
   const model = combination ? 'ensemble' : 'custom-model'
   await authenticate(page, TEST_ACCESS_KEY, 'research')
@@ -153,7 +79,7 @@ for (const combination of [false, true]) test(`Hermes restores its last ${combin
   await expect(draft.getByRole('button', { name: 'Category', exact: true })).toBeVisible()
   await expect(settings.locator('.new-chat-field').filter({ hasText: /^Protocol/ })).toHaveCount(0)
   await settings.getByRole('button', { name: 'Close', exact: true }).click()
-  await draft.locator('textarea').fill('Use my last Hermes model')
+  await draft.locator('textarea').fill('Use my last AFY Studio model')
   await draft.getByRole('button', { name: 'Send', exact: true }).click()
   await expect.poll(() => page.evaluate(() => (window as any).__PW_CHAT_SOCKET__?.emitted?.find((event: any) => event.event === 'run')?.payload)).toMatchObject({ provider, model })
 })

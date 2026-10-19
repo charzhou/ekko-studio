@@ -443,14 +443,15 @@ describe('ChatRunSocket bridge readiness gating', () => {
     })
   })
 
-  it.each(['context', 'usage', 'status', 'compact'])('routes legacy Ekko /%s to built-in commands before queueing', async command => {
+  it.each(['context', 'usage', 'status', 'compact'])('rejects legacy Ekko /%s before commands or queueing', async command => {
     const { ChatRunSocket } = await import('../../packages/server/src/modules/studio/sockets/chat-run')
     const { handlers, io, socket } = makeServerHarness()
     const server = new ChatRunSocket(io as any)
     ;(server as any).sessionMap.set('session-1', { messages: [], isWorking: true, events: [], queue: [] })
     ;(server as any).onConnection(socket)
     await handlers.get('run')?.({ input: `/${command}`, session_id: 'session-1', source: 'coding_agent', coding_agent_id: 'ekko-agent' })
-    expect(handleEkkoCommandMock).toHaveBeenCalledWith(expect.anything(), socket, expect.objectContaining({ agent_id: 'ekko-agent' }), expect.objectContaining({ name: command }), 'default', expect.any(Map), expect.any(Function))
+    expect(socket.emit).toHaveBeenCalledWith('run.failed', expect.objectContaining({ error: 'Only Hermes Agent runs are available in AFY Studio.' }))
+    expect(handleEkkoCommandMock).not.toHaveBeenCalled()
     expect((server as any).sessionMap.get('session-1').queue).toEqual([])
     expect(handleCodingAgentRunMock).not.toHaveBeenCalled()
     expect(handleBridgeRunMock).not.toHaveBeenCalled()
@@ -483,7 +484,7 @@ describe('ChatRunSocket bridge readiness gating', () => {
     }))
   })
 
-  it('routes legacy api_server runs through the bridge path', async () => {
+  it('canonicalizes legacy api_server runs to the Hermes bridge path', async () => {
     const { ChatRunSocket } = await import('../../packages/server/src/modules/studio/sockets/chat-run')
     const { handlers, io, socket } = makeServerHarness()
     const server = new ChatRunSocket(io as any)
@@ -495,7 +496,7 @@ describe('ChatRunSocket bridge readiness gating', () => {
     expect(handleBridgeRunMock).toHaveBeenCalledTimes(1)
     expect(handleBridgeRunMock.mock.calls[0][2]).toEqual(expect.objectContaining({
       input: 'hello',
-      source: 'api_server',
+      source: 'cli',
     }))
     expect(socket.emit).not.toHaveBeenCalledWith('run.failed', expect.anything())
   })
@@ -550,47 +551,24 @@ describe('ChatRunSocket bridge readiness gating', () => {
     })
   })
 
-  it('routes global coding-agent runs through the coding-agent path while preserving session source', async () => {
-    handleCodingAgentRunMock.mockResolvedValueOnce({ runId: 'coding-run-1', messageId: 42 })
+  it('rejects global coding-agent runs before dispatch or peer notification', async () => {
     const { ChatRunSocket } = await import('../../packages/server/src/modules/studio/sockets/chat-run')
     const { handlers, io, socket } = makeServerHarness()
     const server = new ChatRunSocket(io as any)
-
     ;(server as any).onConnection(socket)
     await handlers.get('run')?.({
-      input: 'hello',
-      session_id: 'session-1',
-      source: 'coding_agent',
-      session_source: 'global_agent',
-      coding_agent_id: 'codex',
-      queue_id: 'phone-message-1',
+      input: 'hello', session_id: 'session-1', source: 'coding_agent',
+      session_source: 'global_agent', coding_agent_id: 'codex', queue_id: 'phone-message-1',
     })
-
+    expect(socket.emit).toHaveBeenCalledWith('run.failed', expect.objectContaining({
+      session_id: 'session-1', error: 'Only Hermes Agent runs are available in AFY Studio.',
+    }))
     expect(ensureReadyMock).not.toHaveBeenCalled()
-    expect(handleCodingAgentRunMock).toHaveBeenCalledWith(
-      expect.anything(),
-      socket,
-      expect.objectContaining({
-        source: 'coding_agent',
-        session_source: 'global_agent',
-        coding_agent_id: 'codex',
-      }),
-      'default',
-      expect.any(Map),
-    )
-    expect(socket.to).toHaveBeenCalledWith('session:session-1')
-    expect(socket.to.mock.results[0].value.emit).toHaveBeenCalledWith('run.peer_user_message', {
-      event: 'run.peer_user_message',
-      session_id: 'session-1',
-      message: {
-        id: 'phone-message-1',
-        role: 'user',
-        content: 'hello',
-        timestamp: expect.any(Number),
-        queued: false,
-      },
-    })
+    expect(handleCodingAgentRunMock).not.toHaveBeenCalled()
+    expect(handleEkkoAgentRunMock).not.toHaveBeenCalled()
     expect(handleBridgeRunMock).not.toHaveBeenCalled()
+    expect(socket.to).not.toHaveBeenCalled()
+    expect((server as any).sessionMap.has('session-1')).toBe(false)
   })
 
   it('continues with remaining queued bridge runs when readiness fails before a dequeued run starts', async () => {
@@ -1063,7 +1041,9 @@ describe('ChatRunSocket bridge readiness gating', () => {
 })
 
 
-describe('ChatRunSocket MCP task plan lifecycle', () => {
+// These direct handleRun tests cover retained internal compatibility dispatch;
+// product Socket.IO and runAndWait entry points enforce the Hermes-only policy.
+describe('ChatRunSocket internal MCP task plan compatibility lifecycle', () => {
   it('routes builtin_agent requests through Ekko without requiring the coding-agent field or Hermes', async () => {
     getSessionMock.mockReturnValue(undefined)
     const { ChatRunSocket } = await import('../../packages/server/src/modules/studio/sockets/chat-run')
@@ -1081,7 +1061,7 @@ describe('ChatRunSocket MCP task plan lifecycle', () => {
     expect(ensureReadyMock.mock.calls.length).toBe(readinessCalls)
   })
 
-  it.each(['group_chat', 'workflow'] as const)('routes slash-prefixed Ekko %s tasks to native execution even with a legacy transport', async source => {
+  it.each(['group_chat', 'workflow'] as const)('rejects slash-prefixed legacy Ekko %s sessions before native execution', async source => {
     getSessionMock.mockImplementation((id?: string) => id ? {
       id, profile: 'default', source, agent: 'ekko-agent', provider: 'openai', model: 'gpt-test',
     } : undefined)
@@ -1093,8 +1073,9 @@ describe('ChatRunSocket MCP task plan lifecycle', () => {
     await handlers.get('run')?.({
       session_id: 'session-1', source: 'coding_agent', coding_agent_id: 'ekko-agent', input: '/context',
     })
-    expect(handleEkkoAgentRunMock).toHaveBeenCalledTimes(1)
-    expect((handleEkkoAgentRunMock.mock.calls as any)[0][2]).toMatchObject({ input: '/context', source, coding_agent_id: 'ekko-agent' })
+    expect(handleEkkoAgentRunMock).not.toHaveBeenCalled()
+    expect(socket.emit).toHaveBeenCalledWith('run.failed', expect.objectContaining({ error: 'Only Hermes Agent runs are available in AFY Studio.' }))
+    expect((server as any).sessionMap.has('session-1')).toBe(false)
     expect(socket.emit.mock.calls.some(([event]: any[]) => event === 'session.command')).toBe(false)
   })
 

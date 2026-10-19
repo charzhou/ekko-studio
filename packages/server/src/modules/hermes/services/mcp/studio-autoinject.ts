@@ -266,7 +266,7 @@ async function injectIntoProfile(
           result: {
             profile,
             status: 'skipped',
-            reason: `existing ${name} MCP server is not managed by Hermes Web UI`,
+            reason: `existing ${name} MCP server is not managed by AFY Studio`,
           } satisfies BundledMcpInjectionTargetResult,
         }
       }
@@ -295,7 +295,7 @@ async function injectIntoProfile(
           result: {
             profile,
             status: 'skipped',
-            reason: `existing ${server.name} MCP server is not managed by Hermes Web UI`,
+            reason: `existing ${server.name} MCP server is not managed by AFY Studio`,
           } satisfies BundledMcpInjectionTargetResult,
         }
       }

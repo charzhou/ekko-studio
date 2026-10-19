@@ -38,21 +38,21 @@ describe('API Client', () => {
     mockFetch.mockImplementation(async () => ({ ok: true, json: async () => ({ success: true }) }))
     for (const path of ['/api/hermes/config/providers', '/api/hermes/config/moa', '/api/hermes/auth/copilot/start', '/api/studio/tts/settings/openai']) {
       await request(path, { method: 'PUT', body: '{}' })
-      expect(mockFetch.mock.calls.at(-1)?.[1].headers['X-Hermes-Profile']).toBe('research')
+      expect(mockFetch.mock.calls.at(-1)?.[1].headers['X-AFY Studio-Profile']).toBe('research')
     }
     await request('/api/studio/chat-run/runs', { method: 'POST', body: '{}' })
-    expect(mockFetch.mock.calls.at(-1)?.[1].headers['X-Hermes-Profile']).toBe('default')
+    expect(mockFetch.mock.calls.at(-1)?.[1].headers['X-AFY Studio-Profile']).toBe('default')
     Object.assign(router.currentRoute.value, { name: 'hermes.chat', query: {} })
     await request('/api/hermes/config/moa')
-    expect(mockFetch.mock.calls.at(-1)?.[1].headers['X-Hermes-Profile']).toBe('default')
+    expect(mockFetch.mock.calls.at(-1)?.[1].headers['X-AFY Studio-Profile']).toBe('default')
     expect(localStorage.getItem('hermes_active_profile_name')).toBe('default')
   })
 
   it('preserves an explicit request Profile on the Models page', async () => {
     Object.assign(router.currentRoute.value, { name: 'hermes.models', query: { modelProfile: 'research' } })
     mockFetch.mockResolvedValue({ ok: true, json: async () => ({}) })
-    await request('/api/hermes/config/moa', { headers: { 'X-Hermes-Profile': 'original' } })
-    expect(mockFetch.mock.calls.at(-1)?.[1].headers['X-Hermes-Profile']).toBe('original')
+    await request('/api/hermes/config/moa', { headers: { 'X-AFY Studio-Profile': 'original' } })
+    expect(mockFetch.mock.calls.at(-1)?.[1].headers['X-AFY Studio-Profile']).toBe('original')
   })
 
   it('requests all usage Profiles independently of the global active Profile and combines an explicit Profile with account and today', async () => {
@@ -61,7 +61,7 @@ describe('API Client', () => {
     await fetchUsageStats(30)
     const [allPath, allOptions] = mockFetch.mock.calls.at(-1)!
     expect(new URL(allPath, 'http://local').searchParams.get('profile')).toBe('')
-    expect(allOptions.headers['X-Hermes-Profile']).toBeUndefined()
+    expect(allOptions.headers['X-AFY Studio-Profile']).toBeUndefined()
     await fetchUsageStats(1, { profile: 'research', account: 'unassigned' })
     const [path, options] = mockFetch.mock.calls.at(-1)!
     const params = new URL(path, 'http://local').searchParams
@@ -69,7 +69,7 @@ describe('API Client', () => {
     expect(params.get('account')).toBe('unassigned')
     expect(params.get('period')).toBe('today')
     expect(params.get('time_zone')).toBe(Intl.DateTimeFormat().resolvedOptions().timeZone)
-    expect(options.headers['X-Hermes-Profile']).toBeUndefined()
+    expect(options.headers['X-AFY Studio-Profile']).toBeUndefined()
     expect(localStorage.getItem('hermes_active_profile_name')).toBe('default')
   })
 
@@ -126,7 +126,7 @@ describe('API Client', () => {
       await request('/api/studio/sessions/session-1')
 
       const [, options] = mockFetch.mock.calls[0]
-      expect(options.headers['X-Hermes-Profile']).toBe('default')
+      expect(options.headers['X-AFY Studio-Profile']).toBe('default')
     })
 
     it('does not add the active profile header to profile-wide session collection requests', async () => {
@@ -136,7 +136,7 @@ describe('API Client', () => {
       await request('/api/studio/sessions')
 
       const [, options] = mockFetch.mock.calls[0]
-      expect(options.headers['X-Hermes-Profile']).toBeUndefined()
+      expect(options.headers['X-AFY Studio-Profile']).toBeUndefined()
     })
 
     it('does not add Authorization header when no token', async () => {
@@ -387,7 +387,7 @@ describe('API Client', () => {
       expect(url).toBe('/api/studio/files/upload?path=notes')
       expect(options.method).toBe('POST')
       expect(options.headers.Authorization).toBe('Bearer secret-key')
-      expect(options.headers['X-Hermes-Profile']).toBe('research')
+      expect(options.headers['X-AFY Studio-Profile']).toBe('research')
       expect(options.body).toBeInstanceOf(FormData)
     })
 
@@ -405,7 +405,7 @@ describe('API Client', () => {
       const [url, options] = mockFetch.mock.calls[0]
       expect(url).toBe('/api/studio/files/upload?path=notes&profile=reviewer')
       expect(options.headers.Authorization).toBe('Bearer secret-key')
-      expect(options.headers['X-Hermes-Profile']).toBeUndefined()
+      expect(options.headers['X-AFY Studio-Profile']).toBeUndefined()
     })
 
     it('adds auth and active profile headers when importing skills', async () => {
@@ -424,7 +424,7 @@ describe('API Client', () => {
       expect(url).toBe('/api/hermes/skills/import')
       expect(options.method).toBe('POST')
       expect(options.headers.Authorization).toBe('Bearer secret-key')
-      expect(options.headers['X-Hermes-Profile']).toBe('research')
+      expect(options.headers['X-AFY Studio-Profile']).toBe('research')
       expect(options.body).toBeInstanceOf(FormData)
     })
   })
@@ -472,7 +472,7 @@ describe('API Client', () => {
       const [url, options] = mockFetch.mock.calls[0]
       expect(url).toBe('/api/studio/sessions/batch-delete')
       expect(options.method).toBe('POST')
-      expect(options.headers['X-Hermes-Profile']).toBeUndefined()
+      expect(options.headers['X-AFY Studio-Profile']).toBeUndefined()
       expect(JSON.parse(options.body)).toEqual({
         ids: ['session-default', 'session-travel'],
         sessions: [
@@ -482,7 +482,7 @@ describe('API Client', () => {
       })
     })
 
-    it('sends the profile selector when importing a Hermes session', async () => {
+    it('sends the profile selector when importing a AFY Studio session', async () => {
       mockFetch.mockResolvedValue({
         ok: true,
         status: 200,

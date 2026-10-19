@@ -431,8 +431,8 @@ describe('coding agent resumed session config', () => {
       source: 'coding_agent',
       agent: 'codex',
       agent_session_id: 'agent-session-1',
-      provider: 'fun-codex',
-      model: 'gpt-5.5',
+      provider: 'deepseek',
+      model: 'deepseek-v4-pro',
       api_mode: 'chat_completions',
     })
     readConfigYamlForProfileMock.mockResolvedValue({})
@@ -441,7 +441,7 @@ describe('coding agent resumed session config', () => {
     const { startCodingAgentRun } = await import('../../packages/server/src/bootstrap/coding-agents')
     const result = await startCodingAgentRun('codex', {
       sessionId: 'session-1',
-      baseUrl: 'https://api.apikey.fan/v1',
+      baseUrl: 'https://api.deepseek.com/v1',
       apiKey: 'sk-test',
     })
 

@@ -158,7 +158,7 @@ export function createOpenCodeConfig(host: {
         provider: {
           [OPENCODE_PROVIDER_ID]: {
             npm: '@ai-sdk/openai',
-            name: runtime.provider || 'Ekko Studio',
+            name: runtime.provider || 'AFY Studio',
             options: {
               baseURL: runtime.baseUrl || '',
               apiKey: `{env:${OPENCODE_API_KEY_ENV}}`,

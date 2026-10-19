@@ -3,12 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "type": "commonjs",
-  "description": "Standalone Ekko Agent runtime embedded in Ekko Studio.",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/EKKOLearnAI/ekko-studio.git",
-    "directory": "packages/ekko-agent"
-  },
+  "description": "Local agent runtime embedded in AFY Studio.",
   "engines": {
     "node": ">=23.0.0"
   },

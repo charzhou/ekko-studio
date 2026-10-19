@@ -19,8 +19,8 @@ const packageJson = JSON.parse(readFileSync(join(rootDir, 'package.json'), 'utf-
 const openapi = {
   openapi: '3.0.3',
   info: {
-    title: 'Ekko Studio API',
-    description: 'Ekko Studio API — chat sessions, scheduled jobs, platform channels, model management, skills, memory, logs, file browser, group chat, and terminal.',
+    title: 'AFY Studio API',
+    description: 'AFY Studio API — chat sessions, scheduled jobs, platform channels, model management, skills, memory, logs, file browser, group chat, and terminal.',
     version: packageJson.version,
   },
   servers: [
@@ -62,10 +62,8 @@ const tagMappings = {
   'modules/hermes/routes/minimax-auth.ts': { name: 'MiniMax Auth', description: 'MiniMax OAuth' },
   'modules/hermes/routes/config.ts': { name: 'Config', description: 'Configuration management' },
   'modules/studio/routes/files.ts': { name: 'Studio Files', description: 'Studio profile file browser and editor' },
-  'modules/studio/routes/app-upload.ts': { name: 'Studio Files', description: 'Studio App chunked uploads' },
   'modules/studio/routes/download.ts': { name: 'Studio Files', description: 'Studio file download' },
   'modules/hermes/routes/mcp.ts': { name: 'MCP', description: 'MCP server and tool management' },
-  'modules/hermes/routes/runtime-versions.ts': { name: 'Runtime Versions', description: 'Runtime and Web UI version management' },
   'modules/hermes/routes/legacy-data-migration.ts': { name: 'Data Migration', description: 'One-time legacy Hermes data migration' },
   'modules/hermes/routes/write-gate.ts': { name: 'Write Gate', description: 'Hermes Agent write approval review' },
   'modules/hermes/routes/journey.ts': { name: 'Journey', description: 'Hermes Agent learning journey graph' },
@@ -76,7 +74,6 @@ const tagMappings = {
   'modules/studio/routes/workflows.ts': { name: 'Workflows', description: 'Cross-agent workflow orchestration' },
   'modules/studio/routes/sessions.ts': { name: 'Sessions', description: 'Cross-agent chat session management' },
   'modules/studio/routes/model-api.ts': { name: 'Model API', description: 'OpenAI Responses-compatible inference across configured providers; external usage accounting' },
-  'modules/studio/routes/session-shares.ts': { name: 'Session Shares', description: 'App-bound single-session share tokens, first claim, permissions and revocation' },
   'modules/studio/routes/logs.ts': { name: 'Logs', description: 'Cross-agent log file access' },
   'modules/studio/routes/social-messages.ts': { name: 'Social Messages', description: 'Unified outbound messaging for configured social platforms' },
   'modules/studio/routes/group-chat.ts': { name: 'Group Chat', description: 'Cross-agent group chat management' },
@@ -90,20 +87,18 @@ const tagMappings = {
   'modules/studio/routes/petdex.ts': { name: 'Petdex', description: 'Desktop pet catalog and assets' },
   'modules/studio/routes/pets.ts': { name: 'Pets', description: 'Per-profile desktop pet settings' },
   'modules/studio/routes/health.ts': { name: 'Health', description: 'Health check' },
-  'modules/studio/routes/update.ts': { name: 'Update', description: 'Studio self-update management' },
   'modules/studio/routes/upload.ts': { name: 'Studio Files', description: 'Studio runtime file upload' },
   'modules/studio/routes/auth.ts': { name: 'Auth', description: 'Authentication management' },
-  'modules/studio/routes/app-connections.ts': { name: 'App Connections', description: 'Mobile App authorization and connection management' },
-  'modules/studio/routes/app-relay.ts': { name: 'App Relay', description: 'Mobile App cloud relay route and connection management' },
   'modules/studio/routes/devices.ts': { name: 'Devices', description: 'Device pairing and LAN peer operations' },
-  'modules/studio/routes/mcu-devices.ts': { name: 'MCU Devices', description: 'Microcontroller device management' },
-  'modules/studio/routes/mcu-firmware.ts': { name: 'MCU Firmware', description: 'Microcontroller firmware distribution' },
   'modules/studio/routes/theme.ts': { name: 'Theme', description: 'Per-user appearance settings and background image' },
-  'modules/studio/routes/announcements.ts': { name: 'Announcements', description: 'Published Studio desktop announcements, newest first' },
   'modules/studio/routes/api-docs.ts': { name: 'API Docs', description: 'OpenAPI route catalog' },
   'modules/studio/routes/agent-status.ts': { name: 'Agent Status', description: 'In-memory Agent installation, version, and source status' },
   'modules/coding-agents/routes/agents.ts': { name: 'Coding Agents', description: 'Coding agent installation, config, and runs' },
 }
+
+// Only document route instances composed into the local OEM application.
+const composedRoutes = new Set([...readFileSync(join(serverSourceDir, 'bootstrap/routes.ts'), 'utf8')
+  .matchAll(/app\.use\((\w+)\.routes\(\)/g)].map(match => match[1]))
 
 // Extract route definitions from route files
 function scanRoutes() {
@@ -136,6 +131,7 @@ function scanRouteFile(filePath, tagInfo, paths) {
 
   let match
   while (ctrlRouteRegex && (match = ctrlRouteRegex.exec(content)) !== null) {
+    if (!composedRoutes.has(match[0].slice(0, match[0].indexOf('.')))) continue
     const [, method, path, controllerAlias, controllerMethod] = match
     const controller = controllerContents.get(controllerAlias)
     const controllerSource = controller
@@ -148,6 +144,7 @@ function scanRouteFile(filePath, tagInfo, paths) {
   const inlineRouteRegex = /\w+Routes?\.(get|post|put|delete|patch)\(\s*['"]([^'"]+)['"]\s*,[^\n]*?async\s*\(ctx\)/g
 
   while ((match = inlineRouteRegex.exec(content)) !== null) {
+    if (!composedRoutes.has(match[0].slice(0, match[0].indexOf('.')))) continue
     const [, method, path] = match
     const controllerMethod = generateOperationIdFromPath(path, method)
     addEndpoint(paths, method, path, controllerMethod, tagInfo, content, match.index, extractInlineHandlerSource(content, match.index))
@@ -1071,7 +1068,7 @@ openapi.paths['/api/studio/chat-run/runs'] = {
   post: {
     tags: ['Chat Run'],
     summary: 'Run chat and wait for completion',
-    description: 'Starts a Ekko Studio chat run through the chat-run transport and waits for a terminal result. Use this from HTTP/MCP callers that cannot consume Socket.IO streams.',
+    description: 'Starts a AFY Studio chat run through the chat-run transport and waits for a terminal result. Use this from HTTP/MCP callers that cannot consume Socket.IO streams.',
     operationId: 'runChatOnce',
     security: [{ BearerAuth: [] }],
     requestBody: {
@@ -1101,7 +1098,7 @@ openapi.paths['/api/studio/chat-run/runs'] = {
               },
               profile: {
                 type: 'string',
-                description: 'Ekko Studio profile name. Defaults to the authenticated request profile or default.',
+                description: 'AFY Studio profile name. Defaults to the authenticated request profile or default.',
               },
               provider: {
                 type: 'string',
@@ -1760,7 +1757,7 @@ const themeArchivePreferences = [
 ]
 const themeZipExport = openapi.paths['/api/theme/presets/{id}/export'].get
 themeZipExport.summary = 'Export an owned theme as a ZIP file'
-themeZipExport.description = 'Downloads an ekko-studio-theme version 1 ZIP containing theme.json and the optional background image. Includes the theme name, modes and all global/regional settings; excludes user IDs, server file paths and preset IDs. Legacy device mode/style query values are fallback values only.'
+themeZipExport.description = 'Downloads an AFY Studio theme version 1 ZIP containing theme.json and the optional background image. Includes the theme name, modes and all global/regional settings; excludes user IDs, server file paths and preset IDs. Legacy device mode/style query values are fallback values only.'
 themeZipExport.parameters = [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }, ...themeArchivePreferences]
 themeZipExport.responses = {
   '200': { description: 'Theme ZIP download', content: { 'application/zip': { schema: { type: 'string', format: 'binary' } } } },

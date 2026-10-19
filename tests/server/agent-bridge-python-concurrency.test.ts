@@ -639,8 +639,10 @@ estimated = server.handle({
 
 assert disabled["status"] == "running"
 assert enabled["status"] == "running"
+assert captured[0][-2] is False
+assert captured[1][-2] is None
 assert captured[0][-1] is False
-assert captured[1][-1] is None
+assert captured[1][-1] is False
 assert estimated["session_id"] == "session-estimate-disabled"
 assert captured[2]["background_delegation_enabled"] is False
 `)

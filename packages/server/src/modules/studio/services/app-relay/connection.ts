@@ -1,3 +1,4 @@
+import { OEM_FEATURES } from '../../public/oem'
 import { config } from '../../public/config'
 import { getLanEndpointKind } from '../network/lan-discovery'
 import {
@@ -27,6 +28,7 @@ export function shouldReplaceExistingAppRelayHost(
 }
 
 export async function ensureAppRelayHostClient(requestedRoute?: AppRelayRoute): Promise<AppRelayClient | null> {
+  if (!OEM_FEATURES.cloudServices) return null
   const route = requestedRoute || await getAppRelayRoute()
   if (requestedRoute) await setAppRelayRoute(requestedRoute)
   const relayUrl = appRelayUrlForRoute(route)

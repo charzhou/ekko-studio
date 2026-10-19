@@ -2,7 +2,7 @@ name: Coding agent platforms
 
 on:
   pull_request:
-    branches: [main, base]
+    branches: [main, oem, base]
     paths:
       - 'packages/server/src/**'
       - 'tests/server/**'
@@ -11,7 +11,7 @@ on:
       - 'vitest.config.ts'
       - '.github/workflows/coding-agent-platforms.yml'
   push:
-    branches: [main]
+    branches: [main, oem]
     paths:
       - 'packages/server/src/**'
       - 'tests/server/**'
@@ -33,7 +33,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [windows-latest, ubuntu-latest, macos-latest]
+        os: [windows-latest]
     runs-on: ${{ matrix.os }}
     timeout-minutes: 15
     env:

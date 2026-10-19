@@ -24,7 +24,6 @@ const mockAppStore = vi.hoisted(() => ({
   toggleSidebar: vi.fn(),
   toggleSidebarCollapsed: vi.fn(),
   closeSidebar: vi.fn(),
-  doUpdate: vi.fn(),
   reloadClient: vi.fn(),
 }));
 
@@ -144,8 +143,6 @@ describe("AppSidebar navigation", () => {
     mockAppStore.updating = false;
     mockAppStore.sidebarCollapsed = false;
     mockAppStore.reloadClient.mockClear();
-    mockAppStore.doUpdate.mockReset();
-    mockAppStore.doUpdate.mockResolvedValue(false);
   });
 
   afterEach(() => {
@@ -185,7 +182,7 @@ describe("AppSidebar navigation", () => {
     ).toBeGreaterThan(0);
   });
 
-  it("removes the Hermes entry while hiding Hermes-only tools and device management", () => {
+  it("removes the AFY Studio entry while hiding AFY Studio-only tools and device management", () => {
     localStorage.setItem(
       "hermes_api_key",
       fakeJwt({ sub: "2", role: "admin" }),
@@ -196,7 +193,7 @@ describe("AppSidebar navigation", () => {
       .findAllComponents({ name: "RouteLinkItem" })
       .map((item) => item.text().trim());
 
-    expect(navigationLabels).not.toContain("Hermes");
+    expect(navigationLabels).not.toContain("AFY Studio");
     expect(navigationLabels).not.toContain("sidebar.mcp");
     expect(navigationLabels).not.toContain("sidebar.skills");
     expect(navigationLabels).not.toContain("sidebar.journey");
@@ -207,39 +204,4 @@ describe("AppSidebar navigation", () => {
     expect(wrapper.text()).not.toContain("sidebar.devices");
   });
 
-  it("uses the regular update button to open Docker upgrade guidance", async () => {
-    mockAppStore.isDocker = true;
-    mockAppStore.updateAvailable = true;
-    mockAppStore.latestVersion = "0.6.29";
-    const wrapper = mountSidebar();
-    expect(wrapper.find(".update-btn").exists()).toBe(false);
-    await wrapper.get(".page-sidebar-account-btn").trigger("click");
-    const controls = wrapper.getComponent(SidebarAccountControls);
-
-    const button = controls.get(".update-btn:not(.version-management-btn)");
-    expect(button.classes()).not.toContain("docker-update-btn");
-    expect(button.text()).toContain("sidebar.updateVersion");
-
-    await button.trigger("click");
-
-    expect(mockAppStore.doUpdate).not.toHaveBeenCalled();
-    expect(controls.text()).toContain("sidebar.dockerUpdateGuide");
-  });
-
-  it("keeps the original npm update action outside Docker", async () => {
-    mockAppStore.isDocker = false;
-    mockAppStore.updateAvailable = true;
-    mockAppStore.latestVersion = "0.6.29";
-    const wrapper = mountSidebar();
-    expect(wrapper.find(".update-btn").exists()).toBe(false);
-    await wrapper.get(".page-sidebar-account-btn").trigger("click");
-    const controls = wrapper.getComponent(SidebarAccountControls);
-
-    await controls
-      .get(".update-btn:not(.version-management-btn)")
-      .trigger("click");
-
-    expect(mockAppStore.doUpdate).toHaveBeenCalledOnce();
-    expect(controls.text()).not.toContain("sidebar.dockerUpdateGuide");
-  });
 });

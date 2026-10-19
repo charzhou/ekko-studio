@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it } from 'vitest'
+import { availability, status } from '../../packages/server/src/modules/studio/controllers/agent-status'
 import {
   getAgentAvailabilitySnapshot,
   getAgentStatusSnapshot,
@@ -80,6 +81,18 @@ describe('Agent status registry', () => {
     })
     expect(hermes).not.toHaveProperty('path')
     expect(hermes).not.toHaveProperty('version')
+  })
+
+  it('exposes only Hermes through the OEM status and availability APIs', () => {
+    updateAgentStatus('codex', { installed: true, source: 'user-cli', path: '/usr/local/bin/codex' })
+    updateAgentStatus('hermes', { installed: true, source: 'user-cli', path: '/usr/local/bin/hermes' })
+    const statusCtx = {} as any
+    const availabilityCtx = {} as any
+    status(statusCtx)
+    availability(availabilityCtx)
+    expect(statusCtx.body.agents.map((agent: { id: string }) => agent.id)).toEqual(['hermes'])
+    expect(availabilityCtx.body.agents).toEqual([{ id: 'hermes', installed: true, source: 'user-cli' }])
+    expect(availabilityCtx.body.revision).toBe(statusCtx.body.revision)
   })
 
   it('only reports Hermes available when the inventory has an executable path', () => {

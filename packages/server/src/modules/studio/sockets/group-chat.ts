@@ -14,6 +14,7 @@ import { mkdirSync } from 'fs'
 import { basename, join } from 'path'
 import { createHash, randomBytes, randomUUID, timingSafeEqual } from 'node:crypto'
 import { logger } from '../public/logging'
+import { isOemHermesAgentId } from '../public/oem'
 import { getDb } from '../infrastructure/database'
 import { normalizeMessageContentForStorage, normalizeMessageContentForStorageRole } from '../repositories/message-content'
 import {
@@ -4102,11 +4103,11 @@ export class GroupChatServer {
         for (const room of rooms) {
             const agents = this.storage.getRoomAgents(room.id)
             for (const agent of agents) {
-                if (agent.executorType === 'remote') continue
+                if (agent.executorType === 'remote' || !isOemHermesAgentId(agent.agent)) continue
                 try {
                     const client = await this.agentClients.createAgent({
                         agentId: agent.agentId,
-                        agent: agent.agent,
+                        agent: 'hermes',
                         agentMode: agent.agentMode,
                         profile: agent.profile,
                         provider: agent.provider,

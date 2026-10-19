@@ -3,9 +3,9 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { loadNewChatFormPreferences, saveNewChatFormPreferences, type NewChatFormPreferences } from '../../packages/client/src/utils/new-chat-form-preferences'
 
 const form: NewChatFormPreferences = {
-  agent: 'dsh', mode: 'scoped', profile: 'research', provider: 'manual', model: 'chosen-model', customModel: false,
+  agent: 'hermes', mode: 'scoped', profile: 'research', provider: 'manual', model: 'chosen-model', customModel: false,
   apiMode: 'anthropic_messages', reasoningEffort: 'high', workspace: '/workspace/project', categoryId: 12,
-  agentPreset: 'minimal', baseUrl: 'https://example.invalid', apiKey: 'manual-credential',
+  agentPreset: undefined, baseUrl: 'https://example.invalid', apiKey: 'manual-credential',
 }
 
 beforeEach(() => { localStorage.clear(); sessionStorage.clear(); vi.restoreAllMocks() })
@@ -38,7 +38,14 @@ describe('new-chat form preferences', () => {
     localStorage.setItem('hermes_new_chat_form_v1:104', '{broken')
     expect(loadNewChatFormPreferences(104)).toBeNull()
     localStorage.setItem('hermes_new_chat_form_v1:104', JSON.stringify({ ...form, agent: 'unknown', mode: 'invalid', apiMode: 'invalid', categoryId: -1, reasoningEffort: 'invalid' }))
-    expect(loadNewChatFormPreferences(104)).toMatchObject({ agent: 'ekko-agent', mode: 'scoped', apiMode: 'chat_completions', categoryId: null, reasoningEffort: '' })
+    expect(loadNewChatFormPreferences(104)).toMatchObject({ agent: 'hermes', mode: 'scoped', apiMode: 'chat_completions', categoryId: null, reasoningEffort: '' })
+  })
+
+  it('normalizes retired backend preferences without rewriting the saved record', () => {
+    const legacy = { ...form, agent: 'codex', mode: 'global', agentPreset: 'minimal' }
+    localStorage.setItem('hermes_new_chat_form_v1:107', JSON.stringify(legacy))
+    expect(loadNewChatFormPreferences(107)).toMatchObject({ agent: 'hermes', mode: 'scoped', agentPreset: undefined })
+    expect(JSON.parse(localStorage.getItem('hermes_new_chat_form_v1:107')!)).toEqual(JSON.parse(JSON.stringify(legacy)))
   })
 
   it('continues to work when browser storage rejects writes', () => {

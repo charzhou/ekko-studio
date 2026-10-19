@@ -1,3 +1,4 @@
+import { OEM_FEATURES, requireOemFeature } from '../../public/oem'
 import { randomUUID } from 'crypto'
 import { mkdir, writeFile } from 'fs/promises'
 import { join } from 'path'
@@ -264,6 +265,7 @@ class McuSocketIoRelayClient {
   constructor(private readonly options: OutboundRelayClientOptions) {}
 
   start(): void {
+    requireOemFeature('cloudServices')
     if (this.socket) return
     this.stopped = false
     this.reconnectBlockedReason = ''
@@ -1942,6 +1944,7 @@ export class OutboundRelayClient {
   }
 
   start(): void {
+    requireOemFeature('cloudServices')
     if (this.socket) return
     const auth: Record<string, unknown> = {
       role: 'hermes-studio',
@@ -2252,6 +2255,7 @@ function normalizeOutboundRelayConnectionId(options: StartOutboundRelayClientOpt
 }
 
 export function startOutboundRelayClient(options: StartOutboundRelayClientOptions = {}): RelayClient | null {
+  if (!OEM_FEATURES.cloudServices) return null
   const relayUrl = (options.relayUrl ?? '').trim()
   if (!relayUrl) return null
   const connectionId = normalizeOutboundRelayConnectionId(options, relayUrl)

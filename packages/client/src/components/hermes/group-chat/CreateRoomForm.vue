@@ -7,7 +7,6 @@ import FolderPicker from '@/components/hermes/chat/FolderPicker.vue'
 import { useAppStore } from '@/stores/hermes/app'
 import { useProfilesStore } from '@/stores/hermes/profiles'
 import { configuredProviderApiMode, canScopedCodingAgentUseProvider } from '@/utils/codingAgentProviders'
-import { generateGroupChatInviteCode } from '@/utils/group-chat-invite-code'
 import { inferCodingAgentApiMode, normalizeCodingAgentApiMode } from '@/api/coding-agents'
 import type { RoomAgentInput, RoomSummaryConfig } from '@/api/studio/group-chat'
 
@@ -24,7 +23,6 @@ const emit = defineEmits<{
 }>()
 
 const roomName = ref('')
-const inviteCode = ref('')
 const workspace = ref('')
 const userName = ref(localStorage.getItem('gc_user_name') || getStoredUsername() || '')
 const description = ref(localStorage.getItem('gc_user_description') || '')
@@ -93,7 +91,7 @@ watch([summaryModelGroups, summaryProfile], () => {
 
 function handleCreate() {
     const name = roomName.value.trim()
-    const code = inviteCode.value.trim() || generateGroupChatInviteCode()
+    const code = ''
     const user = userName.value.trim()
     if (!name || !user) return
     emit('submit', name, code, user, description.value.trim(), {
@@ -147,20 +145,7 @@ onMounted(() => {
                 @keyup.enter="handleCreate"
             />
         </div>
-        <div class="form-group">
-            <label class="form-label">{{ t('groupChat.inviteCode') }}</label>
-            <div class="code-row">
-                <NInput
-                    v-model:value="inviteCode"
-                    :placeholder="t('groupChat.autoGenerate')"
-                />
-                <NButton size="small" @click="inviteCode = generateGroupChatInviteCode()">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-                        <polyline points="23 4 23 10 17 10" /><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10" />
-                    </svg>
-                </NButton>
-            </div>
-        </div>
+
 
         <div class="form-group">
             <label class="form-label">{{ t('chat.workspace') }}</label>

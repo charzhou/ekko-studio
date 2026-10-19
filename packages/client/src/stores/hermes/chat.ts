@@ -1,3 +1,4 @@
+import { isOemSessionRunnable } from '@/utils/agent-options'
 import { chatSessionAgentAvatar } from '@/utils/chat-agent-avatar'
 import { deleteSessionMessages, type MessageDeletionResult } from '@/api/studio/sessions'
 import { isNativeCodingAgent } from '@/utils/agent-catalog'
@@ -621,7 +622,7 @@ async function uploadFiles(attachments: Attachment[]): Promise<{ name: string; p
   const profileName = getActiveProfileName()
   const headers: Record<string, string> = {}
   if (token) headers.Authorization = `Bearer ${token}`
-  if (profileName) headers['X-Hermes-Profile'] = profileName
+  if (profileName) headers['X-AFY Studio-Profile'] = profileName
   const res = await fetch('/api/studio/uploads', {
     method: 'POST',
     body: formData,
@@ -3675,7 +3676,7 @@ export const useChatStore = defineStore('chat', () => {
     if (codingAgentId === 'ekko-agent') {
       return { icon: '/coding-agents/ekko-agent.png' }
     }
-    return { icon: '/coding-agents/hermes.png' }
+    return { icon: '/logo.png' }
   }
 
   function completionNotificationBody(session: Session, message?: Message): string {
@@ -3695,7 +3696,7 @@ export const useChatStore = defineStore('chat', () => {
 
     const agent = completionNotificationAgent(session)
     void showCompletionNotification({
-      title: truncateNotificationText(session.title || 'Hermes', 80),
+      title: truncateNotificationText(session.title || 'AFY Studio', 80),
       body: completionNotificationBody(session, message),
       icon: agent.icon,
       tag: `hermes-complete-${sessionId}-${message?.id || Date.now()}`,
@@ -3703,6 +3704,7 @@ export const useChatStore = defineStore('chat', () => {
   }
 
   async function sendMessage(content: string, attachments?: Attachment[]) {
+    if (!isOemSessionRunnable(activeSession.value)) return false
     const generation = runtimeGeneration
     if ((!content.trim() && !(attachments && attachments.length > 0))) return
 

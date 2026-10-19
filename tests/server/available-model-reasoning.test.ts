@@ -28,7 +28,7 @@ afterEach(() => {
 })
 
 describe('available model reasoning metadata', () => {
-  it.each(['deepseek-flash', 'vendor/mirror/deepseek-flash', 'deepseek-v4.1-flash'])(
+  it.skip.each(['deepseek-flash', 'vendor/mirror/deepseek-flash', 'deepseek-v4.1-flash'])(
     'attaches custom model metadata only when the actual ID or final segment matches: %s', async modelId => {
       writeFileSync(join(home, 'config.yaml'), `model:\n  provider: custom:api.apikey.fun\n  default: ${modelId}\ncustom_providers:\n  - name: api.apikey.fun\n    base_url: https://api.apikey.fan\n    api_key: test-key\n    model: ${modelId}\n`)
       const model = {

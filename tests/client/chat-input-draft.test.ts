@@ -401,7 +401,7 @@ describe('ChatInput draft persistence', () => {
     expect((wrapper.get('textarea').element as HTMLTextAreaElement).style.height).not.toBe('180px')
   })
 
-  it('shows only cumulative native usage including caches while retaining Hermes and Ekko context', async () => {
+  it('shows only cumulative native usage including caches while retaining AFY Studio and Ekko context', async () => {
     const wrapper = mountForSession('session-codex', {
       source: 'coding_agent',
       agent: 'codex',
@@ -782,7 +782,7 @@ describe('ChatInput draft persistence', () => {
     expect(wrapper.text()).not.toContain('/bundles pr-review-team')
   })
 
-  it('hides bridge autocomplete for non-Hermes slash prefixes', async () => {
+  it('hides bridge autocomplete for non-AFY Studio slash prefixes', async () => {
     const wrapper = mountForSession('session-prefixes')
     const textarea = wrapper.get('textarea')
 

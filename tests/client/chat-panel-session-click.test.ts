@@ -1,6 +1,6 @@
 import { readFileSync } from 'fs'
 import { describe, expect, it } from 'vitest'
-import { AGENT_OPTIONS } from '../../packages/client/src/utils/agent-options'
+import { OEM_AGENT_OPTIONS } from '../../packages/client/src/utils/agent-options'
 
 describe('ChatPanel session clicks', () => {
   it('switches the store when the route is already on the clicked session', () => {
@@ -42,7 +42,7 @@ describe('ChatPanel session clicks', () => {
     expect(source).toContain('pendingSessionModelSwitch')
     expect(source).toContain('chatStore.switchSessionModel(model, provider, sessionModelSessionId.value, apiMode)')
     expect(source).toContain('activeSessionUsesGlobalCodingAgentConfig')
-    expect(source).toContain(':model-disabled="activeSessionUsesGlobalCodingAgentConfig"')
+    expect(source).toContain(':model-disabled="!isOemSessionRunnable(chatStore.activeSession) || activeSessionUsesGlobalCodingAgentConfig"')
     expect(source).toContain('contextSession.value?.codingAgentMode !== "global"')
     expect(source).toContain('requestedSession?.codingAgentMode === "global"')
     expect(readFileSync('packages/client/src/stores/hermes/chat.ts', 'utf8')).toContain(
@@ -85,16 +85,15 @@ describe('ChatPanel session clicks', () => {
     expect(source).toContain('selectedGroup?.models.includes(selectedModel)')
   })
 
-  it('offers Ekko when creating chats in production builds', () => {
+  it('offers AFY Studio as the only execution backend for new chats', () => {
     const source = readFileSync('packages/client/src/components/hermes/chat/ChatPanel.vue', 'utf8')
 
-    expect(AGENT_OPTIONS).toContainEqual({ label: 'Ekko', value: 'ekko-agent' })
-    expect(source).toContain('const newChatAgentOptions = computed(() => AGENT_OPTIONS.filter(')
-    expect(source).not.toContain('showEkkoAgentEntry')
-    expect(source).not.toContain('import.meta.env.DEV')
+    expect(OEM_AGENT_OPTIONS).toEqual([{ label: 'AFY Studio', value: 'hermes' }])
+    expect(source).toContain('const newChatAgentOptions = computed(() => OEM_AGENT_OPTIONS.filter(')
+    expect(source).not.toContain('const newChatAgentOptions = computed(() => AGENT_OPTIONS.filter(')
   })
 
-  it('persists Pi as the Pi agent instead of falling back to Hermes', () => {
+  it('persists Pi as the Pi agent instead of falling back to AFY Studio', () => {
     const source = readFileSync('packages/client/src/components/hermes/chat/ChatPanel.vue', 'utf8')
 
     expect(source).toContain('newChatAgent.value === "pi"')
@@ -120,7 +119,7 @@ describe('ChatPanel session clicks', () => {
     expect(source).not.toContain('{{ t("chat.newChat") }}\n            </NButton>')
   })
 
-  it('offers MoA only for Hermes session creation and switching', () => {
+  it('offers MoA only for AFY Studio session creation and switching', () => {
     const source = readFileSync('packages/client/src/components/hermes/chat/ChatPanel.vue', 'utf8')
 
     expect(source).toContain('if (group.provider === "moa") return newChatAgent.value === "hermes"')

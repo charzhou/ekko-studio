@@ -17,7 +17,7 @@ export async function fetchAuthenticatedBlob(
   const profile = typeof options.profile === 'string' && options.profile.trim()
     ? options.profile.trim()
     : getActiveProfileName()
-  if (profile) headers['X-Hermes-Profile'] = profile
+  if (profile) headers['X-AFY Studio-Profile'] = profile
 
   const response = await fetch(`${getBaseUrlValue()}${path}`, {
     headers,

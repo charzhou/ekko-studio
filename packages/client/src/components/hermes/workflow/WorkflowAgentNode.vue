@@ -200,7 +200,7 @@ async function uploadImages(files: File[]) {
         :placeholder="t('workflow.node.agent')"
         @update:value="value => updateField('agent', value as string)"
       />
-      <DshSessionPresetSelect v-if="data.agent === 'dsh'" :model-value="data.agentPreset" :disabled="data.readonly"
+      <DshSessionPresetSelect v-if="data.agent === 'dsh' && !data.readonly" :model-value="data.agentPreset" :disabled="data.readonly"
         @update:model-value="updateField('agentPreset', $event)" @valid="updateField('agentPresetReady', $event)" />
       <NSelect
         v-if="supportsGlobalMode && !isGlobalOnlyCodingAgent(data.agent)"
@@ -219,9 +219,10 @@ async function uploadImages(files: File[]) {
         :disabled="data.readonly"
         @select="handleModelSelect"
       />
-      <NativeCodingAgentModelFields v-else :key="data.agent" :agent="data.agent as CodingAgentId"
+      <NativeCodingAgentModelFields v-else-if="!data.readonly" :key="data.agent" :agent="data.agent as CodingAgentId"
         :model="data.model" :reasoning-effort="data.reasoningEffort === 'default' ? '' : data.reasoningEffort"
         :disabled="data.readonly" @change="selection => data.onUpdate(id, { ...selection, reasoningEffort: selection.reasoningEffort || 'default' })" />
+      <span v-else>{{ data.model || t('codingAgents.nativeModelDefault') }}</span>
       <NSelect
         v-if="isCodingAgent && usesScopedModel && !configuredApiMode"
         :value="data.apiMode"
@@ -243,9 +244,10 @@ async function uploadImages(files: File[]) {
           :placeholder="t('chat.reasoningEffort.tooltip')"
           @update:value="value => updateField('reasoningEffort', value as string)"
         />
-        <NativeCodingAgentModelFields v-else :key="data.agent" :agent="data.agent as CodingAgentId"
+        <NativeCodingAgentModelFields v-else-if="!data.readonly" :key="data.agent" :agent="data.agent as CodingAgentId"
           field="reasoning-effort" :model="data.model" :reasoning-effort="data.reasoningEffort === 'default' ? '' : data.reasoningEffort"
           :disabled="data.readonly" @change="selection => data.onUpdate(id, { ...selection, reasoningEffort: selection.reasoningEffort || 'default' })" />
+        <span v-else>{{ data.reasoningEffort || t('chat.reasoningEffort.options.default') }}</span>
       </div>
       <div class="node-field-row">
         <span class="node-field-label-row">

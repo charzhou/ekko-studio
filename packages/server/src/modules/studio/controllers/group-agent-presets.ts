@@ -11,7 +11,13 @@ import {
   normalizeGroupAgentPresetInput,
   validateGroupAgentPresetCapability,
 } from '../services/group-chat/agent-presets'
-import { assertAgentAvailable } from '../services/agent-availability'
+import { assertAgentAvailable as assertInstalledAgent } from '../services/agent-availability'
+import { requireOemHermesAgent } from '../public/oem'
+
+function assertAgentAvailable(agent: string): void {
+  requireOemHermesAgent(agent)
+  assertInstalledAgent(agent)
+}
 
 function authenticatedUser(ctx: any): { id: number; role: string; profiles?: string[] } | null {
   const user = ctx.state?.user

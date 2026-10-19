@@ -48,7 +48,7 @@ export type JevSettingsUpdate = Omit<JevSettings, 'hasApiKey'> & { apiKey?: stri
 
 function profileHeaders(profile: string): Record<string, string> {
   if (!profile.trim()) throw new Error('Profile is required')
-  return { 'X-Hermes-Profile': profile }
+  return { 'X-AFY Studio-Profile': profile }
 }
 
 export function getJevSettings(profile: string) {

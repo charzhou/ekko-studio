@@ -317,7 +317,7 @@ function truncateCodingAgentToolOutputForStorage(output: unknown): string {
   return [
     head,
     '',
-    `[Hermes Web UI: coding-agent tool output truncated for storage; original_chars=${text.length}; omitted_chars=${omitted}]`,
+    `[AFY Studio: coding-agent tool output truncated for storage; original_chars=${text.length}; omitted_chars=${omitted}]`,
     '',
     tail,
   ].join('\n')

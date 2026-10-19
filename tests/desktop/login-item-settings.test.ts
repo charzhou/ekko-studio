@@ -48,7 +48,7 @@ describe('Linux login items', () => {
     const { app, options, path } = fixture()
     setOpenAtLogin(app, true, options)
     const content = readFileSync(path, 'utf8')
-    expect(content).toContain('Type=Application\nName=Ekko Studio\n')
+    expect(content).toContain('Type=Application\nName=AFY Studio\n')
     expect(content).toContain('Exec="/opt/Ekko Studio/hermes-studio" --hidden\n')
     expect(content).toContain('Terminal=false\n')
   })

@@ -406,11 +406,9 @@ describe('stt routes', () => {
     expect(protectedPaths).toEqual(expect.arrayContaining([
       '/api/studio/stt/settings',
       '/api/studio/stt/local-model',
-      '/api/studio/stt/local-model/download',
       '/api/studio/voice/proxy/:profile/v1/audio/transcriptions',
       '/api/studio/stt/profile-status',
       '/api/studio/stt/profile-status/missing-audio',
-      '/api/studio/mcu/voice-turn',
       '/api/studio/stt/settings/active',
       '/api/studio/stt/settings/:provider',
       '/api/studio/stt/settings/:provider',

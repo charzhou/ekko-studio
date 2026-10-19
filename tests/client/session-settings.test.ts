@@ -170,7 +170,7 @@ describe('SessionSettings', () => {
     expect(mockSettingsStore.saveSection).toHaveBeenCalledWith('skills', { write_approval: false })
   })
 
-  it('shows write approval toggles without probing Hermes Agent support', async () => {
+  it('shows write approval toggles without probing AFY Studio Agent support', async () => {
     const wrapper = mount(SessionSettings, {
       global: {
         stubs: {

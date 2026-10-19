@@ -9,7 +9,7 @@ import SidebarResizeHandle from "@/components/layout/SidebarResizeHandle.vue"
 import { usePageSidebarState } from "@/composables/usePageSidebar"
 import PageHeader from '@/components/layout/PageHeader.vue'
 import HeaderSidebarToggle from '@/components/layout/HeaderSidebarToggle.vue'
-import { GROUP_AGENT_OPTIONS } from "@/utils/agent-options"
+import { isOemAgentEnabled, OEM_GROUP_AGENT_OPTIONS } from "@/utils/agent-options"
 import DshSessionPresetSelect from "@/components/coding-agents/dsh/DshSessionPresetSelect.vue"
 import { ref, computed, defineAsyncComponent, nextTick, onMounted, onUnmounted, provide, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
@@ -86,7 +86,6 @@ import {
     parseStoredAvatar,
 } from '@/utils/group-agent-avatar'
 import { generateGroupChatInviteCode } from '@/utils/group-chat-invite-code'
-import { buildRemoteGroupChatRooms, type RemoteGroupChatRoom } from '@/utils/group-chat-remote-rooms'
 import { handoffErrorTranslationKey } from './handoff-presentation'
 import { clearGroupChatRoomDraft } from './group-chat-room-drafts'
 import {
@@ -95,11 +94,16 @@ import {
     type AgentStatusSnapshot,
 } from '@/api/agent-status'
 
+type RemoteGroupChatRoom = { key: string; roomId: string; roomName: string; inviteCode?: string; cloudOrigin?: string; available?: boolean; connectorIds: string[]; connected: boolean }
+function buildRemoteGroupChatRooms(_connections: unknown[] = []): RemoteGroupChatRoom[] { return [] }
+
 const FilesPanel = defineAsyncComponent(async () => (await import('@/components/hermes/chat/FilesPanel.vue')).default)
 const FilePreview = defineAsyncComponent(async () => (await import('@/components/hermes/files/FilePreview.vue')).default)
 const WorkspaceDiffPreview = defineAsyncComponent(async () => (await import('@/components/hermes/files/WorkspaceDiffPreview.vue')).default)
 const DesktopBrowserPanel = defineAsyncComponent(async () => (await import('@/components/hermes/chat/DesktopBrowserPanel.vue')).default)
 const TerminalPanel = defineAsyncComponent(async () => (await import('@/components/hermes/chat/TerminalPanel.vue')).default)
+
+const OEM_CLOUD_FEATURES_ENABLED = false
 
 const props = withDefaults(defineProps<{
     standalone?: boolean
@@ -254,7 +258,7 @@ const profileOptions = computed(() =>
 
 type GroupAgentType = 'hermes' | 'ekko' | 'codex' | 'claude' | 'pi' | 'grok' | 'opencode' | 'dsh' | 'cursor' | 'antigravity' | 'qwen' | 'kimi' | 'codebuddy' | 'qoder' | 'copilot' | 'zcode'
 
-const groupAgentTypeDefinitions = GROUP_AGENT_OPTIONS
+const groupAgentTypeDefinitions = OEM_GROUP_AGENT_OPTIONS
 
 const groupAgentTypeOptions = computed(() => groupAgentTypeDefinitions.filter(option =>
     isAgentStatusAvailable(agentStatusSnapshot.value, option.value)
@@ -285,10 +289,14 @@ function groupAgentDisplayName(agent: GroupAgentType): string {
 }
 
 function isGroupAgentAvailable(agent: GroupAgentType): boolean {
-    return isAgentStatusAvailable(agentStatusSnapshot.value, agent)
+    return isOemAgentEnabled(agent) && isAgentStatusAvailable(agentStatusSnapshot.value, agent)
 }
 
 function warnAgentUnavailable(agent: GroupAgentType) {
+    if (!isOemAgentEnabled(agent)) {
+        message.warning(t('oem.hermesOnly'))
+        return
+    }
     message.warning(t('codingAgents.installRequired', { agent: groupAgentDisplayName(agent) }))
 }
 
@@ -1366,7 +1374,7 @@ async function loadAgentPresets() {
     isLoadingAgentPresets.value = true
     agentPresetLoadError.value = ''
     try {
-        agentPresets.value = (await listGroupAgentPresets()).presets
+        agentPresets.value = (await listGroupAgentPresets()).presets.filter(preset => isOemAgentEnabled(preset.agent))
     } catch (err: any) {
         agentPresetLoadError.value = extractApiErrorMessage(err) || t('groupChat.agentPresetLoadFailed')
         message.error(agentPresetLoadError.value)
@@ -1414,6 +1422,7 @@ function applyAgentPreset(presetId: string | null) {
     selectedAgentPresetId.value = presetId
     const preset = agentPresets.value.find(item => item.id === presetId)
     if (!preset) return
+    if (!isOemAgentEnabled(preset.agent)) return
     if (!preset.available) {
         message.warning(preset.validationError || t('groupChat.agentPresetUnavailable'))
         return
@@ -1577,6 +1586,10 @@ async function handleAgentAvatarFileChange(event: Event) {
 
 function handleEditAgent(agent: RoomAgent) {
     if (!currentRoomCanManage.value || showAddAgentDrawer.value) return
+    if (!isOemAgentEnabled(agent.agent || 'hermes')) {
+        warnAgentUnavailable(agent.agent)
+        return
+    }
     resetAgentForm()
     editingAgent.value = agent
     selectedAgentType.value = agent.agent || 'hermes'
@@ -1611,10 +1624,12 @@ onMounted(() => {
         void profilesStore.fetchProfiles()
     }
     if (!props.standalone) {
-        agentPairingRefreshTimer = setInterval(() => void refreshPendingAgentPairings(), 3_000)
-        remoteRoomRefreshTimer = setInterval(() => void refreshRemoteRooms(), 5_000)
-        void refreshPendingAgentPairings()
-        void refreshRemoteRooms()
+        if (OEM_CLOUD_FEATURES_ENABLED) {
+            agentPairingRefreshTimer = setInterval(() => void refreshPendingAgentPairings(), 3_000)
+            remoteRoomRefreshTimer = setInterval(() => void refreshRemoteRooms(), 5_000)
+            void refreshPendingAgentPairings()
+            void refreshRemoteRooms()
+        }
     }
 })
 
@@ -1661,11 +1676,12 @@ watch(() => store.currentRoomId, (roomId, previousRoomId) => {
     roomSummaryDraft.value = ''
     if (filesStore.previewFile || toolPanelStore.workspaceDiff || showWorkspacePanel.value) closeWorkspacePanel()
     if (roomId && !props.standalone) void loadRoomSummaryState(roomId)
-    if (!props.standalone) void refreshPendingAgentPairings()
+    if (OEM_CLOUD_FEATURES_ENABLED && !props.standalone) void refreshPendingAgentPairings()
 }, { immediate: true, flush: 'sync' })
 
 watch(() => store.agentPairingRevision, () => {
-    if (!props.standalone) void refreshPendingAgentPairings()
+    if (!OEM_CLOUD_FEATURES_ENABLED) return
+    if (OEM_CLOUD_FEATURES_ENABLED && !props.standalone) void refreshPendingAgentPairings()
 })
 
 watch(
@@ -1875,7 +1891,7 @@ async function handleOpenRoomSettings() {
     }
     if (!store.currentRoomId) return
     const summaryRoomId = store.currentRoomId
-    void refreshPendingAgentPairings()
+    if (OEM_CLOUD_FEATURES_ENABLED) void refreshPendingAgentPairings()
     isLoadingRoomSummary.value = true
     try {
         const result = await getRoomSummary(summaryRoomId)
@@ -2165,7 +2181,7 @@ function handleClarifyKeydown(event: KeyboardEvent) {
                             />
                             <div class="room-info">
                                 <span class="room-name">{{ room.name || room.id }}</span>
-                                <span v-if="room.inviteCode" class="room-code">{{ room.inviteCode }}</span>
+                                <span v-if="OEM_CLOUD_FEATURES_ENABLED && room.inviteCode" class="room-code">{{ room.inviteCode }}</span>
                                 <span class="room-tokens">{{ formatTokens(room.totalTokens || 0) }}</span>
                             </div>
                             <NPopconfirm v-if="canManageRoom(room)" @positive-click="handleDeleteRoom(room.id)">
@@ -2180,7 +2196,7 @@ function handleClarifyKeydown(event: KeyboardEvent) {
                     </div>
                 </section>
 
-                <section v-if="remoteRooms.length" class="room-section">
+                <section v-if="OEM_CLOUD_FEATURES_ENABLED && remoteRooms.length" class="room-section">
                     <button
                         class="room-section-title"
                         type="button"
@@ -2208,7 +2224,7 @@ function handleClarifyKeydown(event: KeyboardEvent) {
                             </svg>
                             <span class="room-info">
                                 <span class="room-name">{{ room.roomName }}</span>
-                                <span v-if="room.inviteCode" class="room-code">{{ room.inviteCode }}</span>
+                                <span v-if="OEM_CLOUD_FEATURES_ENABLED && room.inviteCode" class="room-code">{{ room.inviteCode }}</span>
                                 <span class="room-origin">{{ room.cloudOrigin }}</span>
                             </span>
                             <span
@@ -2287,7 +2303,7 @@ function handleClarifyKeydown(event: KeyboardEvent) {
                         </template>
                     </NButton>
                     <button
-                        v-if="currentRoomCanManage && pendingAgentPairings.length"
+                        v-if="OEM_CLOUD_FEATURES_ENABLED && currentRoomCanManage && pendingAgentPairings.length"
                         class="agent-pairing-header-button"
                         type="button"
                         @click="handleOpenRoomSettings"
@@ -2490,7 +2506,7 @@ function handleClarifyKeydown(event: KeyboardEvent) {
                             @adjust-handoff-settings="handleOpenRoomSettings"
                         />
                         <Transition name="approval-float">
-                            <div v-if="visibleAgentPairing" class="approval-float-panel agent-pairing-float-panel">
+                            <div v-if="OEM_CLOUD_FEATURES_ENABLED && visibleAgentPairing" class="approval-float-panel agent-pairing-float-panel">
                                 <div class="approval-float-header">
                                     <span class="approval-float-icon" aria-hidden="true">
                                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -3253,7 +3269,7 @@ function handleClarifyKeydown(event: KeyboardEvent) {
             >
                 <NDrawerContent :title="t('groupChat.roomSettings')" closable>
                     <div class="room-settings-drawer">
-                        <section v-if="pendingAgentPairings.length" class="settings-section pending-agent-pairings-section">
+                        <section v-if="OEM_CLOUD_FEATURES_ENABLED && pendingAgentPairings.length" class="settings-section pending-agent-pairings-section">
                             <h4>{{ t('groupChat.agentPairingRequestTitle') }} ({{ pendingAgentPairings.length }})</h4>
                             <article
                                 v-for="request in pendingAgentPairings"
@@ -4932,36 +4948,6 @@ export default defineComponent({ components: { CreateRoomForm } })
     }
 }
 
-.agent-pairing-header-button {
-    display: inline-flex;
-    align-items: center;
-    gap: calc(6px * var(--spacing-scale, 1));
-    min-height: 30px;
-    padding: 0 calc(9px * var(--spacing-scale, 1));
-    border: var(--border-width, 1px) solid rgba(var(--accent-primary-rgb), 0.32);
-    border-radius: 999px;
-    color: var(--accent-primary);
-    background: rgba(var(--accent-primary-rgb), 0.08);
-    font-size: calc(var(--font-size-base, 14px) * 12 / 14);
-    cursor: pointer;
-
-    strong {
-        min-width: 18px;
-        padding: calc(1px * var(--spacing-scale, 1)) calc(5px * var(--spacing-scale, 1));
-        border-radius: 999px;
-        color: #fff;
-        background: var(--accent-primary);
-        text-align: center;
-    }
-}
-
-.agent-pairing-header-dot {
-    width: 7px;
-    height: 7px;
-    border-radius: 50%;
-    background: var(--accent-primary);
-    box-shadow: 0 0 0 4px rgba(var(--accent-primary-rgb), 0.12);
-}
 
 .guest-agent-policy-row {
     display: flex;

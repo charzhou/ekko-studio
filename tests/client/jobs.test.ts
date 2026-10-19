@@ -52,7 +52,7 @@ function makeJob(overrides: Partial<Job> = {}): Job {
   }
 }
 
-describe('Hermes jobs edit payloads', () => {
+describe('AFY Studio jobs edit payloads', () => {
   beforeEach(() => {
     localStorage.clear()
     vi.clearAllMocks()
@@ -165,6 +165,6 @@ describe('Hermes jobs edit payloads', () => {
     expect(mockFetch).toHaveBeenCalledOnce()
     const [url, options] = mockFetch.mock.calls[0]
     expect(url).toBe('/api/cron-history?jobId=job-1')
-    expect(options.headers['X-Hermes-Profile']).toBe('research')
+    expect(options.headers['X-AFY Studio-Profile']).toBe('research')
   })
 })

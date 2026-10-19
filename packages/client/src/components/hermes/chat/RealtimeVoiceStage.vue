@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { createMcuSpeechSegmenter } from '@/api/studio/mcu-interaction'
 import {
   cancelLocalSttStream,
   finishLocalSttStream,
@@ -132,7 +131,33 @@ const synthesisControllers = new Set<AbortController>()
 const synthesisJobs: SpeechSynthesisJob[] = []
 const processedAssistantText = new Map<string, string>()
 const processedToolMessageIds = new Set<string>()
-const speechSegmenter = createMcuSpeechSegmenter({ emitOnSentenceEnd: true })
+const speechSegmenter = (() => {
+  let buffer = ''
+  return {
+    reset() { buffer = '' },
+    pushDelta(delta: string): string[] {
+      buffer += delta
+      const segments: string[] = []
+      // Split at sentence punctuation even when streamed Chinese text has no
+      // whitespace between sentences. Keep punctuation runs together and leave
+      // an unfinished tail in the buffer until the next delta or flush.
+      const pattern = /(.+?[.!?。！？]+)(?=\s|$|[^.!?。！？\s])/g
+      let match: RegExpExecArray | null
+      let consumed = 0
+      while ((match = pattern.exec(buffer))) {
+        segments.push(match[1].trim())
+        consumed = pattern.lastIndex
+      }
+      if (consumed > 0) buffer = buffer.slice(consumed)
+      return segments.filter(Boolean)
+    },
+    flush(): string {
+      const value = buffer.trim()
+      buffer = ''
+      return value
+    },
+  }
+})()
 
 const currentTranscript = computed(() => {
   const liveTranscript = normalizeText([
@@ -151,14 +176,14 @@ const agentDisplayName = computed(() => {
   const session = chatStore.activeSession
   const agent = session?.agent || session?.codingAgentId || 'hermes'
   return {
-    hermes: 'Hermes',
+    hermes: 'AFY Studio',
     claude: 'Claude',
     'claude-code': 'Claude',
     codex: 'Codex',
     grok: 'Grok',
     opencode: 'OpenCode',
     dsh: 'DeepSeek Harness',
-    'ekko-agent': 'Ekko',
+    'ekko-agent': 'AFY Studio',
   }[agent] || agent
 })
 const statusLabel = computed(() => t(`realtimeVoice.status.${mode.value}`, {
@@ -944,7 +969,20 @@ async function playSpeechSegment(segment: VoiceSpeechSegment) {
     }
     if (generation !== playbackGeneration || !sessionActive.value) return
     if (activeSpeechSegment.value?.id === segment.id) activeSpeechSegment.value = null
-    if (waitingForResponse.value) mode.value = 'thinking'
+    // The final response can finish while the queue is still draining. Once
+    // its last audio segment ends, restart browser capture for the next turn.
+    if (
+      responseFinalizing
+      && !chatStore.isStreaming
+      && speechSegments.value.length === 0
+      && activeCaptureMode === null
+    ) {
+      waitingForResponse.value = false
+      mode.value = 'thinking'
+      scheduleRestart()
+    } else if (waitingForResponse.value) {
+      mode.value = 'thinking'
+    }
   } catch (cause) {
     if (activeSpeechSegment.value?.id === segment.id) activeSpeechSegment.value = null
     if (generation === playbackGeneration) setError(cause)

@@ -1,3 +1,4 @@
+import { requireOemFeature } from '../../../public/oem'
 import { createHash, randomUUID } from 'node:crypto'
 import { spawn, type ChildProcess } from 'node:child_process'
 import { createReadStream, createWriteStream, existsSync, lstatSync, mkdirSync, readFileSync, renameSync, rmSync, writeFileSync } from 'node:fs'
@@ -12,8 +13,8 @@ import { killOwnedProcessTree } from '../../../infrastructure/process-tree'
 import { transcodeToPcmS16le } from './audio-convert'
 import { SttNoSpeechDetectedError, type SttTranscribeInput, type SttTranscribeResult } from './types'
 
-const DEFAULT_DOWNLOAD_BASE_URL = 'https://download.ekkolearnai.com'
-const DEFAULT_GITHUB_REPO = 'EKKOLearnAI/ekko-studio'
+const DEFAULT_DOWNLOAD_BASE_URL = ''
+const DEFAULT_GITHUB_REPO = ''
 const MODEL_MANIFEST_FILE = 'model-manifest.json'
 const MODEL_SCHEMA = 1
 const TRANSCRIBE_TIMEOUT_MS = 120_000
@@ -64,6 +65,7 @@ export interface LocalSttModelStatus {
   usable: boolean
   validationError: string
   job: LocalSttModelDownloadJob | null
+  downloadsEnabled: boolean
 }
 
 interface LocalSttModelManifest {
@@ -360,6 +362,7 @@ export function getLocalSttModelStatus(): LocalSttModelStatus {
     extractedSize: LOCAL_STT_MODEL_EXTRACTED_SIZE,
     ...state,
     job: latestJob(),
+    downloadsEnabled: false,
   }
 }
 
@@ -729,6 +732,7 @@ async function installLocalSttModel(job: LocalSttModelDownloadJob): Promise<void
 }
 
 export function startLocalSttModelDownload(source: LocalSttModelDownloadSource): LocalSttModelDownloadJob {
+  requireOemFeature('updates')
   const current = Array.from(jobs.values()).find(job => job.status === 'queued' || job.status === 'running')
   if (current) return { ...current }
   if (isLocalSttModelUsable()) throw new Error('Local STT model is already installed and usable')

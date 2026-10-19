@@ -316,6 +316,27 @@ class BridgeBroker:
         if action in {"interrupt", "request_boundary_interrupt", "cancel_boundary_interrupt", "steer", "command", "switch_session_model", "goal_evaluate", "goal_pause", "status", "get_history", "get_session_title", "destroy"}:
             session_id = str(req.get("session_id") or "")
             profile, worker_key = self._route_for_session(session_id, req.get("profile"), req.get("worker_key") if "worker_key" in req else None)
+            if action == "destroy" and req.get("stop_worker") is True:
+                # Only the reserved per-summary worker may be retired this way;
+                # ordinary Profile/chat workers keep their existing lifecycle.
+                if worker_key != f"{profile}:summary:{session_id}":
+                    raise ValueError("stop_worker requires an isolated summary worker")
+                with self._lock:
+                    worker = self._workers.pop(worker_key, None)
+                    for profile_map, key_map in (
+                        (self._run_profile, self._run_worker_key),
+                        (self._running_run_profile, self._running_run_worker_key),
+                        (self._session_profile, self._session_worker_key),
+                        (self._approval_profile, self._approval_worker_key),
+                        (self._clarify_profile, self._clarify_worker_key),
+                        (self._compression_profile, self._compression_worker_key),
+                    ):
+                        for key in [key for key, value in key_map.items() if value == worker_key]:
+                            key_map.pop(key, None)
+                            profile_map.pop(key, None)
+                if worker is not None:
+                    worker.stop()
+                return {"session_id": session_id, "destroyed": worker is not None, "worker_stopped": True}
             resp = self._forward(profile, req, worker_key)
             if action == "destroy":
                 with self._lock:

@@ -57,7 +57,7 @@ const DEFAULTS: Record<AgentStatusId, Omit<AgentStatusRecord, 'updatedAt'>> = {
   zcode: { id: 'zcode', name: 'ZCode', provider: 'Z.ai', kind: 'coding-agent', installed: false, version: '', source: 'not-installed', path: '', error: '', installations: [] },
   hermes: {
     id: 'hermes',
-    name: 'Hermes',
+    name: 'AFY Studio',
     provider: 'Nous Research',
     kind: 'hermes',
     installed: false,
@@ -69,8 +69,8 @@ const DEFAULTS: Record<AgentStatusId, Omit<AgentStatusRecord, 'updatedAt'>> = {
   },
   'ekko-agent': {
     id: 'ekko-agent',
-    name: 'Ekko',
-    provider: 'Ekko Studio',
+    name: 'AFY Studio',
+    provider: 'AFY Studio',
     kind: 'built-in',
     installed: true,
     version: '',

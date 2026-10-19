@@ -65,11 +65,11 @@ describe('desktop preload auth', () => {
     expect(invoke).toHaveBeenLastCalledWith('hermes-desktop:computer-use-permissions')
     await bridge.computerUsePermissions!.request('screenRecording')
     expect(invoke).toHaveBeenLastCalledWith('hermes-desktop:computer-use-request-permission', 'screenRecording')
-    expect(loadPreload(['--hermes-remote-mode']).bridge.computerUsePermissions).toBeUndefined()
+    expect(loadPreload(['--hermes-remote-mode']).bridge.computerUsePermissions).toBeDefined()
     for (const platform of ['win32', 'linux']) expect(loadPreload([], '', platform).bridge.computerUsePermissions).toBeUndefined()
   })
   it.each(['main', 'chat'])('exposes the message menu bridge in the %s window', async kind => {
-    const { bridge, invoke } = loadPreload(['--hermes-remote-mode', `--hermes-window-kind=${kind}`])
+    const { bridge, invoke } = loadPreload([`--hermes-window-kind=${kind}`])
     const request = { label: '多选消息', enabled: true, hasSelection: true }
     invoke.mockResolvedValueOnce('select-messages')
     expect(await bridge.messageContextMenu.show(request)).toBe('select-messages')
@@ -78,29 +78,12 @@ describe('desktop preload auth', () => {
     expect(invoke).toHaveBeenLastCalledWith('hermes-desktop:message-context-menu-close')
   })
 
-  it.each(['main', 'pet', 'chat'])('preserves remote auth and password policy in the %s window', async kind => {
-    const preload = loadPreload(['--hermes-remote-mode', `--hermes-window-kind=${kind}`])
-
-    expect(preload.bridge).toMatchObject({ isDesktop: true, remoteMode: true, windowKind: kind })
-    expect(await preload.bridge.ensureAuth()).toBe(true)
-    await preload.listeners.get('DOMContentLoaded')!()
-    expect(preload.invoke).not.toHaveBeenCalled()
-    expect(preload.storage.get('AUTH_TOKEN')).toBe('remote-session')
-    const response = await preload.window.fetch('/api/auth/me')
-    expect((await response.json()).user.requiresCredentialChange).toBe(true)
-    const xhr = new preload.window.XMLHttpRequest()
-    xhr.open('GET', '/api/auth/me')
-    expect(JSON.parse(xhr.responseText).user.requiresCredentialChange).toBe(true)
-    expect(JSON.parse(xhr.response).user.requiresCredentialChange).toBe(true)
-  })
-
-  it('leaves an unauthenticated remote window logged out', async () => {
+  it('uses local auth even when a legacy remote flag is supplied', async () => {
     const preload = loadPreload(['--hermes-remote-mode'], '')
-
+    expect(preload.bridge.remoteMode).toBe(false)
     expect(await preload.bridge.ensureAuth()).toBe(false)
     await preload.listeners.get('DOMContentLoaded')!()
-    expect(preload.invoke).not.toHaveBeenCalled()
-    expect(preload.storage.size).toBe(0)
+    expect(preload.invoke).toHaveBeenCalledWith('hermes-desktop:get-token')
   })
 
   it('retains token injection and password-policy suppression for local mode', async () => {

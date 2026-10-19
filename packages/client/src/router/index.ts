@@ -19,18 +19,6 @@ const router = createRouter({
       meta: { public: true },
     },
     {
-      path: '/share/group-chat/:inviteCode?',
-      name: 'share.groupChat',
-      component: () => import('@/views/hermes/SharedGroupChatView.vue'),
-      meta: { public: true, standaloneChat: true, inviteOnly: true },
-    },
-    {
-      path: '/group-chat-link',
-      name: 'groupChat.link',
-      component: () => import('@/views/hermes/GroupChatLinkView.vue'),
-      meta: { standaloneChat: true },
-    },
-    {
       path: '/hermes/chat',
       name: 'hermes.chat',
       component: () => import('@/views/hermes/ChatView.vue'),
@@ -87,11 +75,6 @@ const router = createRouter({
       path: '/hermes/models',
       name: 'hermes.models',
       component: () => import('@/views/hermes/ChatView.vue'),
-    },
-    {
-      path: '/hermes/api-relay',
-      name: 'hermes.apiRelay',
-      component: () => import('@/views/hermes/ApiRelayView.vue'),
     },
     {
       path: '/hermes/profiles',
@@ -172,30 +155,9 @@ const router = createRouter({
       meta: { hermesConfig: true },
     },
     {
-      path: '/social-messages',
-      redirect: {
-        name: 'hermes.connections',
-        query: { view: 'messages' },
-      },
-    },
-    {
       path: '/hermes/terminal',
       name: 'hermes.terminal',
       component: () => import('@/views/hermes/TerminalView.vue'),
-      meta: { requiresSuperAdmin: true },
-    },
-    {
-      path: '/hermes/connections',
-      name: 'hermes.connections',
-      component: () => import('@/views/hermes/ChatView.vue'),
-    },
-    {
-      path: '/hermes/devices',
-      name: 'hermes.devices',
-      redirect: to => ({
-        name: 'hermes.connections',
-        query: { ...to.query, tab: 'devices' },
-      }),
       meta: { requiresSuperAdmin: true },
     },
     {
@@ -272,12 +234,6 @@ const router = createRouter({
       redirect: { name: 'hermes.agentManager' },
     },
     {
-      path: '/hermes/version-preview',
-      name: 'hermes.versionPreview',
-      component: () => import('@/views/hermes/VersionPreviewView.vue'),
-      meta: { requiresSuperAdmin: true },
-    },
-    {
       path: '/hermes/mcp',
       name: 'hermes.mcp',
       component: () => import('@/views/hermes/McpManagerView.vue'),
@@ -314,6 +270,14 @@ function isDesktopShell(): boolean {
 
 router.beforeEach(async (to, _from, next) => {
   await ensureDesktopAuth()
+
+  // OEM build exposes Hermes as the only selectable execution backend. Keep
+  // legacy routes for bookmarks and persisted links, but do not allow users to
+  // enter the retired Ekko or native coding-agent configuration surfaces.
+  if (to.name === 'codingAgent.config' || String(to.name || '').startsWith('ekko.')) {
+    next({ name: 'hermes.chat', replace: true })
+    return
+  }
 
   if (to.name === 'codingAgent.config' && ['plugins', 'presets'].includes(String(to.params.section)) && to.params.agentId !== 'dsh') {
     next({ name: 'codingAgent.config', params: { ...to.params, section: 'settings' }, replace: true })

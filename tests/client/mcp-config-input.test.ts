@@ -37,7 +37,7 @@ describe('shared MCP config input', () => {
     vi.useRealTimers()
   })
 
-  it('automatically unwraps mcpServers and pretty-prints after the Hermes delay', () => {
+  it('automatically unwraps mcpServers and pretty-prints after the AFY Studio delay', () => {
     const mounted = mountInput(() => null)
     wrapper = mounted.wrapper
     const { input } = mounted

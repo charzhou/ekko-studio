@@ -24,10 +24,10 @@ beforeEach(async () => {
     '../../packages/server/src/modules/studio/public/agent-status-registry'
   )
   resetAgentStatusRegistryForTests()
-  updateAgentStatus('codex', {
+  updateAgentStatus('hermes', {
     installed: true,
     source: 'user-cli',
-    path: '/usr/local/bin/codex',
+    path: '/usr/local/bin/hermes',
   })
 })
 
@@ -56,7 +56,7 @@ describe('group Agent presets', () => {
     modelGroups.value = [{ provider: 'openai', models: ['gpt-test'] }]
 
     const input = {
-      agent: 'codex',
+      agent: 'hermes',
       profile: 'research',
       provider: 'openai',
       model: 'gpt-test',
@@ -229,27 +229,22 @@ describe('group Agent presets', () => {
     { agent: 'codex', effort: 'ultra' },
     { agent: 'kimi', effort: 'off' },
     { agent: 'kimi', effort: 'on' },
-  ])('round-trips global $agent effort $effort and native defaults without Studio bindings', async ({ agent, effort }) => {
+  ])('preserves legacy global $agent effort $effort in stored definitions', async ({ agent, effort }) => {
     const { initAllStores } = await import('../../packages/server/src/modules/studio/infrastructure/database/init')
-    const controller = await import('../../packages/server/src/modules/studio/controllers/group-agent-presets')
-    const { updateAgentStatus } = await import('../../packages/server/src/modules/studio/public/agent-status-registry')
-    updateAgentStatus(agent as 'codex' | 'kimi', { installed: true, source: 'user-cli', path: `/test/${agent}` })
+    const { normalizeGroupAgentPresetInput, validateGroupAgentPresetCapability, createGroupAgentPreset,
+      listGroupAgentPresets, updateGroupAgentPreset } = await import('../../packages/server/src/modules/studio/services/group-chat/agent-presets')
     initAllStores()
-    modelGroups.value = []
-    const user = { id: 910, role: 'admin', profiles: ['research'] }
     const input = { agent, agentMode: 'global', profile: 'research', name: `Global native ${agent} ${effort}`,
       model: 'native-review', reasoningEffort: effort, provider: 'discard', apiMode: 'codex_responses' }
-    const created: any = { state: { user }, request: { body: input } }
-    await controller.create(created)
-    expect(created.status).toBe(201)
-    expect(created.body.preset).toMatchObject({ model: 'native-review', reasoningEffort: effort, provider: '', apiMode: '' })
-    const listed: any = { state: { user } }
-    await controller.list(listed)
-    expect(listed.body.presets).toContainEqual(expect.objectContaining({ model: 'native-review', reasoningEffort: effort, available: true }))
-    const updated: any = { state: { user }, params: { presetId: created.body.preset.id },
-      request: { body: { ...input, model: '', reasoningEffort: '' } } }
-    await controller.update(updated)
-    expect(updated.body.preset).toMatchObject({ model: '', reasoningEffort: '', provider: '', apiMode: '' })
+    const definition = normalizeGroupAgentPresetInput(input)
+    expect(() => validateGroupAgentPresetCapability(definition, [])).not.toThrow()
+    const created = createGroupAgentPreset({ ...definition, ownerUserId: 910 })
+    expect(created).toMatchObject({ model: 'native-review', reasoningEffort: effort, provider: '', apiMode: '' })
+    expect(listGroupAgentPresets(910)).toContainEqual(created)
+    const updated = updateGroupAgentPreset(created.id, 910, {
+      ...normalizeGroupAgentPresetInput({ ...input, model: '', reasoningEffort: '' }), ownerUserId: 910,
+    })
+    expect(updated).toMatchObject({ model: '', reasoningEffort: '', provider: '', apiMode: '' })
   })
 
   it('marks presets unavailable when their Agent is not installed', async () => {
@@ -258,7 +253,7 @@ describe('group Agent presets', () => {
     modelGroups.value = [{ provider: 'openai', models: ['gpt-test'] }]
     const user = { id: 901, role: 'admin', profiles: ['research'] }
     const input = {
-      agent: 'codex',
+      agent: 'hermes',
       profile: 'research',
       provider: 'openai',
       model: 'gpt-test',
@@ -272,7 +267,7 @@ describe('group Agent presets', () => {
     await controller.create(createCtx)
     expect(createCtx.status).toBe(201)
 
-    updateAgentStatus('codex', {
+    updateAgentStatus('hermes', {
       installed: false,
       source: 'not-installed',
       path: '',
@@ -285,11 +280,11 @@ describe('group Agent presets', () => {
       expect.objectContaining({
         id: createCtx.body.preset.id,
         available: false,
-        validationError: 'Codex is not installed',
+        validationError: 'Hermes is not installed',
       }),
     ])
     await expect(controller.resolveGroupAgentPresetForApplication(user, createCtx.body.preset.id))
-      .rejects.toMatchObject({ status: 409, code: 'AGENT_NOT_INSTALLED', agent: 'codex' })
+      .rejects.toMatchObject({ status: 409, code: 'AGENT_NOT_INSTALLED', agent: 'hermes' })
   })
 
   it('enforces owner/profile boundaries and fail-closes disabled models across CRUD and application', async () => {
@@ -298,7 +293,7 @@ describe('group Agent presets', () => {
     const createCtx: any = {
       state: { user: { id: 41, role: 'admin', profiles: ['research'] } },
       request: { body: {
-        agent: 'codex',
+        agent: 'hermes',
         profile: 'research',
         provider: 'openai',
         model: 'gpt-test',
@@ -391,67 +386,64 @@ describe('group Agent presets', () => {
     expect(listCtx.body.presets).toEqual([
       expect.objectContaining({ id: presetId, available: false, validationError: expect.stringContaining('unavailable') }),
     ])
+
+    const removeCtx: any = { state: createCtx.state, params: { presetId } }
+    await controller.remove(removeCtx)
+    expect(removeCtx.body).toEqual({ success: true })
+    await expect(controller.resolveGroupAgentPresetForApplication(createCtx.state.user, presetId))
+      .rejects.toMatchObject({ status: 404 })
   })
 
-  it('keeps the stashed launch mode on a saved Cursor preset and clears it when the preset leaves Cursor', async () => {
-    const { updateAgentStatus } = await import('../../packages/server/src/modules/studio/public/agent-status-registry')
+  it('preserves a saved Cursor launch mode in compatible storage and clears it for another agent', async () => {
+    const { initAllStores } = await import('../../packages/server/src/modules/studio/infrastructure/database/init')
+    const { normalizeGroupAgentPresetInput, createGroupAgentPreset, getGroupAgentPreset,
+      updateGroupAgentPreset } = await import('../../packages/server/src/modules/studio/services/group-chat/agent-presets')
+    initAllStores()
+    const created = createGroupAgentPreset({
+      ...normalizeGroupAgentPresetInput({ agent: 'cursor', agentMode: 'global', priorAgentMode: 'global',
+        profile: 'research', name: 'Cursor Reviewer' }),
+      ownerUserId: 77,
+    })
+    expect(getGroupAgentPreset(created.id, 77)).toMatchObject({
+      agent: 'cursor', agentMode: 'global', priorAgentMode: 'global',
+    })
+    const updated = updateGroupAgentPreset(created.id, 77, {
+      ...normalizeGroupAgentPresetInput({ agent: 'codex', agentMode: 'scoped', profile: 'research',
+        provider: 'openai', model: 'gpt-test', apiMode: 'codex_responses', name: 'Cursor Reviewer' }),
+      ownerUserId: 77,
+    })
+    expect(updated).toMatchObject({ agent: 'codex', priorAgentMode: '' })
+  })
+
+  it.each(['codex', 'kimi', 'cursor', 'ekko'] as const)('rejects %s creation and legacy preset application without changing storage', async agent => {
     const { initAllStores } = await import('../../packages/server/src/modules/studio/infrastructure/database/init')
     const controller = await import('../../packages/server/src/modules/studio/controllers/group-agent-presets')
+    const { normalizeGroupAgentPresetInput, createGroupAgentPreset, getGroupAgentPreset,
+      listGroupAgentPresets } = await import('../../packages/server/src/modules/studio/services/group-chat/agent-presets')
     initAllStores()
     modelGroups.value = [{ provider: 'openai', models: ['gpt-test'] }]
-    updateAgentStatus('cursor', {
-      installed: true,
-      source: 'user-cli',
-      path: 'agent',
-    })
-    updateAgentStatus('codex', {
-      installed: true,
-      source: 'user-cli',
-      path: '/usr/local/bin/codex',
-    })
-    const user = { id: 77, role: 'admin', profiles: ['research'] }
-    const createCtx: any = {
-      state: { user },
-      request: { body: {
-        agent: 'cursor',
-        agentMode: 'global',
-        priorAgentMode: 'global',
-        profile: 'research',
-        name: 'Cursor Reviewer',
-        description: '',
-        avatar: '',
-      } },
-    }
+    const user = { id: 990, role: 'admin', profiles: ['research'] }
+    const input = { agent, profile: 'research', provider: 'openai', model: 'gpt-test',
+      apiMode: 'codex_responses', name: `Legacy ${agent}` }
+    const before = listGroupAgentPresets(user.id)
+    const createCtx: any = { state: { user }, request: { body: input } }
     await controller.create(createCtx)
-    expect(createCtx.status).toBe(201)
-    expect(createCtx.body.preset).toMatchObject({
-      agent: 'cursor',
-      agentMode: 'global',
-      priorAgentMode: 'global',
-    })
+    expect(createCtx).toMatchObject({ status: 410, body: { code: 'agent_disabled' } })
+    expect(listGroupAgentPresets(user.id)).toEqual(before)
 
-    await expect(controller.resolveGroupAgentPresetForApplication(user, createCtx.body.preset.id))
-      .resolves.toMatchObject({ priorAgentMode: 'global' })
-
-    const updateCtx: any = {
-      state: { user },
-      params: { presetId: createCtx.body.preset.id },
-      request: { body: {
-        agent: 'codex',
-        agentMode: 'scoped',
-        profile: 'research',
-        provider: 'openai',
-        model: 'gpt-test',
-        apiMode: 'codex_responses',
-        name: 'Cursor Reviewer',
-        description: '',
-        avatar: '',
-      } },
-    }
+    const legacy = createGroupAgentPreset({ ...normalizeGroupAgentPresetInput(input), ownerUserId: user.id })
+    await expect(controller.resolveGroupAgentPresetForApplication(user, legacy.id))
+      .rejects.toMatchObject({ status: 410, code: 'agent_disabled' })
+    const updateCtx: any = { state: { user }, params: { presetId: legacy.id },
+      request: { body: { ...input, name: `Rejected change ${agent}` } } }
     await controller.update(updateCtx)
-    expect(updateCtx.body.preset).toMatchObject({
-      agent: 'codex',
-      priorAgentMode: '',
-    })
+    expect(updateCtx).toMatchObject({ status: 410, body: { code: 'agent_disabled' } })
+    expect(getGroupAgentPreset(legacy.id, user.id)).toEqual(legacy)
+    const listCtx: any = { state: { user }, query: {} }
+    await controller.list(listCtx)
+    expect(listCtx.body.presets).toContainEqual(expect.objectContaining({
+      id: legacy.id, available: false, validationError: 'Only Hermes Agent runs are available in AFY Studio.',
+    }))
   })
+
 })

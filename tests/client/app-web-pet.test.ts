@@ -92,10 +92,6 @@ vi.mock('@/components/layout/GlobalPendingActions.vue', () => ({
   default: { name: 'GlobalPendingActions', template: '<div class="global-pending-actions-test" />' },
 }))
 
-vi.mock('@/components/layout/RuntimeRestartPrompt.vue', () => ({
-  default: { name: 'RuntimeRestartPrompt', template: '<div class="runtime-restart-prompt-test" />' },
-}))
-
 vi.mock('@/components/layout/StudioAnnouncementPrompt.vue', () => ({
   default: { name: 'StudioAnnouncementPrompt', template: '<div />' },
 }))
@@ -167,20 +163,13 @@ describe('App web pet mounting', () => {
     expect(sources.activeProfileName()).toBe('default')
   })
 
-  it.each(['super_admin', 'admin', null] as const)(
-    'mounts pending actions but restricts the Runtime prompt for role %s', async (role) => {
-      if (role) {
-        const payload = btoa(JSON.stringify({ sub: '1', role }))
-        localStorage.setItem('hermes_api_key', `header.${payload}.signature`)
-      }
-      const wrapper = mountApp()
-      await flushPromises()
+  it('mounts pending actions', async () => {
+    const wrapper = mountApp()
+    await flushPromises()
 
-      expect(wrapper.findComponent({ name: 'GlobalPendingActions' }).exists()).toBe(true)
-      expect(wrapper.findComponent({ name: 'RuntimeRestartPrompt' }).exists()).toBe(role === 'super_admin')
+    expect(wrapper.findComponent({ name: 'GlobalPendingActions' }).exists()).toBe(true)
     wrapper.unmount()
-    },
-  )
+  })
 
   it('mounts the web pet in the browser web app', async () => {
     const wrapper = mountApp()

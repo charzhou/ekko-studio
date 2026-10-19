@@ -1115,17 +1115,17 @@ describe('group chat agent workspace bridge runs', () => {
       agentId: 'agent-ekko',
       agent: 'ekko',
       profile: 'default',
-      name: 'Ekko',
+      name: 'AFY Studio',
       description: '',
       invited: 0,
       backgroundDelegationEnabled: false,
     } as any) as any
     client.setStorage({ getRoom: vi.fn(() => ({ sessionSeed: 'seed-1', workspace: '' })) })
     ;(clients as any).rooms.set('room-1', new Map([[client.agentId, client]]))
-    const activeSessionId = `gc_run_room-1_default_Ekko_${'a'.repeat(32)}`
+    const activeSessionId = `gc_run_room-1_default_AFY_${'a'.repeat(32)}`
     client.activeSessions.set('room-1', activeSessionId)
 
-    await clients.interruptAgent('room-1', 'Ekko')
+    await clients.interruptAgent('room-1', 'AFY Studio')
 
     expect(chatRunService.abortSession).toHaveBeenCalledWith(
       activeSessionId,

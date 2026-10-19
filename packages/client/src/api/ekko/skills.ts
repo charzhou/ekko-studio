@@ -91,7 +91,7 @@ export async function importEkkoSkill(files: File[], category?: string): Promise
   const token = getApiKey()
   if (token) headers.Authorization = `Bearer ${token}`
   const profile = getActiveProfileName()
-  if (profile) headers['X-Hermes-Profile'] = profile
+  if (profile) headers['X-AFY Studio-Profile'] = profile
   const formData = new FormData()
   for (const file of files) {
     const path = (file as File & { webkitRelativePath?: string }).webkitRelativePath || file.name

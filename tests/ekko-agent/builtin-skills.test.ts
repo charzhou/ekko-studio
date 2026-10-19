@@ -1,16 +1,12 @@
-import { execFile as execFileCallback } from 'node:child_process'
 import { existsSync } from 'node:fs'
 import { mkdir, mkdtemp, readFile, readdir, realpath, rm, writeFile } from 'node:fs/promises'
-import { createServer } from 'node:http'
 import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
-import { promisify } from 'node:util'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { EkkoDirectoryManager } from '../../packages/ekko-agent/src/directories'
 import { SkillListTool, SkillViewTool } from '../../packages/ekko-agent/src/tools/skills'
 
 const tempDirectories: string[] = []
-const execFile = promisify(execFileCallback)
 
 async function temporaryDirectory(prefix: string): Promise<string> {
   const directory = await mkdtemp(join(tmpdir(), prefix))
@@ -85,9 +81,6 @@ describe('Ekko built-in skills', () => {
       'docx',
       'gh-issues',
       'github',
-      'grok-image-to-video',
-      'hermes-studio-installation',
-      'image-gen',
       'node-inspect-debugger',
       'obsidian',
       'ocr-and-documents',
@@ -137,121 +130,12 @@ describe('Ekko built-in skills', () => {
         },
       })
 
-    const installationList = await new SkillListTool(defaultSkills).execute({ query: 'Claude Code' })
-    expect(JSON.parse(installationList.content).skills).toEqual([
-      expect.objectContaining({ name: 'hermes-studio-installation' }),
-    ])
-    await expect(new SkillViewTool(defaultSkills).execute({ name: 'hermes-studio-installation' }))
-      .resolves.toMatchObject({
-        ok: true,
-        data: {
-          name: 'hermes-studio-installation',
-          baseDirectory: await realpath(join(defaultSkills, 'hermes-studio-installation')),
-        },
-      })
   })
 
-  it('runs the bundled Studio media helpers without exposing the server token', async () => {
-    const root = await temporaryDirectory('ekko-builtin-media-')
-    const inputImage = join(root, 'source.png')
-    const outputImage = join(root, 'generated.png')
-    const outputVideo = join(root, 'generated.mp4')
-    await writeFile(inputImage, 'source-image', 'utf8')
-    const requests: Array<{
-      path: string
-      authorization: string
-      profile: string
-      body: Record<string, unknown>
-    }> = []
-    const server = createServer((request, response) => {
-      const chunks: Buffer[] = []
-      request.on('data', chunk => chunks.push(Buffer.from(chunk)))
-      request.on('end', () => {
-        void (async () => {
-          const body = JSON.parse(Buffer.concat(chunks).toString('utf8')) as Record<string, unknown>
-          requests.push({
-            path: request.url || '',
-            authorization: String(request.headers.authorization || ''),
-            profile: String(request.headers['x-hermes-profile'] || ''),
-            body,
-          })
-          response.setHeader('Content-Type', 'application/json')
-          if (request.url === '/api/studio/media/apikey-image-generate') {
-            await writeFile(String(body.output_path), 'generated-image', 'utf8')
-            response.end(JSON.stringify({ ok: true, output_paths: [body.output_path] }))
-            return
-          }
-          if (request.url === '/api/studio/media/grok-image-to-video') {
-            await writeFile(String(body.output_path), 'generated-video', 'utf8')
-            response.end(JSON.stringify({ status: 'done', output_path: body.output_path }))
-            return
-          }
-          response.statusCode = 404
-          response.end(JSON.stringify({ error: 'not found' }))
-        })().catch((error) => {
-          response.statusCode = 500
-          response.end(JSON.stringify({ error: String(error) }))
-        })
-      })
-    })
-    await new Promise<void>((resolveListen, rejectListen) => {
-      server.once('error', rejectListen)
-      server.listen(0, '127.0.0.1', () => resolveListen())
-    })
-
-    try {
-      const address = server.address()
-      if (!address || typeof address === 'string') throw new Error('Expected a TCP test server address.')
-      const env = {
-        ...process.env,
-        AUTH_TOKEN: 'private-test-token',
-        HERMES_WEB_UI_URL: `http://127.0.0.1:${address.port}`,
-      }
-      const skills = resolve(process.cwd(), 'packages/ekko-agent/skills')
-      const imageResult = await execFile(process.execPath, [
-        join(skills, 'image-gen', 'scripts', 'studio-image-gen.mjs'),
-        '--mode', 'edit',
-        '--profile', 'work',
-        '--image-path', inputImage,
-        '--prompt', 'Keep the subject and change the background.',
-        '--output-path', outputImage,
-      ], { env, encoding: 'utf8' })
-      const videoResult = await execFile(process.execPath, [
-        join(skills, 'grok-image-to-video', 'scripts', 'grok-image-to-video.mjs'),
-        '--profile', 'work',
-        '--image-path', inputImage,
-        '--prompt', 'Use a slow push-in.',
-        '--duration', '6',
-        '--output-path', outputVideo,
-      ], { env, encoding: 'utf8' })
-
-      expect(JSON.parse(imageResult.stdout)).toMatchObject({
-        output_paths: [outputImage],
-        output_verified: true,
-      })
-      expect(JSON.parse(videoResult.stdout)).toMatchObject({
-        output_path: outputVideo,
-        output_verified: true,
-      })
-      expect(`${imageResult.stdout}${videoResult.stdout}`).not.toContain('private-test-token')
-      expect(requests).toEqual([
-        expect.objectContaining({
-          path: '/api/studio/media/apikey-image-generate',
-          authorization: 'Bearer private-test-token',
-          profile: 'work',
-          body: expect.objectContaining({ mode: 'edit', image_path: inputImage, output_path: outputImage }),
-        }),
-        expect.objectContaining({
-          path: '/api/studio/media/grok-image-to-video',
-          authorization: 'Bearer private-test-token',
-          profile: 'work',
-          body: expect.objectContaining({ duration: 6, image_path: inputImage, output_path: outputVideo }),
-        }),
-      ])
-    } finally {
-      await new Promise<void>((resolveClose, rejectClose) => {
-        server.close(error => error ? rejectClose(error) : resolveClose())
-      })
+  it('does not distribute partner media helpers or upstream installation guides', async () => {
+    const root = resolve(process.cwd(), 'packages/ekko-agent/skills')
+    for (const name of ['grok-image-to-video', 'image-gen', 'hermes-studio-installation']) {
+      expect(existsSync(join(root, name))).toBe(false)
     }
   })
 })

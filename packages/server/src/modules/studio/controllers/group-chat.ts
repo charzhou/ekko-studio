@@ -22,8 +22,14 @@ import * as uploadCtrl from './group-chat-upload'
 import * as agentPresetCtrl from './group-agent-presets'
 import {
     AGENT_NOT_INSTALLED,
-    assertAgentAvailable,
+    assertAgentAvailable as assertInstalledAgent,
 } from '../services/agent-availability'
+import { requireOemHermesAgent } from '../public/oem'
+
+function assertAgentAvailable(agent: string | undefined): void {
+    requireOemHermesAgent(agent || 'hermes')
+    assertInstalledAgent(agent)
+}
 
 let chatServer: GroupChatServer | null = null
 const roomAgentUpdates = new Set<string>()
@@ -191,14 +197,15 @@ function applyParticipantNameConflict(ctx: any, err: any): boolean {
 }
 
 function applyAgentAvailabilityError(ctx: any, err: any): boolean {
-    if (err?.code !== AGENT_NOT_INSTALLED) return false
+    if (err?.code !== AGENT_NOT_INSTALLED && err?.code !== 'agent_disabled') return false
     ctx.status = Number(err.status || 409)
     ctx.body = { code: err.code, error: err.message, agent: err.agent }
     return true
 }
 
 async function createRoomAgentRuntimeClient(server: GroupChatServer, agentId: string, input: AgentInput) {
-    const agent = String(input.agent || 'hermes').trim() as AgentInput['agent']
+    requireOemHermesAgent(input.agent || 'hermes')
+    const agent = 'hermes'
     assertAgentAvailable(agent)
     const profile = input.profile.trim()
     return server.agentClients.createAgent({

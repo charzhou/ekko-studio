@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, nextTick, onBeforeUnmount, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
-import thinkingImage from '@/assets/thinking.gif'
+const thinkingImage = '/logo.png'
 import type { ChatAgentAvatar } from '@/utils/chat-agent-avatar'
 
 const props = withDefaults(defineProps<{
@@ -11,9 +11,9 @@ const props = withDefaults(defineProps<{
   agent?: ChatAgentAvatar
   deploymentSessionId?: string
 }>(), {
-  agent: () => ({ label: 'Hermes', src: '/coding-agents/hermes.png' }),
+  agent: () => ({ label: 'AFY Studio', src: '/logo.png' }),
 })
-const isEkko = computed(() => props.agent.label === 'Ekko')
+const isEkko = computed(() => props.agent.label === 'AFY Studio')
 
 const { t } = useI18n()
 const reasoningBody = ref<HTMLElement | null>(null)

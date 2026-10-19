@@ -1438,7 +1438,7 @@ describe('coding agent launch preparation', () => {
     expect(readFileSync(join(rootDir, 'auth.json'), 'utf8')).toBe('{"token":"user-token"}\n')
     const prompt = readFileSync(join(rootDir, 'AGENTS.md'), 'utf8')
     expect(prompt).toContain('User global Codex instructions.')
-    expect(prompt).toContain('Ekko Studio MCP usage')
+    expect(prompt).toContain('AFY Studio MCP usage')
     expect(readFileSync(join(globalCodexHome, 'config.toml'), 'utf8')).toBe('model = "gpt-global"\n')
     expect(readFileSync(join(globalCodexHome, 'auth.json'), 'utf8')).toBe('{"token":"user-token"}\n')
     expect(readFileSync(join(globalCodexHome, 'AGENTS.md'), 'utf8')).toBe('User global Codex instructions.\n')
@@ -1746,7 +1746,7 @@ describe('coding agent launch preparation', () => {
       promptFile: promptPath,
     })
     expect(rootDir).toContain(join('coding-agent', 'model', 'default', 'global', 'pi', 'runs'))
-    expect(readFileSync(promptPath, 'utf8')).toContain('Ekko Studio MCP usage')
+    expect(readFileSync(promptPath, 'utf8')).toContain('AFY Studio MCP usage')
     expect(existsSync(join(home, 'global-home', '.pi', 'agent', 'APPEND_SYSTEM.md'))).toBe(false)
   })
 
@@ -2466,7 +2466,7 @@ describe('coding agent launch preparation', () => {
     expect(config).toContain(`model_catalog_json = ${JSON.stringify(join(result.rootDir, 'codex-model-catalog.json'))}`)
     expect(config).toContain('model_reasoning_summary = "auto"')
     expect(config).toContain('developer_instructions = """')
-    expect(config).toContain('Ekko Studio MCP usage')
+    expect(config).toContain('AFY Studio MCP usage')
     expect(config).toContain('ekko_studio_browser_toolset is available')
     expect(config).toContain('call it with action=list')
     expect(config).toContain('Browser MCP exposes a compact toolset rather than resources')
@@ -2492,7 +2492,7 @@ describe('coding agent launch preparation', () => {
 
     expect(result.files.some(file => file.key === 'agents')).toBe(true)
     const agents = readFileSync(join(result.rootDir, 'AGENTS.md'), 'utf-8')
-    expect(agents).toContain('Ekko Studio MCP usage')
+    expect(agents).toContain('AFY Studio MCP usage')
     expect(agents).toContain('# 输出格式规范')
 
     const catalog = JSON.parse(readFileSync(join(result.rootDir, 'codex-model-catalog.json'), 'utf-8'))
@@ -3742,9 +3742,9 @@ describe('coding agent launch preparation', () => {
 
   it('adapts Claude Code streaming requests to the Responses API for codex_responses providers', async () => {
     const target = registerClaudeCodeProxyTarget({
-      provider: 'fun-codex',
+      provider: 'deepseek',
       model: 'gpt-5.5',
-      baseUrl: 'https://api.apikey.fan/v1',
+      baseUrl: 'https://api.deepseek.com/v1',
       apiKey: 'sk-upstream',
       apiMode: 'codex_responses',
     })
@@ -3766,7 +3766,7 @@ describe('coding agent launch preparation', () => {
 
     await claudeProxyMessages(ctx)
 
-    expect(fetchMock).toHaveBeenCalledWith('https://api.apikey.fan/v1/responses', expect.objectContaining({
+    expect(fetchMock).toHaveBeenCalledWith('https://api.deepseek.com/v1/responses', expect.objectContaining({
       method: 'POST',
       headers: expect.objectContaining({ Authorization: 'Bearer sk-upstream' }),
     }))
@@ -3790,9 +3790,9 @@ describe('coding agent launch preparation', () => {
 
   it('returns one normalized Claude tool call when Responses uses separate item and call ids', async () => {
     const target = registerClaudeCodeProxyTarget({
-      provider: 'fun-codex',
+      provider: 'deepseek',
       model: 'gpt-5.5',
-      baseUrl: 'https://api.apikey.fan/v1',
+      baseUrl: 'https://api.deepseek.com/v1',
       apiKey: 'sk-upstream',
       apiMode: 'codex_responses',
     })
@@ -3953,9 +3953,9 @@ describe('coding agent launch preparation', () => {
 
   it('passes Anthropic Messages providers through the local proxy without exposing upstream credentials', async () => {
     const target = registerClaudeCodeProxyTarget({
-      provider: 'fun-claude',
+      provider: 'anthropic',
       model: 'claude-sonnet-4-6',
-      baseUrl: 'https://api.apikey.fan',
+      baseUrl: 'https://api.anthropic.com',
       apiKey: 'sk-upstream',
       apiMode: 'anthropic_messages',
     })
@@ -3978,7 +3978,7 @@ describe('coding agent launch preparation', () => {
 
     await claudeProxyMessages(ctx)
 
-    expect(fetchMock).toHaveBeenCalledWith('https://api.apikey.fan/v1/messages', expect.objectContaining({
+    expect(fetchMock).toHaveBeenCalledWith('https://api.anthropic.com/v1/messages', expect.objectContaining({
       method: 'POST',
       headers: expect.objectContaining({
         Authorization: 'Bearer sk-upstream',

@@ -87,7 +87,7 @@ export const useKanbanStore = defineStore('kanban', () => {
 
   function assertCapability(key: string): void {
     if (!isCapabilitySupported(key)) {
-      throw new Error(`Kanban capability "${key}" is not supported by the current Hermes backend`)
+      throw new Error(`Kanban capability "${key}" is not supported by the current AFY Studio backend`)
     }
   }
 

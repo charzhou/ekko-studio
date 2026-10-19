@@ -42,7 +42,10 @@ describe('Agent Manager locale coverage', () => {
 
       for (const key of ['aiHelpGeneralPrompt', 'aiHelpPrompt'] as const) {
         const prompt = String(messages.agentManager[key])
-        expect(prompt, `${locale} agentManager.${key} Skill routing`).toContain('hermes-studio-installation')
+        expect(prompt, `${locale} agentManager.${key} runtime identity`).toContain('AFY Studio')
+        expect(prompt).toContain('HERMES_HOME')
+        expect(prompt).not.toContain('AFY Studio Agent diagnostics')
+        expect(prompt).not.toContain('hermes-studio-installation')
         expect(prompt, `${locale} agentManager.${key} reference routing`).not.toContain('references/coding-agents.md')
       }
     }

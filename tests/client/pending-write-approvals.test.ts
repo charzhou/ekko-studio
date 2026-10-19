@@ -70,7 +70,7 @@ describe('PendingWriteApprovals', () => {
     mockRejectPendingWrite.mockResolvedValue({ success: true, output: 'rejected' })
   })
 
-  it('shows an unsupported state for older Hermes Agent versions', async () => {
+  it('shows an unsupported state for older AFY Studio Agent versions', async () => {
     mockFetchPendingWrites.mockResolvedValue({ records: [], counts: { memory: 0, skills: 0 }, supported: false })
 
     const wrapper = mountComponent()
