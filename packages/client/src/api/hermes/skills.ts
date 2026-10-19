@@ -207,7 +207,7 @@ export async function importSkill(files: File[], category?: string, target: Skil
   const headers: Record<string, string> = {}
   if (token) headers['Authorization'] = `Bearer ${token}`
   const profile = getActiveProfileName()
-  if (profile) headers['X-AFY Studio-Profile'] = profile
+  if (profile) headers['X-Hermes-Profile'] = profile
 
   const formData = new FormData()
   for (const f of files) {

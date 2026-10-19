@@ -756,7 +756,7 @@ describe('ChatRunSocket queued bridge runs', () => {
     expect(handleCodingAgentRunMock).not.toHaveBeenCalled()
     expect((server as any).sessionMap.get('session-1').queue).toEqual([])
     expect(socket.emit).toHaveBeenCalledWith('run.failed', expect.objectContaining({
-      session_id: 'session-1', error: 'Only Hermes Agent runs are available in AFY Studio.',
+      session_id: 'session-1', error: 'Only AFY Studio Agent runs are available in AFY Studio.',
     }))
     expect(handleBridgeRunMock).not.toHaveBeenCalled()
     expect(namespace.to).not.toHaveBeenCalledWith('session:session-1')

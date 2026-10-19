@@ -14,7 +14,7 @@ export interface ApiModel {
   responses_supported: boolean
 }
 // This account-level feature must not inherit the page's active Profile.
-const headers = { 'X-AFY Studio-Profile': '' }
+const headers = { 'X-Hermes-Profile': '' }
 export function modelApiBaseUrl(): string {
   return new URL(`${getBaseUrl().replace(/\/$/, '')}/api/ekko-studio/models/v1`, window.location.origin).href
 }

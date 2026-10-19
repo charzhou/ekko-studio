@@ -1,5 +1,5 @@
 export interface ChatAgentAvatar {
-  label: 'AFY Studio' | 'AFY Studio' | 'Claude' | 'Codex' | 'Pi' | 'Grok' | 'OpenCode' | 'DeepSeek Harness' | 'Cursor' | 'Antigravity' | 'Qwen Code' | 'Kimi Code' | 'CodeBuddy' | 'Qoder' | 'GitHub Copilot' | 'ZCode'
+  label: 'AFY Studio' | 'Claude' | 'Codex' | 'Pi' | 'Grok' | 'OpenCode' | 'DeepSeek Harness' | 'Cursor' | 'Antigravity' | 'Qwen Code' | 'Kimi Code' | 'CodeBuddy' | 'Qoder' | 'GitHub Copilot' | 'ZCode'
   src: string
 }
 

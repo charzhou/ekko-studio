@@ -622,7 +622,7 @@ async function uploadFiles(attachments: Attachment[]): Promise<{ name: string; p
   const profileName = getActiveProfileName()
   const headers: Record<string, string> = {}
   if (token) headers.Authorization = `Bearer ${token}`
-  if (profileName) headers['X-AFY Studio-Profile'] = profileName
+  if (profileName) headers['X-Hermes-Profile'] = profileName
   const res = await fetch('/api/studio/uploads', {
     method: 'POST',
     body: formData,

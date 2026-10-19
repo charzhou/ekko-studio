@@ -450,7 +450,7 @@ describe('ChatRunSocket bridge readiness gating', () => {
     ;(server as any).sessionMap.set('session-1', { messages: [], isWorking: true, events: [], queue: [] })
     ;(server as any).onConnection(socket)
     await handlers.get('run')?.({ input: `/${command}`, session_id: 'session-1', source: 'coding_agent', coding_agent_id: 'ekko-agent' })
-    expect(socket.emit).toHaveBeenCalledWith('run.failed', expect.objectContaining({ error: 'Only Hermes Agent runs are available in AFY Studio.' }))
+    expect(socket.emit).toHaveBeenCalledWith('run.failed', expect.objectContaining({ error: 'Only AFY Studio Agent runs are available in AFY Studio.' }))
     expect(handleEkkoCommandMock).not.toHaveBeenCalled()
     expect((server as any).sessionMap.get('session-1').queue).toEqual([])
     expect(handleCodingAgentRunMock).not.toHaveBeenCalled()
@@ -561,7 +561,7 @@ describe('ChatRunSocket bridge readiness gating', () => {
       session_source: 'global_agent', coding_agent_id: 'codex', queue_id: 'phone-message-1',
     })
     expect(socket.emit).toHaveBeenCalledWith('run.failed', expect.objectContaining({
-      session_id: 'session-1', error: 'Only Hermes Agent runs are available in AFY Studio.',
+      session_id: 'session-1', error: 'Only AFY Studio Agent runs are available in AFY Studio.',
     }))
     expect(ensureReadyMock).not.toHaveBeenCalled()
     expect(handleCodingAgentRunMock).not.toHaveBeenCalled()
@@ -1074,7 +1074,7 @@ describe('ChatRunSocket internal MCP task plan compatibility lifecycle', () => {
       session_id: 'session-1', source: 'coding_agent', coding_agent_id: 'ekko-agent', input: '/context',
     })
     expect(handleEkkoAgentRunMock).not.toHaveBeenCalled()
-    expect(socket.emit).toHaveBeenCalledWith('run.failed', expect.objectContaining({ error: 'Only Hermes Agent runs are available in AFY Studio.' }))
+    expect(socket.emit).toHaveBeenCalledWith('run.failed', expect.objectContaining({ error: 'Only AFY Studio Agent runs are available in AFY Studio.' }))
     expect((server as any).sessionMap.has('session-1')).toBe(false)
     expect(socket.emit.mock.calls.some(([event]: any[]) => event === 'session.command')).toBe(false)
   })

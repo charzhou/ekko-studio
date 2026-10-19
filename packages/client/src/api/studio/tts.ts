@@ -68,7 +68,7 @@ function ttsHeaders(explicitProfile?: string): Record<string, string> {
   }
   const profile = explicitProfile?.trim() || getActiveProfileName()
   if (profile) {
-    headers['X-AFY Studio-Profile'] = profile
+    headers['X-Hermes-Profile'] = profile
   }
   return headers
 }

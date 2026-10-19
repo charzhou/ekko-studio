@@ -13,7 +13,7 @@ const props = withDefaults(defineProps<{
 }>(), {
   agent: () => ({ label: 'AFY Studio', src: '/logo.png' }),
 })
-const isEkko = computed(() => props.agent.label === 'AFY Studio')
+const isEkko = computed(() => props.agent.src === '/coding-agents/ekko-agent.png')
 
 const { t } = useI18n()
 const reasoningBody = ref<HTMLElement | null>(null)

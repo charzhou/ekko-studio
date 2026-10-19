@@ -10,7 +10,7 @@ const endMarker = '<!-- END GENERATED EKKO PUBLIC API -->'
 const write = process.argv.includes('--write')
 
 const inventory = buildInventory()
-const document = readFileSync(documentPath, 'utf8')
+const document = readFileSync(documentPath, 'utf8').replace(/\r\n?/g, '\n')
 const start = document.indexOf(beginMarker)
 const end = document.indexOf(endMarker)
 

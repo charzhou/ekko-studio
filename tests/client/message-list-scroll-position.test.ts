@@ -290,7 +290,7 @@ describe('MessageList session scroll position', () => {
 
     expect(wrapper.get('.empty-logo').attributes('src')).toBe('/coding-agents/ekko-agent.png')
     expect(wrapper.get('.empty-logo').attributes('alt')).toBe('AFY Studio')
-    expect(wrapper.get('.empty-state p').text()).toBe('chat.emptyStateAgent')
+    expect(wrapper.get('.empty-state p').text()).toBe('chat.emptyState')
 
     chatStore.activeSession = {
       ...makeSession('pending-session'),

@@ -442,7 +442,7 @@ describe('group Agent presets', () => {
     const listCtx: any = { state: { user }, query: {} }
     await controller.list(listCtx)
     expect(listCtx.body.presets).toContainEqual(expect.objectContaining({
-      id: legacy.id, available: false, validationError: 'Only Hermes Agent runs are available in AFY Studio.',
+      id: legacy.id, available: false, validationError: 'Only AFY Studio Agent runs are available in AFY Studio.',
     }))
   })
 
