@@ -187,7 +187,7 @@ describe('DisplaySettings', () => {
     await testButton!.trigger('click')
     await flushPromises()
     expect(notificationMock.showSystemNotification).toHaveBeenCalledWith(expect.objectContaining({
-      title: 'AFY Studio',
+      title: 'Studio',
       body: 'settings.display.notifyOnApprovalTest',
     }), { requireBackground: false, deduplicate: false })
   })

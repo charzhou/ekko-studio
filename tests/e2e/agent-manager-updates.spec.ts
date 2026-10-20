@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test'
 import { authenticate, mockHermesApi } from './fixtures'
 
-for (const width of [1280, 390]) test(`AFY Studio is the only Agent card and its local CLI details fit at ${width}px`, async ({ page }, testInfo) => {
+for (const width of [1280, 390]) test(`Studio is the only Agent card and its local CLI details fit at ${width}px`, async ({ page }, testInfo) => {
   await authenticate(page)
   const api = await mockHermesApi(page)
   await page.route('**/api/agents/status', route => route.fulfill({ json: {
@@ -39,7 +39,7 @@ for (const width of [1280, 390]) test(`AFY Studio is the only Agent card and its
   expect(api.requests.filter(request => request.pathname.startsWith('/api/coding-agents'))).toHaveLength(0)
 })
 
-test('missing AFY Studio reports status without offering runtime downloads', async ({ page }) => {
+test('missing Studio reports status without offering runtime downloads', async ({ page }) => {
   await authenticate(page)
   await mockHermesApi(page)
   await page.route('**/api/agents/status', route => route.fulfill({ json: {

@@ -691,7 +691,7 @@ Options:
 }
 
 function doUpdate() {
-  throw new Error('Updates and downloads are not available in AFY Studio.')
+  throw new Error('Updates and downloads are not available in Studio.')
 }
 
 if (process.argv[1] && realpathSync(resolve(process.argv[1])) === __filename) {

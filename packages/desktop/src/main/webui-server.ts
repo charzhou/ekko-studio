@@ -638,7 +638,9 @@ export async function startWebUiServer(port = DEFAULT_PORT): Promise<string> {
     searchPath: userSearchPath,
     hermesHome: agentHome,
     managedRuntimes: runtimeCandidates,
-    preferManagedRuntime: app.isPackaged || Boolean(process.env.HERMES_DESKTOP_RUNTIME_DIR?.trim()),
+    // Windows ships an offline runtime; local macOS builds should prefer the user CLI.
+    preferManagedRuntime: (app.isPackaged && process.platform === 'win32')
+      || Boolean(process.env.HERMES_DESKTOP_RUNTIME_DIR?.trim()),
   })
   const selectedManagedRuntime = hermesSelection.source === 'managed-runtime'
     ? runtimeCandidates.find(candidate => resolve(candidate.path) === resolve(hermesSelection.path))

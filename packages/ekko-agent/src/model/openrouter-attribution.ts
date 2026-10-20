@@ -1,5 +1,5 @@
 export const OPENROUTER_APP_HEADERS = {
-  'X-OpenRouter-Title': 'AFY Studio',
+  'X-OpenRouter-Title': 'Studio',
   'X-OpenRouter-Categories': 'cli-agent,personal-agent',
 } as const
 

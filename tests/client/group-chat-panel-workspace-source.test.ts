@@ -20,7 +20,7 @@ describe('GroupChatPanel OEM surface', () => {
     const panel = readFileSync('packages/client/src/components/hermes/group-chat/GroupChatPanel.vue', 'utf8')
     const selection = readFileSync('packages/client/src/utils/coding-agent-mode.ts', 'utf8')
 
-    expect(OEM_GROUP_AGENT_OPTIONS).toEqual([{ label: 'AFY Studio', value: 'hermes' }])
+    expect(OEM_GROUP_AGENT_OPTIONS).toEqual([{ label: 'Studio', value: 'hermes' }])
     expect(panel).toContain('const groupAgentTypeDefinitions = OEM_GROUP_AGENT_OPTIONS')
     expect(panel).toContain('submittedCodingAgentSelection({')
     expect(panel).toContain('priorAgentMode: priorAgentMode.value,')

@@ -5,7 +5,7 @@ export function desktopUpdateChannel(_platform = process.platform, _arch = proce
 export type DesktopUpdateSource = { channel: 'disabled'; url: ''; fallbackUrl: '' }
 
 export function validateTestUpdateUrl(_value: unknown): never {
-  throw new Error('Desktop updates are disabled in AFY Studio')
+  throw new Error('Desktop updates are disabled in Studio')
 }
 
 export function resolveDesktopUpdateSource(_metadata: unknown): DesktopUpdateSource {

@@ -19,8 +19,8 @@ const packageJson = JSON.parse(readFileSync(join(rootDir, 'package.json'), 'utf-
 const openapi = {
   openapi: '3.0.3',
   info: {
-    title: 'AFY Studio API',
-    description: 'AFY Studio API — chat sessions, scheduled jobs, platform channels, model management, skills, memory, logs, file browser, group chat, and terminal.',
+    title: 'Studio API',
+    description: 'Studio API — chat sessions, scheduled jobs, platform channels, model management, skills, memory, logs, file browser, group chat, and terminal.',
     version: packageJson.version,
   },
   servers: [
@@ -1068,7 +1068,7 @@ openapi.paths['/api/studio/chat-run/runs'] = {
   post: {
     tags: ['Chat Run'],
     summary: 'Run chat and wait for completion',
-    description: 'Starts a AFY Studio chat run through the chat-run transport and waits for a terminal result. Use this from HTTP/MCP callers that cannot consume Socket.IO streams.',
+    description: 'Starts a Studio chat run through the chat-run transport and waits for a terminal result. Use this from HTTP/MCP callers that cannot consume Socket.IO streams.',
     operationId: 'runChatOnce',
     security: [{ BearerAuth: [] }],
     requestBody: {
@@ -1098,7 +1098,7 @@ openapi.paths['/api/studio/chat-run/runs'] = {
               },
               profile: {
                 type: 'string',
-                description: 'AFY Studio profile name. Defaults to the authenticated request profile or default.',
+                description: 'Studio profile name. Defaults to the authenticated request profile or default.',
               },
               provider: {
                 type: 'string',
@@ -1757,7 +1757,7 @@ const themeArchivePreferences = [
 ]
 const themeZipExport = openapi.paths['/api/theme/presets/{id}/export'].get
 themeZipExport.summary = 'Export an owned theme as a ZIP file'
-themeZipExport.description = 'Downloads an AFY Studio theme version 1 ZIP containing theme.json and the optional background image. Includes the theme name, modes and all global/regional settings; excludes user IDs, server file paths and preset IDs. Legacy device mode/style query values are fallback values only.'
+themeZipExport.description = 'Downloads an Studio theme version 1 ZIP containing theme.json and the optional background image. Includes the theme name, modes and all global/regional settings; excludes user IDs, server file paths and preset IDs. Legacy device mode/style query values are fallback values only.'
 themeZipExport.parameters = [{ name: 'id', in: 'path', required: true, schema: { type: 'string' } }, ...themeArchivePreferences]
 themeZipExport.responses = {
   '200': { description: 'Theme ZIP download', content: { 'application/zip': { schema: { type: 'string', format: 'binary' } } } },

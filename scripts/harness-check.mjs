@@ -152,16 +152,16 @@ for (const [file, factory] of [
 const desktopManifest = JSON.parse(await readText('packages/desktop/package.json'))
 const desktopBuild = await readText('packages/desktop/electron-builder.yml')
 const manualBuild = await readText('.github/workflows/desktop-manual-build.yml')
-if (!desktopBuild.includes('productName: AFY Studio')) fail('Windows application must display AFY Studio')
+if (!desktopBuild.includes('productName: Studio')) fail('Windows application must display Studio')
 if (!desktopBuild.includes('appId: com.hermeswebui.studio')) fail('OEM keeps the existing application ID')
 if (desktopManifest.name !== 'hermes-studio') fail('OEM keeps the existing desktop package identity')
-if (/^(?:mac|linux):/m.test(desktopBuild)) fail('AFY Studio only distributes Windows desktop installers')
+if (/^(?:mac|linux):/m.test(desktopBuild)) fail('Studio only distributes Windows desktop installers')
 if (!manualBuild.includes('--win nsis') || !manualBuild.includes('--publish never')) fail('Windows build must produce installer artifacts without publication')
-if (/action-gh-release|gh release/.test(manualBuild)) fail('AFY Windows CI must not publish releases')
+if (/action-gh-release|gh release/.test(manualBuild)) fail('Studio Windows CI must not publish releases')
 // Build-time preparation supplies offline runtime artifacts; it must not restore
 // application runtime download/update endpoints or publication feeds.
 if (!manualBuild.includes('run prepare:runtime') || !manualBuild.includes('run package:runtime')
-  || !manualBuild.includes('afy-studio-runtime-windows-')) fail('AFY Windows CI must prepare and upload offline runtime artifacts')
+  || !manualBuild.includes('studio-runtime-windows-')) fail('Studio Windows CI must prepare and upload offline runtime artifacts')
 for (const retired of ['packages/esp32-c3', 'packages/tos', 'Dockerfile', 'docker-compose.yml']) {
   if (existsSync(path.join(root, retired))) fail('Retired OEM distribution remains: ' + retired)
 }
@@ -169,11 +169,11 @@ if ((await readText('scripts/build-server.mjs')).includes('dist/mcu')) fail('Ser
 for (const asset of ['packages/client/public/logo-original.png', 'packages/client/public/relay-logo.png', 'packages/client/src/assets/image.gif', 'packages/client/src/assets/thinking.gif']) {
   if (existsSync(path.join(root, asset))) fail('Retired OEM artwork remains: ' + asset)
 }
-if (!(await readText('packages/client/index.html')).includes('<title>AFY Studio</title>')) fail('Web page must display AFY Studio')
+if (!(await readText('packages/client/index.html')).includes('<title>Studio</title>')) fail('Web page must display Studio')
 if (failures.length > 0) {
   console.error('Harness check failed:')
   for (const failure of failures) console.error('- ' + failure)
   process.exitCode = 1
 } else {
-  console.log('Harness check passed: architecture, theme, JEV, managed MCP and AFY OEM distribution contracts.')
+  console.log('Harness check passed: architecture, theme, JEV, managed MCP and Studio OEM distribution contracts.')
 }

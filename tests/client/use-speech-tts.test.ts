@@ -94,7 +94,7 @@ describe('client TTS unified synthesize flow', () => {
         headers: {
           'Content-Type': 'application/json',
           Authorization: 'Bearer secret-key',
-          'X-AFY Studio-Profile': 'research',
+          'X-Studio-Profile': 'research',
         },
         body: JSON.stringify({
           provider: 'openai',
@@ -129,7 +129,7 @@ describe('client TTS unified synthesize flow', () => {
 
     const [, options] = mockFetch.mock.calls[0]
     expect(options.headers).toMatchObject({
-      'X-AFY Studio-Profile': 'group-agent-profile',
+      'X-Studio-Profile': 'group-agent-profile',
     })
     expect(JSON.parse(options.body)).toEqual({
       text: 'Profile-owned voice',
@@ -142,7 +142,7 @@ describe('client TTS unified synthesize flow', () => {
     mockFetch.mockImplementation((_url, options: RequestInit) => {
       const headers = options.headers as Record<string, string>
       return new Promise<Response>((resolve) => {
-        responseResolvers.set(headers['X-AFY Studio-Profile'], resolve)
+        responseResolvers.set(headers['X-Studio-Profile'], resolve)
       })
     })
 
@@ -156,7 +156,7 @@ describe('client TTS unified synthesize flow', () => {
     expect(mockFetch).toHaveBeenCalledTimes(2)
     expect(audioInstances).toHaveLength(0)
     expect(mockFetch.mock.calls[0][1].headers).toMatchObject({
-      'X-AFY Studio-Profile': 'profile-one',
+      'X-Studio-Profile': 'profile-one',
     })
 
     responseResolvers.get('profile-two')?.(new Response(new Blob(['second'], { type: 'audio/mpeg' }), {
@@ -183,7 +183,7 @@ describe('client TTS unified synthesize flow', () => {
     expect(mockFetch).toHaveBeenCalledTimes(2)
     expect(audioInstances).toHaveLength(2)
     expect(mockFetch.mock.calls[1][1].headers).toMatchObject({
-      'X-AFY Studio-Profile': 'profile-two',
+      'X-Studio-Profile': 'profile-two',
     })
     expect(speech.currentCustomMessageId.value).toBe('group-msg-2')
   })

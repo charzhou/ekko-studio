@@ -4,7 +4,7 @@ import { join } from 'node:path'
 
 export async function verifyBundledRuntime(runtimeRoot, platform, arch) {
   if (platform !== 'win32' || arch !== 'x64') {
-    throw new Error(`AFY Studio offline installers currently require win32-x64, received ${platform}-${arch}`)
+    throw new Error(`Studio offline installers currently require win32-x64, received ${platform}-${arch}`)
   }
   const platformKey = `win-${arch}`
   const manifestPath = join(runtimeRoot, `hermes-runtime-${platformKey}.json`)

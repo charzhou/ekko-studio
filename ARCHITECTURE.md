@@ -1,6 +1,6 @@
 # Architecture
 
-AFY Studio is a TypeScript monorepo that ships a local-first AI workspace
+Studio is a TypeScript monorepo that ships a local-first AI workspace
 through a web console, a Koa backend, and an Electron desktop app. It integrates
 Hermes Agent for chat, coding, and workflows. The OEM product keeps the original
 module boundaries and Studio orchestration surfaces, while Hermes is the only

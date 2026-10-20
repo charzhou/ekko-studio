@@ -146,12 +146,12 @@ for (const brightness of ['light', 'dark'] as const) test(`Agent card edges fade
 })
 
 for (const { width, height, agent } of [
-  { width: 1280, height: 720, agent: 'AFY Studio' },
-  { width: 1366, height: 768, agent: 'AFY Studio' },
-  { width: 1440, height: 900, agent: 'AFY Studio' },
-  { width: 1024, height: 600, agent: 'AFY Studio' },
-  { width: 1000, height: 560, agent: 'AFY Studio' },
-  { width: 1920, height: 1080, agent: 'AFY Studio' },
+  { width: 1280, height: 720, agent: 'Studio' },
+  { width: 1366, height: 768, agent: 'Studio' },
+  { width: 1440, height: 900, agent: 'Studio' },
+  { width: 1024, height: 600, agent: 'Studio' },
+  { width: 1000, height: 560, agent: 'Studio' },
+  { width: 1920, height: 1080, agent: 'Studio' },
 ]) test(`new chat fits one screen at ${width}x${height} with ${agent}`, async ({ page }) => {
   await page.setViewportSize({ width, height })
   await authenticate(page, TEST_ACCESS_KEY, 'research')
@@ -227,7 +227,7 @@ test('new chat shares the session model picker and automatically sends the Provi
   expect(api.unexpectedRequests).toEqual([])
 })
 
-for (const choice of ['standard', 'custom', 'moa'] as const) test(`AFY Studio draft uses the shared ${choice === 'custom' ? 'saved custom' : choice} model selection without changing the existing conversation`, async ({ page }) => {
+for (const choice of ['standard', 'custom', 'moa'] as const) test(`Studio draft uses the shared ${choice === 'custom' ? 'saved custom' : choice} model selection without changing the existing conversation`, async ({ page }) => {
   const session = { id: 'existing-model-chat', title: 'Existing conversation', source: 'cli', profile: 'research', model: 'test-model', provider: 'test-provider', started_at: 100, last_active: 101, message_count: 0 }
   await authenticate(page, TEST_ACCESS_KEY, 'research')
   await page.addInitScript(id => {
@@ -240,7 +240,7 @@ for (const choice of ['standard', 'custom', 'moa'] as const) test(`AFY Studio dr
   await page.goto(`/#/hermes/session/${session.id}`)
   await expect(page.locator('.page-loading-overlay:visible')).toHaveCount(0)
   await page.getByRole('button', { name: 'New Chat', exact: true }).click()
-  await selectNewChatAgent(page, 'AFY Studio')
+  await selectNewChatAgent(page, 'Studio')
   const draft = page.locator('.new-chat-page')
   if (choice === 'moa') {
     await draft.locator('.reasoning-effort-button').click()

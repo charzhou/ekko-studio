@@ -512,7 +512,7 @@ describe('hermes-web-ui MCP server', () => {
     } finally { server.closeAllConnections(); await new Promise<void>(resolve => server.close(() => resolve())) }
   })
 
-  it('exposes the curated AFY Studio use catalog through one compact category tool', async () => {
+  it('exposes the curated Studio use catalog through one compact category tool', async () => {
     const server = createServer((req, res) => {
       res.setHeader('content-type', 'application/json')
       if (req.url === '/api/studio/chat-run/runs') {

@@ -168,7 +168,7 @@ async function maybePromptLegacyWindowsDataMigration() {
       onNegativeClick: () => submitLegacyDataMigrationDecision('decline'),
     })
   } catch (error) {
-    console.warn('[agent-manager] failed to check legacy Windows AFY Studio data migration', error)
+    console.warn('[agent-manager] failed to check legacy Windows Studio data migration', error)
   }
 }
 
@@ -225,7 +225,7 @@ onUnmounted(() => {
                 <img :src="'/logo.png'" alt="" class="agent-logo" />
                 <div>
                   <div class="agent-name-row">
-                    <h3>AFY Studio</h3>
+                    <h3>Studio</h3>
                     <NTag
                       v-if="hermesDetected && hermesType"
                       data-testid="hermes-source-type"

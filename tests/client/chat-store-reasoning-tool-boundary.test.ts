@@ -279,7 +279,7 @@ describe('chat store reasoning/tool boundaries', () => {
           tool_calls: [{
             id: 'item_2',
             type: 'function',
-            function: { name: 'Web Search', arguments: '{"query":"AFY Studio"}' },
+            function: { name: 'Web Search', arguments: '{"query":"Studio"}' },
           }],
           timestamp: 3,
           finish_reason: 'tool_calls',
@@ -314,7 +314,7 @@ describe('chat store reasoning/tool boundaries', () => {
         toolCallId: 'item_2',
         runMarker: 'run-b',
         toolName: 'Web Search',
-        toolArgs: '{"query":"AFY Studio"}',
+        toolArgs: '{"query":"Studio"}',
         reasoning: 'reasoning for run B',
         toolResult: 'result B',
       }),

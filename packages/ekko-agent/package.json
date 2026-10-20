@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "type": "commonjs",
-  "description": "Local agent runtime embedded in AFY Studio.",
+  "description": "Local agent runtime embedded in Studio.",
   "engines": {
     "node": ">=23.0.0"
   },

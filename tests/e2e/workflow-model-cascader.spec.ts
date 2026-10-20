@@ -69,7 +69,7 @@ test('workflow uses the shared dialog and saves aliases, protocol and saved cust
 })
 
 for (const [agent, label] of [['ekko-agent', 'Ekko'], ['codex', 'Codex']]) {
-  test(`workflow excludes MoA for AFY Studio and ${label} and repairs old selections`, async ({ page }) => {
+  test(`workflow excludes MoA for Studio and ${label} and repairs old selections`, async ({ page }) => {
     await authenticate(page, TEST_ACCESS_KEY, 'research')
     const api = await mockHermesApi(page, { modelGroups, workflows: [workflow('moa', 'review-combination')], workflowRuns: [] })
     await page.goto('/#/hermes/workflow')

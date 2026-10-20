@@ -52,7 +52,7 @@ function makeJob(overrides: Partial<Job> = {}): Job {
   }
 }
 
-describe('AFY Studio jobs edit payloads', () => {
+describe('Studio jobs edit payloads', () => {
   beforeEach(() => {
     localStorage.clear()
     vi.clearAllMocks()
@@ -165,6 +165,6 @@ describe('AFY Studio jobs edit payloads', () => {
     expect(mockFetch).toHaveBeenCalledOnce()
     const [url, options] = mockFetch.mock.calls[0]
     expect(url).toBe('/api/cron-history?jobId=job-1')
-    expect(options.headers['X-AFY Studio-Profile']).toBe('research')
+    expect(options.headers['X-Studio-Profile']).toBe('research')
   })
 })

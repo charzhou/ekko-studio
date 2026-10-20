@@ -1050,7 +1050,7 @@ export async function handleUpdate(ctx: any) {
     ctx.status = 409
     ctx.body = {
       success: false,
-      message: 'AFY Studio update is already in progress',
+      message: 'Studio update is already in progress',
     }
     return
   }
@@ -1061,7 +1061,7 @@ export async function handleUpdate(ctx: any) {
     ctx.body = {
       success: false,
       code: DOCKER_ENVIRONMENT_CODE,
-      message: 'AFY Studio update is not available inside Docker. '
+      message: 'Studio update is not available inside Docker. '
         + 'Please pull a new image and recreate the container:\n\n'
         + '  docker compose pull\n'
         + '  docker compose up -d --force-recreate',

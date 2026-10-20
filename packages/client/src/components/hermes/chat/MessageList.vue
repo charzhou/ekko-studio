@@ -205,7 +205,7 @@ const emptyState = computed(() => {
   return {
     logo: agent.src,
     alt: agent.label,
-    text: agent.label === "AFY Studio"
+    text: agent.label === "Studio"
       ? t("chat.emptyState")
       : t("chat.emptyStateAgent", { agent: agent.label }),
   };

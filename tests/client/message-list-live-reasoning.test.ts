@@ -101,7 +101,7 @@ describe('MessageList live reasoning', () => {
     vi.useRealTimers()
   })
 
-  it('updates the thinking logo with the active agent and uses AFY Studio branding', async () => {
+  it('updates the thinking logo with the active agent and uses Studio branding', async () => {
     const wrapper = mountMessageList([])
     const chatStore = useChatStore()
     for (const [agent, src] of [
@@ -163,7 +163,7 @@ describe('MessageList live reasoning', () => {
     expect(wrapper.get('.live-reasoning-body').text().startsWith('…')).toBe(false)
   })
 
-  it('shows the insert arrow for AFY Studio and one-shot coding agents', async () => {
+  it('shows the insert arrow for Studio and one-shot coding agents', async () => {
     const chatStore = useChatStore()
     const session = makeSession([])
     session.source = 'cli'

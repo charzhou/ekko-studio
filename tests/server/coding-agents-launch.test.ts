@@ -1438,7 +1438,7 @@ describe('coding agent launch preparation', () => {
     expect(readFileSync(join(rootDir, 'auth.json'), 'utf8')).toBe('{"token":"user-token"}\n')
     const prompt = readFileSync(join(rootDir, 'AGENTS.md'), 'utf8')
     expect(prompt).toContain('User global Codex instructions.')
-    expect(prompt).toContain('AFY Studio MCP usage')
+    expect(prompt).toContain('Studio MCP usage')
     expect(readFileSync(join(globalCodexHome, 'config.toml'), 'utf8')).toBe('model = "gpt-global"\n')
     expect(readFileSync(join(globalCodexHome, 'auth.json'), 'utf8')).toBe('{"token":"user-token"}\n')
     expect(readFileSync(join(globalCodexHome, 'AGENTS.md'), 'utf8')).toBe('User global Codex instructions.\n')
@@ -1746,7 +1746,7 @@ describe('coding agent launch preparation', () => {
       promptFile: promptPath,
     })
     expect(rootDir).toContain(join('coding-agent', 'model', 'default', 'global', 'pi', 'runs'))
-    expect(readFileSync(promptPath, 'utf8')).toContain('AFY Studio MCP usage')
+    expect(readFileSync(promptPath, 'utf8')).toContain('Studio MCP usage')
     expect(existsSync(join(home, 'global-home', '.pi', 'agent', 'APPEND_SYSTEM.md'))).toBe(false)
   })
 
@@ -2466,7 +2466,7 @@ describe('coding agent launch preparation', () => {
     expect(config).toContain(`model_catalog_json = ${JSON.stringify(join(result.rootDir, 'codex-model-catalog.json'))}`)
     expect(config).toContain('model_reasoning_summary = "auto"')
     expect(config).toContain('developer_instructions = """')
-    expect(config).toContain('AFY Studio MCP usage')
+    expect(config).toContain('Studio MCP usage')
     expect(config).toContain('ekko_studio_browser_toolset is available')
     expect(config).toContain('call it with action=list')
     expect(config).toContain('Browser MCP exposes a compact toolset rather than resources')
@@ -2492,7 +2492,7 @@ describe('coding agent launch preparation', () => {
 
     expect(result.files.some(file => file.key === 'agents')).toBe(true)
     const agents = readFileSync(join(result.rootDir, 'AGENTS.md'), 'utf-8')
-    expect(agents).toContain('AFY Studio MCP usage')
+    expect(agents).toContain('Studio MCP usage')
     expect(agents).toContain('# 输出格式规范')
 
     const catalog = JSON.parse(readFileSync(join(result.rootDir, 'codex-model-catalog.json'), 'utf-8'))

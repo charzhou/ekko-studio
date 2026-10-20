@@ -26,7 +26,7 @@ const ROOT = resolve(__dirname, '..')
 const TARGET_OS = process.env.TARGET_OS || osPlatform()
 const TARGET_ARCH = process.env.TARGET_ARCH || osArch()
 const HERMES_VERSION = hermesSource().version
-// AFY's core desktop tools plus the Anthropic provider SDK. Optional adapters
+// Studio's core desktop tools plus the Anthropic provider SDK. Optional adapters
 // can be included explicitly without changing the default offline bundle.
 const HERMES_EXTRAS = splitPackageList(process.env.HERMES_EXTRAS || 'all,anthropic')
 const BROWSER_PACKAGES = splitPackageList(
@@ -37,7 +37,7 @@ const CHROME_FOR_TESTING_VERSION = (
   || process.env.HERMES_WINDOWS_CHROME_FOR_TESTING_VERSION
   || '149.0.7827.55'
 ).trim()
-// AFY Studio supplies the desktop UI. Keep optional upstream UIs and browser
+// Studio supplies the desktop UI. Keep optional upstream UIs and browser
 // downloads out of the default offline runtime; set the matching SKIP flag to
 // 0/false explicitly to include them in a build.
 function skipOptionalComponent(name) {

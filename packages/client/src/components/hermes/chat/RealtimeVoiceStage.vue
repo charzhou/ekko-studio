@@ -176,14 +176,14 @@ const agentDisplayName = computed(() => {
   const session = chatStore.activeSession
   const agent = session?.agent || session?.codingAgentId || 'hermes'
   return {
-    hermes: 'AFY Studio',
+    hermes: 'Studio',
     claude: 'Claude',
     'claude-code': 'Claude',
     codex: 'Codex',
     grok: 'Grok',
     opencode: 'OpenCode',
     dsh: 'DeepSeek Harness',
-    'ekko-agent': 'AFY Studio',
+    'ekko-agent': 'Studio',
   }[agent] || agent
 })
 const statusLabel = computed(() => t(`realtimeVoice.status.${mode.value}`, {

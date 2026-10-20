@@ -3696,7 +3696,7 @@ export const useChatStore = defineStore('chat', () => {
 
     const agent = completionNotificationAgent(session)
     void showCompletionNotification({
-      title: truncateNotificationText(session.title || 'AFY Studio', 80),
+      title: truncateNotificationText(session.title || 'Studio', 80),
       body: completionNotificationBody(session, message),
       icon: agent.icon,
       tag: `hermes-complete-${sessionId}-${message?.id || Date.now()}`,

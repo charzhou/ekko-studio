@@ -83,7 +83,7 @@ export const useProfilesStore = defineStore('profiles', () => {
       clearAllSessionCaches()
     } catch (err) {
       hermesAvailable.value = false
-      console.error('Failed to fetch AFY Studio profiles:', err)
+      console.error('Failed to fetch Studio profiles:', err)
     } finally {
       loading.value = false
     }

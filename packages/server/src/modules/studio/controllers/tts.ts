@@ -568,7 +568,7 @@ async function synthesizeVoiceProxyText(ctx: Context, text: string) {
     }
     ctx.status = statusForTtsError(error)
     ctx.body = {
-      error: 'AFY Studio TTS failed',
+      error: 'Studio TTS failed',
       detail: sanitizeTtsError(error),
     }
   }

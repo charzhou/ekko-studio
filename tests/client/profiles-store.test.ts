@@ -41,7 +41,7 @@ describe('Profiles Store', () => {
     })
   })
 
-  it('tracks AFY Studio availability from the server Agent status snapshot', async () => {
+  it('tracks Studio availability from the server Agent status snapshot', async () => {
     mockProfilesApi.fetchProfiles.mockResolvedValue([
       { name: 'default', active: true, model: 'gpt-4', alias: '' },
     ])
@@ -63,7 +63,7 @@ describe('Profiles Store', () => {
     expect(store.hermesAvailable).toBe(true)
   })
 
-  it('keeps profiles usable but hides AFY Studio-only actions when Agent status fails', async () => {
+  it('keeps profiles usable but hides Studio-only actions when Agent status fails', async () => {
     mockProfilesApi.fetchProfiles.mockResolvedValue([
       { name: 'default', active: true, model: 'gpt-4', alias: '' },
     ])

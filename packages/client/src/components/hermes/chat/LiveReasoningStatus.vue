@@ -11,7 +11,7 @@ const props = withDefaults(defineProps<{
   agent?: ChatAgentAvatar
   deploymentSessionId?: string
 }>(), {
-  agent: () => ({ label: 'AFY Studio', src: '/logo.png' }),
+  agent: () => ({ label: 'Studio', src: '/logo.png' }),
 })
 const isEkko = computed(() => props.agent.src === '/coding-agents/ekko-agent.png')
 

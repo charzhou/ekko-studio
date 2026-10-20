@@ -1,11 +1,11 @@
-# AFY Studio OEM implementation
+# Studio OEM implementation
 
-The `oem` branch changes the visible product to **AFY Studio** and ships the Windows desktop installer plus the local web application.
+The `oem` branch changes the visible product to **Studio** and ships the Windows desktop installer plus the local web application.
 
 ## Product behavior
 
-- Application names, browser metadata, all twelve locales, notifications, default assistant identity and model-facing product descriptions use AFY Studio.
-- A new editable AFY mark lives in `packages/client/public/afy-mark.svg`. `node scripts/generate-afy-icons.mjs` generates the web logo, assistant avatar, Windows installer/application/tray icons and favicon. Hermes avatars use the App icon throughout chat, group chat, notifications, settings previews and Agent management. The legacy Hermes image URL serves the same App icon for stored avatar references. Legacy promotional screenshots and GIFs are removed.
+- Application names, browser metadata, all twelve locales, notifications, default assistant identity and model-facing product descriptions use Studio.
+- An editable neutral Studio mark lives in `packages/client/public/afy-mark.svg`. `node scripts/generate-afy-icons.mjs` generates the web logo, assistant avatar, Windows installer/application/tray icons and favicon. Hermes avatars use the App icon throughout chat, group chat, notifications, settings previews and Agent management. The legacy Hermes image URL serves the same App icon for stored avatar references. Legacy promotional screenshots and GIFs are removed.
 - Hermes is the only Agent execution backend exposed by the OEM product. Chat, Profile selection, approvals, tool calls and streamed turns continue to use the existing Hermes Bridge and local Hermes installation. Ekko Agent and Coding Agent entries are disabled at the product registration and routing boundaries; their source packages and compatibility identifiers remain in the repository so the surrounding architecture does not need to be rewritten.
 - Application update checks, downloads, package-manager self-updates and runtime/model download flows are unavailable. The Windows x64 installer carries a pinned local Hermes runtime, prepares it offline on first launch, and continues to use the existing Hermes profiles.
 - Official announcements, original website/repository links, mobile/App services and cloud relays, remote device/hardware features, partner marketing and partner provider presets are excluded.
@@ -19,7 +19,7 @@ The OEM edition keeps the existing Studio architecture and narrows only the
 execution choice:
 
 ```text
-AFY Studio Chat / Group Chat / Workflow
+Studio Chat / Group Chat / Workflow
   -> existing Socket.IO and service layer
   -> Hermes-only agent registry and routing
   -> AgentBridgeClient
@@ -79,7 +79,7 @@ dependency retrieval is enabled; application download/update
 services remain disabled. No user profiles, credentials or chat history are
 copied from the developer machine.
 
-The artifact named `afy-studio-runtime-windows-x64` contains:
+The artifact named `studio-runtime-windows-x64` contains:
 
 - `hermes-runtime-hermes-agent-0.22.0-win-<arch>.tar.gz`
 - the archive's `.sha256` checksum

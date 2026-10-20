@@ -4,7 +4,7 @@ import type { SessionSummary } from '@/api/studio/sessions'
 import { EKKO_SESSION_COMMAND_DEFINITIONS, isKnownEkkoSessionCommand, isKnownBridgeSessionCommand } from '@/utils/hermes/bridge-session-commands'
 
 describe('built-in Ekko session classification', () => {
-  it('recognizes AFY Studio histories while excluding built-in, external and unknown agents', () => {
+  it('recognizes Studio histories while excluding built-in, external and unknown agents', () => {
     for (const source of ['cli', 'api_server', 'workflow', undefined]) {
       expect(isHermesSession({ source, agent: 'hermes' })).toBe(true)
       expect(isHermesSession({ source })).toBe(true)
@@ -31,7 +31,7 @@ describe('built-in Ekko session classification', () => {
     expect(sessionAgentFields(session)).toMatchObject({ codingAgentId: 'ekko-agent', codingAgentMode: 'scoped', agentSessionId: 'runtime', agentNativeSessionId: 'native' })
     expect(session.source).toBe('coding_agent')
   })
-  it('keeps AFY Studio and external runtimes distinct', () => {
+  it('keeps Studio and external runtimes distinct', () => {
     expect(isExternalCodingAgentSession({ agent: 'hermes', source: 'cli' })).toBe(false)
     for (const agent of ['claude', 'codex', 'pi', 'grok', 'opencode', 'dsh', 'cursor', 'antigravity']) {
       expect(isExternalCodingAgentSession({ agent })).toBe(true)
@@ -40,7 +40,7 @@ describe('built-in Ekko session classification', () => {
     expect(historySessionSource({ codingAgentId: 'future-cli', source: 'coding_agent' })).toBe('coding_agent')
     expect(historySessionSource({ source: 'cli', agent: 'hermes' })).toBe('cli')
   })
-  it('keeps Ekko commands small and AFY Studio commands intact', () => {
+  it('keeps Ekko commands small and Studio commands intact', () => {
     expect(EKKO_SESSION_COMMAND_DEFINITIONS.map(command => command.name)).toEqual(['context', 'compact', 'usage', 'status'])
     expect(isKnownEkkoSessionCommand('/compact')).toBe(true)
     expect(isKnownEkkoSessionCommand('/compress')).toBe(true)

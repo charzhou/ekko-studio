@@ -36,11 +36,11 @@ function readManifest(resourceDirectory: string, platform: string): BundledManif
     || !/^[a-f0-9]{40}$/.test(manifest.hermesSource.commit || '')
     || !/^[a-f0-9]{64}$/.test(manifest.asset?.sha256 || '')
     || !Number.isSafeInteger(manifest.asset.size) || manifest.asset.size <= 0) {
-    throw new Error('Invalid bundled AFY Studio runtime manifest')
+    throw new Error('Invalid bundled Studio runtime manifest')
   }
   const expectedName = `hermes-runtime-hermes-agent-${manifest.hermesAgentVersion}-${platform}.tar.gz`
   if (manifest.asset.name !== expectedName || basename(manifest.asset.name) !== manifest.asset.name) {
-    throw new Error('Invalid bundled AFY Studio runtime archive name')
+    throw new Error('Invalid bundled Studio runtime archive name')
   }
   return manifest
 }
@@ -54,7 +54,7 @@ function validateExtractedRuntime(root: string, expected: BundledManifest): void
     || actual.hermesSource.ref !== expected.hermesSource.ref
     || actual.hermesSource.installMethod !== 'git'
     || actual.asset?.name !== expected.asset.name) {
-    throw new Error('Extracted AFY Studio runtime identity does not match its bundle')
+    throw new Error('Extracted Studio runtime identity does not match its bundle')
   }
   const required = [
     'python/base/python.exe', 'python/venv/Scripts/python.exe',
@@ -63,9 +63,9 @@ function validateExtractedRuntime(root: string, expected: BundledManifest): void
     'python/.git/HEAD', 'node/node.exe', 'git/cmd/git.exe',
   ]
   const missing = required.filter(file => !existsSync(join(root, file)))
-  if (missing.length) throw new Error(`Bundled AFY Studio runtime is incomplete: ${missing.join(', ')}`)
+  if (missing.length) throw new Error(`Bundled Studio runtime is incomplete: ${missing.join(', ')}`)
   const stamp = JSON.parse(readFileSync(join(root, 'python', 'install-stamp.json'), 'utf8')) as { updateMechanism?: string }
-  if (stamp.updateMechanism !== 'external') throw new Error('Bundled AFY Studio runtime must use external management')
+  if (stamp.updateMechanism !== 'external') throw new Error('Bundled Studio runtime must use external management')
 }
 
 function isReusable(root: string, manifest: BundledManifest): boolean {
@@ -89,7 +89,7 @@ async function verifyArchive(file: string, manifest: BundledManifest): Promise<v
 export async function validateBundledRuntimePython(root: string): Promise<void> {
   // Do not touch the real Hermes home, or allow lazy installs to hide missing
   // packages. Check the copied editable install from outside its source tree.
-  const validation = await mkdtemp(join(tmpdir(), 'afy-runtime-check-'))
+  const validation = await mkdtemp(join(tmpdir(), 'studio-runtime-check-'))
   try {
     const env = { ...process.env }
     for (const key of Object.keys(env)) {
@@ -133,7 +133,7 @@ export async function prepareBundledRuntime(options: PrepareOptions): Promise<st
       options.onProgress?.('ready')
       return candidate
     } catch (error) {
-      console.warn(`[runtime] cached AFY Studio runtime failed validation; preparing a fresh copy: ${error instanceof Error ? error.message : String(error)}`)
+      console.warn(`[runtime] cached Studio runtime failed validation; preparing a fresh copy: ${error instanceof Error ? error.message : String(error)}`)
     }
   }
   options.onProgress?.('verify')
@@ -143,7 +143,7 @@ export async function prepareBundledRuntime(options: PrepareOptions): Promise<st
   // or the user's data in order to prepare a new runtime.
   if (existsSync(target)) target = join(options.storageRoot, 'hermes', `${versionKey}-${Date.now()}`, options.platform)
   await mkdir(dirname(target), { recursive: true })
-  const stage = await mkdtemp(join(dirname(target), '.afy-install-'))
+  const stage = await mkdtemp(join(dirname(target), '.studio-install-'))
   try {
     options.onProgress?.('extract')
     await extractTarGzipArchive(archive, stage)

@@ -38,7 +38,7 @@ describe('Ekko configuration navigation', () => {
     expect(agentManager).toContain("router.push({ name: 'hermes.configSettings' })")
   })
 
-  it('uses the AFY Studio settings layout for every user-facing Ekko config section', () => {
+  it('uses the Studio settings layout for every user-facing Ekko config section', () => {
     const settings = readClientFile('views/ekko/SettingsView.vue')
 
     expect(settings).toContain("@/components/hermes/settings/SettingRow.vue")
@@ -75,7 +75,7 @@ describe('Ekko configuration navigation', () => {
     expect(readClientFile('components/layout/EkkoConfigSidebar.vue')).toContain(mainGearPath)
   })
 
-  it('keeps Ekko Skills and MCP on the AFY Studio configuration page patterns', () => {
+  it('keeps Ekko Skills and MCP on the Studio configuration page patterns', () => {
     const skills = readClientFile('views/ekko/SkillsView.vue')
     const hermesSkills = readClientFile('views/hermes/SkillsView.vue')
     const sourceLegend = readClientFile('components/hermes/skills/SkillSourceLegend.vue')

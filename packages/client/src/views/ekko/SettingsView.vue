@@ -203,7 +203,7 @@ onBeforeUnmount(() => {
 
           <!-- Ekko compression settings stay hidden until Studio delegates its
           compression policy to the agent-level config. Studio currently owns
-          this configuration through the main AFY Studio settings.
+          this configuration through the main Studio settings.
           <NTabPane name="compression" :tab="t('settings.tabs.compression')">
             <section class="settings-section">
               <SettingRow :label="t('settings.compression.enabled')" :hint="t('settings.compression.enabledHint')">

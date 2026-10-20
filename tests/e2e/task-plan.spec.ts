@@ -113,7 +113,7 @@ for (const agent of ['ekko-agent', 'codex']) {
 }
 
 
-test('keeps two successive AFY Studio turn plans as separate cards', async ({ page }) => {
+test('keeps two successive Studio turn plans as separate cards', async ({ page }) => {
   await authenticate(page, TEST_ACCESS_KEY, 'research')
   await mockHermesApi(page)
   await mockChatSocket(page)

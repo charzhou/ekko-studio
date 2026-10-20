@@ -33,7 +33,7 @@ const contentMode = computed<ChatContentMode>(() => {
   if (route.name === 'hermes.models') return 'models'
   return 'chat'
 })
-const productTitle = 'AFY Studio'
+const productTitle = 'Studio'
 const initializing = ref(true)
 const routeLoading = ref(false)
 let routeLoadSequence = 0

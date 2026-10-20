@@ -56,7 +56,7 @@ function createXlsxFixture(): Buffer {
     <worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">
       <sheetData>
         <row r="1"><c r="A1" t="inlineStr"><is><t>Product</t></is></c><c r="B1" t="inlineStr"><is><t>Revenue</t></is></c></row>
-        <row r="2"><c r="A2" t="inlineStr"><is><t>AFY Studio</t></is></c><c r="B2"><v>100</v></c></row>
+        <row r="2"><c r="A2" t="inlineStr"><is><t>Studio</t></is></c><c r="B2"><v>100</v></c></row>
       </sheetData>
     </worksheet>`))
   return zip.toBuffer()
@@ -77,7 +77,7 @@ function createDocxFixture(): Buffer {
   zip.addFile('word/document.xml', Buffer.from(`<?xml version="1.0" encoding="UTF-8"?>
     <w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">
       <w:body>
-        <w:p><w:r><w:t>AFY Studio DOCX Preview</w:t></w:r></w:p>
+        <w:p><w:r><w:t>Studio DOCX Preview</w:t></w:r></w:p>
         <w:sectPr><w:pgSz w:w="12240" w:h="15840"/><w:pgMar w:top="1440" w:right="1440" w:bottom="1440" w:left="1440"/></w:sectPr>
       </w:body>
     </w:document>`))
@@ -115,7 +115,7 @@ function createPptxFixture(): Buffer {
         <p:sp>
           <p:nvSpPr><p:cNvPr id="2" name="Title"/><p:cNvSpPr/><p:nvPr/></p:nvSpPr>
           <p:spPr><a:xfrm><a:off x="914400" y="1371600"/><a:ext cx="7315200" cy="1828800"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom><a:noFill/><a:ln><a:noFill/></a:ln></p:spPr>
-          <p:txBody><a:bodyPr/><a:lstStyle/><a:p><a:r><a:rPr lang="en-US" sz="3200"/><a:t>AFY Studio PPTX Preview</a:t></a:r><a:endParaRPr lang="en-US"/></a:p></p:txBody>
+          <p:txBody><a:bodyPr/><a:lstStyle/><a:p><a:r><a:rPr lang="en-US" sz="3200"/><a:t>Studio PPTX Preview</a:t></a:r><a:endParaRPr lang="en-US"/></a:p></p:txBody>
         </p:sp>
       </p:spTree></p:cSld>
       <p:clrMapOvr><a:masterClrMapping/></p:clrMapOvr>
@@ -124,7 +124,7 @@ function createPptxFixture(): Buffer {
 }
 
 function createPdfFixture(): Buffer {
-  const contentStream = 'BT /F1 18 Tf 40 80 Td (AFY Studio PDF Preview) Tj ET'
+  const contentStream = 'BT /F1 18 Tf 40 80 Td (Studio PDF Preview) Tj ET'
   const objects = [
     '<< /Type /Catalog /Pages 2 0 R >>',
     '<< /Type /Pages /Kids [3 0 R] /Count 1 >>',
@@ -497,7 +497,7 @@ test('XLSX preview parses workbook sheets inside the isolated worker', async ({ 
   const panel = page.locator('.chat-tool-panel')
   await expect(panel.getByRole('button', { name: 'Sales Data', exact: true })).toBeVisible()
   await expect(panel.locator('.n-data-table')).toContainText('Product')
-  await expect(panel.locator('.n-data-table')).toContainText('AFY Studio')
+  await expect(panel.locator('.n-data-table')).toContainText('Studio')
   await expect(panel.locator('.n-data-table')).toContainText('100')
   expect(api.unexpectedRequests).toEqual([])
 })
@@ -554,7 +554,7 @@ test('DOCX, PDF, and PPTX lazy renderers open safely and cleanly replace one ano
   await page.goto(`/#/hermes/session/${sessionId}`)
   await page.locator('.markdown-file-link', { hasText: 'brief.docx' }).click()
   const panel = page.locator('.chat-tool-panel')
-  await expect(panel.locator('.docx-container')).toContainText('AFY Studio DOCX Preview')
+  await expect(panel.locator('.docx-container')).toContainText('Studio DOCX Preview')
   await panel.getByRole('button', { name: 'Close', exact: true }).click()
   await expect(panel).toHaveCount(0)
 
@@ -565,6 +565,6 @@ test('DOCX, PDF, and PPTX lazy renderers open safely and cleanly replace one ano
   await page.locator('.chat-tool-panel').getByRole('button', { name: 'Close', exact: true }).click()
 
   await page.locator('.markdown-file-link', { hasText: 'deck.pptx' }).click()
-  await expect(page.locator('.chat-tool-panel .pptx-renderer-host')).toContainText('AFY Studio PPTX Preview')
+  await expect(page.locator('.chat-tool-panel .pptx-renderer-host')).toContainText('Studio PPTX Preview')
   expect(api.unexpectedRequests).toEqual([])
 })

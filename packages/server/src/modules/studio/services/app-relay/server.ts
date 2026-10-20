@@ -139,7 +139,7 @@ type NormalizedBody = {
 }
 
 /**
- * Serves the App-facing relay protocol directly from AFY Studio.
+ * Serves the App-facing relay protocol directly from Studio.
  *
  * The cloud relay uses the same App events but forwards them through the
  * outbound AppRelayClient. On a LAN connection this server terminates those
@@ -400,7 +400,7 @@ export class LocalAppRelayServer {
     }
     const authenticated = Boolean(socket.data.localUserToken) && await this.authorized(socket)
     if (!authenticated && !loginRequest) {
-      return httpError(request.id, 'app_relay_unauthorized', 'Log in to AFY Studio before using the App relay', 401)
+      return httpError(request.id, 'app_relay_unauthorized', 'Log in to Studio before using the App relay', 401)
     }
 
     const headers = normalizeHeaders(request.headers)

@@ -182,7 +182,7 @@ describe("AppSidebar navigation", () => {
     ).toBeGreaterThan(0);
   });
 
-  it("removes the AFY Studio entry while hiding AFY Studio-only tools and device management", () => {
+  it("removes the Studio entry while hiding Studio-only tools and device management", () => {
     localStorage.setItem(
       "hermes_api_key",
       fakeJwt({ sub: "2", role: "admin" }),
@@ -193,7 +193,7 @@ describe("AppSidebar navigation", () => {
       .findAllComponents({ name: "RouteLinkItem" })
       .map((item) => item.text().trim());
 
-    expect(navigationLabels).not.toContain("AFY Studio");
+    expect(navigationLabels).not.toContain("Studio");
     expect(navigationLabels).not.toContain("sidebar.mcp");
     expect(navigationLabels).not.toContain("sidebar.skills");
     expect(navigationLabels).not.toContain("sidebar.journey");

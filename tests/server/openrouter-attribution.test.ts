@@ -21,7 +21,7 @@ describe('Studio OpenRouter attribution', () => {
     expect(fetchMock).toHaveBeenCalledTimes(3)
     for (const [, init] of fetchMock.mock.calls) {
       const headers = new Headers(init?.headers)
-    expect(headers.get('X-OpenRouter-Title')).toBe('AFY Studio')
+    expect(headers.get('X-OpenRouter-Title')).toBe('Studio')
     expect(headers.get('HTTP-Referer')).toBe(null)
       expect(headers.get('X-OpenRouter-Categories')).toBe('cli-agent,personal-agent')
       expect(headers.get('authorization')).toBe('Bearer test-key')

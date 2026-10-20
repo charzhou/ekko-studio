@@ -1,6 +1,6 @@
-# AFY Studio Desktop
+# Studio Desktop
 
-Windows Electron desktop distribution for AFY Studio. The shell starts the local Web UI and uses an already-installed Hermes runtime when available.
+Windows Electron desktop distribution for Studio. The shell starts the local Web UI and uses an already-installed Hermes runtime when available.
 
 ## Build
 
@@ -14,7 +14,7 @@ The packaged app can install the existing compatibility commands:
 
 | Command | Description |
 | --- | --- |
-| `ekko-studio` | Open the AFY Studio desktop app |
+| `ekko-studio` | Open the Studio desktop app |
 | `ekko-studio cli ...` | Run the local Hermes Agent CLI |
 | `ekko-studio web ...` | Run the local Web UI command |
 | `ekko-studio-mcp` | Run the local Web UI MCP bridge |

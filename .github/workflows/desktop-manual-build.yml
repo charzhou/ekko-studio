@@ -1,4 +1,4 @@
-name: AFY Studio Windows Build
+name: Studio Windows Build
 
 on:
   push:
@@ -16,7 +16,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: afy-windows-${{ inputs.target_arch || 'x64' }}-${{ github.ref }}
+  group: studio-windows-${{ inputs.target_arch || 'x64' }}-${{ github.ref }}
   cancel-in-progress: false
 
 jobs:
@@ -50,7 +50,7 @@ jobs:
       - name: Download bundled offline runtime
         uses: actions/download-artifact@v4
         with:
-          name: afy-studio-runtime-windows-x64
+          name: studio-runtime-windows-x64
           path: packages/desktop/resources/runtime
       - name: Verify runtime artifact and stage its release identity
         run: node packages/desktop/scripts/stage-bundled-runtime.mjs
@@ -59,7 +59,7 @@ jobs:
       - name: Upload installer
         uses: actions/upload-artifact@v4
         with:
-          name: afy-studio-windows-x64
+          name: studio-windows-x64
           path: packages/desktop/release/*.exe
           if-no-files-found: error
           retention-days: 7
@@ -73,7 +73,7 @@ jobs:
     env:
       TARGET_OS: win32
       TARGET_ARCH: x64
-      # Match the Hermes release currently used by the local AFY integration.
+      # Match the Hermes release currently used by the local Studio integration.
       # Keep version, release ref and peeled commit together when upgrading.
       HERMES_VERSION: 0.22.0
       HERMES_SOURCE_REPOSITORY: https://github.com/NousResearch/hermes-agent.git
@@ -106,7 +106,7 @@ jobs:
       - name: Upload offline runtime
         uses: actions/upload-artifact@v4
         with:
-          name: afy-studio-runtime-windows-x64
+          name: studio-runtime-windows-x64
           path: |
             packages/desktop/release/runtime/*.tar.gz
             packages/desktop/release/runtime/*.tar.gz.sha256

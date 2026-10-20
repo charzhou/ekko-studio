@@ -768,7 +768,7 @@ export async function transcribeVoiceProxy(ctx: Context) {
       return
     }
     ctx.status = 502
-    ctx.body = { error: error instanceof Error ? error.message : 'AFY Studio transcription failed' }
+    ctx.body = { error: error instanceof Error ? error.message : 'Studio transcription failed' }
   }
 }
 

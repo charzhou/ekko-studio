@@ -3,7 +3,7 @@ import { authenticate, mockChatSocket, mockHermesApi, TEST_ACCESS_KEY } from './
 
 const cases = [
   { name: 'Ekko default effort', agent: 'ekko-agent', mode: 'scoped', model: 'ekko-runtime-model', effort: '', label: 'ekko-runtime-model' },
-  { name: 'AFY Studio', agent: 'hermes', mode: 'scoped', model: 'hermes-runtime-model', effort: 'high', label: 'hermes-runtime-model' },
+  { name: 'Studio', agent: 'hermes', mode: 'scoped', model: 'hermes-runtime-model', effort: 'high', label: 'hermes-runtime-model' },
   { name: 'scoped Codex', agent: 'codex', mode: 'scoped', model: 'codex-scoped-runtime-model', effort: 'high', label: 'codex-scoped-runtime-model' },
   { name: 'global Codex', agent: 'codex', mode: 'global', model: 'codex-native-runtime-model', effort: 'high', label: 'codex-native-runtime-model' },
   { name: 'Cursor', agent: 'cursor', mode: 'global', model: 'cursor-native-high', effort: 'high', label: 'cursor-native-high' },

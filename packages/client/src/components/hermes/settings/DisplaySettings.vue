@@ -66,7 +66,7 @@ async function handleNotifyOnApprovalChange(value: boolean) {
       return
     }
     const shown = await showSystemNotification({
-      title: 'AFY Studio',
+      title: 'Studio',
       body: t('settings.display.notifyOnApprovalTest'),
       icon: '/logo.png',
       tag: `hermes-approval-test-${Date.now()}`,
@@ -86,7 +86,7 @@ async function testApprovalNotification() {
     return
   }
   const shown = await showSystemNotification({
-    title: 'AFY Studio',
+    title: 'Studio',
     body: t('settings.display.notifyOnApprovalTest'),
     icon: '/logo.png',
     tag: `hermes-approval-test-${Date.now()}`,
@@ -109,7 +109,7 @@ async function handleNotifyOnCompleteChange(value: boolean) {
   await save({ notify_on_complete: value })
   if (value) {
     void showCompletionNotification({
-      title: 'AFY Studio',
+      title: 'Studio',
       body: t('settings.display.notifyOnCompleteTest'),
       icon: '/logo.png',
       tag: `hermes-complete-test-${Date.now()}`,
@@ -124,7 +124,7 @@ async function testCompletionNotification() {
     return
   }
   const shown = await showCompletionNotification({
-    title: 'AFY Studio',
+    title: 'Studio',
     body: t('settings.display.notifyOnCompleteTest'),
     icon: '/logo.png',
     tag: `hermes-complete-test-${Date.now()}`,

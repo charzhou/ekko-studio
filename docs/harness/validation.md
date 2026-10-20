@@ -1,6 +1,6 @@
 # Validation Guide
 
-AFY Studio OEM scope and distribution rules are recorded in [the implementation notes](../oem/IMPLEMENTATION.md).
+Studio OEM scope and distribution rules are recorded in [the implementation notes](../oem/IMPLEMENTATION.md).
 
 Run the smallest relevant checks while iterating. Escalate to the broad checks
 when touching shared behavior, release automation, auth, persistence, or chat.

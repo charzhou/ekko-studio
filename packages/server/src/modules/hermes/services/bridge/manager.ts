@@ -19,7 +19,7 @@ const DEFAULT_AGENT_BRIDGE_SHUTDOWN_TIMEOUT_MS = 10_000
 const DEFAULT_AGENT_BRIDGE_FORCE_KILL_WAIT_MS = 2_000
 const FORCE_KILL_COMMAND_TIMEOUT_MS = 5_000
 const OPENROUTER_WEB_UI_ATTRIBUTION_ENV = {
-  // AFY Studio intentionally does not send an origin URL to OpenRouter.
+  // Studio intentionally does not send an origin URL to OpenRouter.
   HERMES_OPENROUTER_APP_REFERER: '',
   HERMES_OPENROUTER_APP_TITLE: OPENROUTER_APP_HEADERS['X-OpenRouter-Title'],
   HERMES_OPENROUTER_APP_CATEGORIES: OPENROUTER_APP_HEADERS['X-OpenRouter-Categories'],

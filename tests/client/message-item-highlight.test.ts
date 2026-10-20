@@ -95,14 +95,14 @@ describe('MessageItem tool details', () => {
           timestamp: Date.now(),
         } satisfies Message,
         assistantAgent: {
-          label: 'AFY Studio',
+          label: 'Studio',
           src: '/coding-agents/ekko-agent.png',
         },
       },
       global: { stubs: { MarkdownRenderer: true } },
     })
 
-    expect(wrapper.get('.assistant-message-author .message-author-name').text()).toBe('AFY Studio')
+    expect(wrapper.get('.assistant-message-author .message-author-name').text()).toBe('Studio')
     expect(wrapper.get('.assistant-message-author .msg-avatar').attributes('src')).toBe('/coding-agents/ekko-agent.png')
   })
 

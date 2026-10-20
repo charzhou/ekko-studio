@@ -77,18 +77,18 @@ test('sends a chat run and renders streamed Socket.IO response events', async ({
     const socket = (window as any).__PW_CHAT_SOCKET__.latest
     socket.__trigger('run.started', { event: 'run.started', session_id: sid, run_id: 'run-1' })
     socket.__trigger('message.delta', { event: 'message.delta', session_id: sid, run_id: 'run-1', delta: 'Streaming ' })
-    socket.__trigger('message.delta', { event: 'message.delta', session_id: sid, run_id: 'run-1', delta: 'answer from AFY Studio' })
+    socket.__trigger('message.delta', { event: 'message.delta', session_id: sid, run_id: 'run-1', delta: 'answer from Studio' })
     socket.__trigger('run.completed', {
       event: 'run.completed',
       session_id: sid,
       run_id: 'run-1',
-      output: 'Streaming answer from AFY Studio',
+      output: 'Streaming answer from Studio',
       inputTokens: 11,
       outputTokens: 7,
     })
   }, run.session_id)
 
-  await expect(page.getByText('Streaming answer from AFY Studio')).toBeVisible()
+  await expect(page.getByText('Streaming answer from Studio')).toBeVisible()
   await expect(page.getByRole('button', { name: 'Stop' })).toHaveCount(0)
   expect(api.unexpectedRequests).toEqual([])
 })

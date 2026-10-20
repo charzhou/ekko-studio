@@ -96,7 +96,7 @@ export async function validateLocalChatWebhookTestDelivery(
     return {
       ok: false,
       status: 400,
-      response: { error: 'Invalid AFY Studio webhook test payload' },
+      response: { error: 'Invalid Studio webhook test payload' },
     }
   }
 

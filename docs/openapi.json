@@ -1,8 +1,8 @@
 {
   "openapi": "3.0.3",
   "info": {
-    "title": "AFY Studio API",
-    "description": "AFY Studio API — chat sessions, scheduled jobs, platform channels, model management, skills, memory, logs, file browser, group chat, and terminal.",
+    "title": "Studio API",
+    "description": "Studio API — chat sessions, scheduled jobs, platform channels, model management, skills, memory, logs, file browser, group chat, and terminal.",
     "version": "0.7.36"
   },
   "servers": [
@@ -10984,7 +10984,7 @@
           "Chat Run"
         ],
         "summary": "Run chat and wait for completion",
-        "description": "Starts a AFY Studio chat run through the chat-run transport and waits for a terminal result. Use this from HTTP/MCP callers that cannot consume Socket.IO streams.\nApp session sharing: requires the claimed recipient identity and input permission; scope is fixed to the shared session. workspace-file/content with download=1 requires download instead. Agent and terminal execution retain existing host permissions.",
+        "description": "Starts a Studio chat run through the chat-run transport and waits for a terminal result. Use this from HTTP/MCP callers that cannot consume Socket.IO streams.\nApp session sharing: requires the claimed recipient identity and input permission; scope is fixed to the shared session. workspace-file/content with download=1 requires download instead. Agent and terminal execution retain existing host permissions.",
         "operationId": "runChatOnce",
         "security": [
           {
@@ -11026,7 +11026,7 @@
                   },
                   "profile": {
                     "type": "string",
-                    "description": "AFY Studio profile name. Defaults to the authenticated request profile or default."
+                    "description": "Studio profile name. Defaults to the authenticated request profile or default."
                   },
                   "provider": {
                     "type": "string",
@@ -21710,7 +21710,7 @@
           "Theme"
         ],
         "summary": "Export an owned theme as a ZIP file",
-        "description": "Downloads an AFY Studio theme version 1 ZIP containing theme.json and the optional background image. Includes the theme name, modes and all global/regional settings; excludes user IDs, server file paths and preset IDs. Legacy device mode/style query values are fallback values only.",
+        "description": "Downloads an Studio theme version 1 ZIP containing theme.json and the optional background image. Includes the theme name, modes and all global/regional settings; excludes user IDs, server file paths and preset IDs. Legacy device mode/style query values are fallback values only.",
         "operationId": "exportPreset",
         "security": [
           {

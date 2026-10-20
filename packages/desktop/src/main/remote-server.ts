@@ -13,5 +13,5 @@ export function resolveRemoteServerUrl(_env: NodeJS.ProcessEnv = process.env, _h
 export function remoteReadyTimeoutMs(_env: NodeJS.ProcessEnv = process.env): number { return 30_000 }
 
 export async function waitForRemoteServerReady(_serverUrl: string, _timeoutMs: number): Promise<void> {
-  throw new Error('Remote server connections are disabled in AFY Studio')
+  throw new Error('Remote server connections are disabled in Studio')
 }

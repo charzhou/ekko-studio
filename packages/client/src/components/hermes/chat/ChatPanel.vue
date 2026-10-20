@@ -1433,12 +1433,12 @@ async function submitNewChat(text: string, attachments?: Attachment[]): Promise<
           if (isSuperAdmin.value) {
             await router.push({ name: "hermes.agentManager" });
           } else {
-            message.warning(t("codingAgents.installRequired", { agent: "AFY Studio" }));
+            message.warning(t("codingAgents.installRequired", { agent: "Studio" }));
           }
           return false;
         }
       } catch (error) {
-        console.warn("Failed to read AFY Studio Agent availability before creating a chat:", error);
+        console.warn("Failed to read Studio Agent availability before creating a chat:", error);
       }
     }
 
@@ -1448,7 +1448,7 @@ async function submitNewChat(text: string, attachments?: Attachment[]): Promise<
         // Reuse the server inventory; probing every CLI's version delays creation.
         const status = await fetchAgentAvailabilitySnapshot();
         if (agentInstallationState(status, agentId) !== "installed") {
-          const agentName = 'AFY Studio';
+          const agentName = 'Studio';
           message.warning(t("codingAgents.installRequired", { agent: agentName }));
           showNewChatPage.value = false;
           await router.push({ name: "hermes.agentManager" });

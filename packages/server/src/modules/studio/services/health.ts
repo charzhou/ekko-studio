@@ -12,7 +12,7 @@ export class StudioHealthService {
   constructor(private readonly dependencies: StudioHealthDependencies) {}
 
   async checkLatestVersion(): Promise<void> {
-    // AFY Studio has no hosted update source.
+    // Studio has no hosted update source.
   }
 
   startVersionCheck(): void {}

@@ -88,7 +88,7 @@ async function handleLogout() {
       </div>
       <div class="version-info">
 
-        <span class="version-text">AFY Studio v{{ appStore.serverVersion || "—" }}</span>
+        <span class="version-text">Studio v{{ appStore.serverVersion || "—" }}</span>
         <ThemeSwitch />
       </div>
 

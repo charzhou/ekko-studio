@@ -1,4 +1,4 @@
-/** Capabilities deliberately excluded from the AFY Studio distribution. */
+/** Capabilities deliberately excluded from the Studio distribution. */
 export const OEM_FEATURES = Object.freeze({
   updates: false,
   cloudServices: false,
@@ -6,10 +6,10 @@ export const OEM_FEATURES = Object.freeze({
   partnerServices: false,
 })
 
-export const OEM_DISABLED_MESSAGE = 'This feature is disabled in AFY Studio.'
+export const OEM_DISABLED_MESSAGE = 'This feature is disabled in Studio.'
 
 /** One execution backend; retained runtime modules remain protocol-compatible. */
-export const OEM_HERMES_ONLY_MESSAGE = 'Only AFY Studio Agent runs are available in AFY Studio.'
+export const OEM_HERMES_ONLY_MESSAGE = 'Only Studio Agent runs are available in Studio.'
 
 type HermesOnlyRunRequest = {
   source?: unknown

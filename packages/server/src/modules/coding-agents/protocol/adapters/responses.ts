@@ -26,7 +26,7 @@ const HERMES_STUDIO_SPLIT_MCP_TOOLS = new Map<string, Array<{
   ['mcp__ekko_studio_api', [
     {
       name: 'ekko_studio_api_openapi_get',
-      description: 'Return the compact AFY Studio API module index or filtered endpoint documentation. Call without filters first, then filter by tag, path, or method.',
+      description: 'Return the compact Studio API module index or filtered endpoint documentation. Call without filters first, then filter by tag, path, or method.',
       inputSchema: inputSchema({
         path: { type: 'string', description: 'Optional exact endpoint path filter.' },
         method: { type: 'string', enum: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'HEAD'] },
@@ -36,7 +36,7 @@ const HERMES_STUDIO_SPLIT_MCP_TOOLS = new Map<string, Array<{
     },
     {
       name: 'ekko_studio_api_request',
-      description: 'Call a documented AFY Studio API endpoint using its relative path and structured JSON fields.',
+      description: 'Call a documented Studio API endpoint using its relative path and structured JSON fields.',
       inputSchema: inputSchema({
         method: { type: 'string', enum: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'HEAD'] },
         path: { type: 'string', description: 'Relative /api/... or /health path. Full URLs are rejected.' },
@@ -51,11 +51,11 @@ const HERMES_STUDIO_SPLIT_MCP_TOOLS = new Map<string, Array<{
   ]],
   ['mcp__ekko_studio_browser', [categoryToolset(
     'ekko_studio_browser_toolset',
-    'Discover and invoke AFY Studio Desktop browser operations. Covers tabs and leases, navigation, accessibility snapshots, interaction, screenshots, and console logs.',
+    'Discover and invoke Studio Desktop browser operations. Covers tabs and leases, navigation, accessibility snapshots, interaction, screenshots, and console logs.',
   )]],
   ['mcp__ekko_studio_use', [categoryToolset(
     'ekko_studio_use_toolset',
-    'Discover and invoke high-level AFY Studio operations for explicit user-requested runs, sessions, usage, profiles, models, providers, workers, and workflows.',
+    'Discover and invoke high-level Studio operations for explicit user-requested runs, sessions, usage, profiles, models, providers, workers, and workflows.',
   )]],
 ])
 
@@ -92,7 +92,7 @@ function inputSchema(properties: Record<string, unknown> = {}, required: string[
     properties: {
       token: {
         type: 'string',
-        description: 'Optional AFY Studio bearer token. Usually omit this and pass profile so the MCP server can read the temporary profile token.',
+        description: 'Optional Studio bearer token. Usually omit this and pass profile so the MCP server can read the temporary profile token.',
       },
       profile: {
         type: 'string',
@@ -265,7 +265,7 @@ function utf8Tail(text: string, maxBytes: number): string {
 function truncateResponsesToolOutputText(output: string): string {
   const originalBytes = utf8ByteLength(output)
   if (originalBytes <= RESPONSES_TOOL_OUTPUT_FORWARD_LIMIT) return output
-  const marker = `[AFY Studio: coding-agent tool output truncated before provider request; original_chars=${output.length}; original_bytes=${originalBytes}]`
+  const marker = `[Studio: coding-agent tool output truncated before provider request; original_chars=${output.length}; original_bytes=${originalBytes}]`
   const markerOverhead = utf8ByteLength(marker) + 4
   const contentBudget = Math.max(0, RESPONSES_TOOL_OUTPUT_FORWARD_LIMIT - markerOverhead)
   const tailBytes = Math.min(RESPONSES_TOOL_OUTPUT_TAIL_BYTES, Math.floor(contentBudget / 4))
@@ -294,7 +294,7 @@ function inlineResponseImageDataUrl(part: any): string {
 function historicalImageOmission(originalBytes: number): any {
   return {
     type: 'input_text',
-    text: `[AFY Studio: historical inline image omitted before provider request; original_bytes=${originalBytes}]`,
+    text: `[Studio: historical inline image omitted before provider request; original_bytes=${originalBytes}]`,
   }
 }
 

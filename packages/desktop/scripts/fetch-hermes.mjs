@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // Prepare a clean, shallow Hermes Agent Git checkout as the runtime's python/
-// root. Retain the checkout for provenance; AFY manages runtime replacement.
+// root. Retain the checkout for provenance; Studio manages runtime replacement.
 import {
   appendFileSync,
   existsSync,
@@ -126,7 +126,7 @@ if (needsStamp) {
     '--branch', 'main',
     '--distance', '0',
     '--source', 'git',
-    // AFY Studio ships and replaces this environment. Do not let startup
+    // Studio ships and replaces this environment. Do not let startup
     // turn the copied checkout into a self-managed PM installation.
     '--update-mechanism', 'external',
   ])

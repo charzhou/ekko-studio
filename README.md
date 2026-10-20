@@ -1,4 +1,4 @@
-# AFY Studio
+# Studio
 
 A local AI workspace for chat, coding, and visual workflows, available as a Windows desktop application and a web interface.
 
@@ -23,7 +23,7 @@ npm run build
 
 ## Windows installer
 
-Run **AFY Studio Windows Build** in GitHub Actions and select x64 or ARM64. Installers are available as workflow artifacts. The workflow does not publish releases or update feeds.
+Run **Studio Windows Build** in GitHub Actions and select x64. Installers are available as workflow artifacts. The workflow does not publish releases or update feeds.
 
 The built-in local agent works without downloading a separate agent runtime. Hermes and coding integrations use installations already available on the server machine. Application updates, managed runtime/model downloads, cloud/mobile relays, hardware features and partner service integrations are excluded from this edition.
 

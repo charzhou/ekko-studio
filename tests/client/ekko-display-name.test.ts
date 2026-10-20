@@ -11,14 +11,14 @@ function clientSourceFiles(directory: string): string[] {
   })
 }
 
-describe('AFY Studio display name', () => {
-  it('uses AFY Studio everywhere in the client without changing the internal runtime id', () => {
+describe('Studio display name', () => {
+  it('uses Studio everywhere in the client without changing the internal runtime id', () => {
     const occurrences = clientSourceFiles('packages/client/src')
       .flatMap(path => readFileSync(path, 'utf8').includes('Ekko Agent') ? [path] : [])
 
     expect(occurrences).toEqual([])
-    expect(AGENT_OPTIONS).toContainEqual({ label: 'AFY Studio', value: 'ekko-agent' })
-    expect(GROUP_AGENT_OPTIONS).toContainEqual({ label: 'AFY Studio', value: 'ekko' })
+    expect(AGENT_OPTIONS).toContainEqual({ label: 'Studio', value: 'ekko-agent' })
+    expect(GROUP_AGENT_OPTIONS).toContainEqual({ label: 'Studio', value: 'ekko' })
   })
 
   it.each([
@@ -28,15 +28,15 @@ describe('AFY Studio display name', () => {
       OEM_GROUP_AGENT_OPTIONS, 'OEM_GROUP_AGENT_OPTIONS', 'const groupAgentTypeDefinitions = OEM_GROUP_AGENT_OPTIONS'],
     ['workflow', 'packages/client/src/views/hermes/WorkflowView.vue',
       OEM_AGENT_OPTIONS, 'OEM_AGENT_OPTIONS', 'const workflowAgentDefinitions = OEM_AGENT_OPTIONS'],
-  ] as const)('exposes only AFY Studio in the %s Agent dropdown', (_name, path, options, exportName, binding) => {
+  ] as const)('exposes only Studio in the %s Agent dropdown', (_name, path, options, exportName, binding) => {
     const source = readFileSync(path, 'utf8')
 
     expect(source).toContain(exportName)
     expect(source).toContain(binding)
-    expect(options).toEqual([{ label: 'AFY Studio', value: 'hermes' }])
+    expect(options).toEqual([{ label: 'Studio', value: 'hermes' }])
   })
 
-  it('keeps server-managed provider choices available for AFY Studio workflow nodes', () => {
+  it('keeps server-managed provider choices available for Studio workflow nodes', () => {
     const view = readFileSync('packages/client/src/views/hermes/WorkflowView.vue', 'utf8')
     const node = readFileSync('packages/client/src/components/hermes/workflow/WorkflowAgentNode.vue', 'utf8')
 
@@ -44,10 +44,10 @@ describe('AFY Studio display name', () => {
     expect(node).toContain('canScopedCodingAgentUseProvider(')
   })
 
-  it('keeps the log API id internal while displaying AFY Studio', () => {
+  it('keeps the log API id internal while displaying Studio', () => {
     const logs = readFileSync('packages/client/src/views/hermes/LogsView.vue', 'utf8')
 
-    expect(logs).toContain("name.replace(/^ekko-agent(?=\\/|$)/, 'AFY Studio')")
+    expect(logs).toContain("name.replace(/^ekko-agent(?=\\/|$)/, 'Studio')")
     expect(logs).toContain('`${displayLogName(f.name)} (${f.size})`')
     expect(logs).toContain('{{ displayLogName(entry.logger) }}')
   })

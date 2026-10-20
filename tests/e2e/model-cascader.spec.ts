@@ -44,14 +44,14 @@ async function expectUnifiedCascader(menu: Locator) {
   expect(layout.radius).toBeGreaterThan(0)
 }
 
-test('global model switching hides MoA while AFY Studio single chat retains it', async ({ page }) => {
+test('global model switching hides MoA while Studio single chat retains it', async ({ page }) => {
   await authenticate(page, TEST_ACCESS_KEY, 'research')
   const api = await mockHermesApi(page, { modelGroups, modelAliases })
   await mockChatSocket(page)
   await page.route('**/api/hermes/config/model', route => route.fulfill({ json: { success: true } }))
   await page.goto('/#/hermes/chat')
   await page.getByRole('button', { name: 'New Chat', exact: true }).click()
-  await selectNewChatAgent(page, 'AFY Studio')
+  await selectNewChatAgent(page, 'Studio')
   const menu = page.locator('.model-cascader:visible')
   await page.locator('.new-chat-page .input-model-button').click()
   await expect(menu.locator('.model-cascader-provider').filter({ hasText: 'MoA' })).toBeVisible()
@@ -72,7 +72,7 @@ test('global model switching hides MoA while AFY Studio single chat retains it',
 })
 
 for (const [label, identity, expectedMoa] of [
-  ['legacy AFY Studio', { source: 'cli' }, true],
+  ['legacy Studio', { source: 'cli' }, true],
   ['built-in Ekko without agent metadata', { source: 'builtin_agent' }, false],
   ['Codex', { source: 'coding_agent', agent: 'codex', agent_mode: 'scoped' }, false],
 ] as const) test(`existing ${label} session ${expectedMoa ? 'offers' : 'hides'} MoA models`, async ({ page }) => {
@@ -108,7 +108,7 @@ for (const { mobile, dark } of [{ mobile: false, dark: false }, { mobile: true, 
   await page.goto('/#/hermes/chat')
   if (mobile) await page.getByRole('button', { name: 'Menu', exact: true }).click()
   await page.getByRole('button', { name: 'New Chat', exact: true }).click()
-  await selectNewChatAgent(page, 'AFY Studio')
+  await selectNewChatAgent(page, 'Studio')
   const draft = page.locator('.new-chat-page')
   await draft.locator('textarea').fill('Keep my draft')
   const trigger = draft.locator('.input-model-button')
@@ -176,7 +176,7 @@ test('supports keyboard traversal, Escape, close and backdrop dismissal without 
   await mockChatSocket(page)
   await page.goto('/#/hermes/chat')
   await page.getByRole('button', { name: 'New Chat', exact: true }).click()
-  await selectNewChatAgent(page, 'AFY Studio')
+  await selectNewChatAgent(page, 'Studio')
   const draft = page.locator('.new-chat-page')
   const trigger = draft.locator('.input-model-button')
   await trigger.focus()

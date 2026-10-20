@@ -1,4 +1,4 @@
-# AFY Studio
+# Studio
 
 本地 AI 工作区，支持聊天、编码和可视化工作流，提供 Windows 桌面应用及 Web 界面。
 
@@ -16,7 +16,7 @@ npm run dev
 
 ## Windows 打包
 
-在 GitHub Actions 中运行 **AFY Studio Windows Build**，选择 x64 或 ARM64，从该次运行的 Artifacts 下载安装器。此流程不发布 Release 或更新源。
+在 GitHub Actions 中运行 **Studio Windows Build**，选择 x64，从该次运行的 Artifacts 下载安装器。此流程不发布 Release 或更新源。
 
 内置本地 Agent 可直接使用；Hermes 与其他 Coding Agent 使用服务器上已有的安装。本版本移除应用更新、托管运行时/模型下载、云端及手机中继、硬件功能和合作服务。
 

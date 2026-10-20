@@ -10,7 +10,7 @@ async function openDraft(page: Page, mobile = false) {
   return page.locator('.new-chat-page')
 }
 
-for (const mobile of [false, true]) test(`legacy form preferences open and send as AFY Studio (${mobile ? 'mobile' : 'desktop'})`, async ({ page }) => {
+for (const mobile of [false, true]) test(`legacy form preferences open and send as Studio (${mobile ? 'mobile' : 'desktop'})`, async ({ page }) => {
   if (mobile) await page.setViewportSize({ width: 390, height: 844 })
   await authenticate(page, TEST_ACCESS_KEY, 'research')
   await page.addInitScript(key => localStorage.setItem(key, JSON.stringify({
@@ -61,7 +61,7 @@ test('restoring removed options falls back without losing valid form choices', a
   await expect(draft.getByRole('button', { name: 'Send', exact: true })).toBeEnabled()
 })
 
-for (const combination of [false, true]) test(`AFY Studio restores its last ${combination ? 'combination' : 'custom'} model`, async ({ page }) => {
+for (const combination of [false, true]) test(`Studio restores its last ${combination ? 'combination' : 'custom'} model`, async ({ page }) => {
   const provider = combination ? 'moa' : 'test-provider'
   const model = combination ? 'ensemble' : 'custom-model'
   await authenticate(page, TEST_ACCESS_KEY, 'research')
@@ -79,7 +79,7 @@ for (const combination of [false, true]) test(`AFY Studio restores its last ${co
   await expect(draft.getByRole('button', { name: 'Category', exact: true })).toBeVisible()
   await expect(settings.locator('.new-chat-field').filter({ hasText: /^Protocol/ })).toHaveCount(0)
   await settings.getByRole('button', { name: 'Close', exact: true }).click()
-  await draft.locator('textarea').fill('Use my last AFY Studio model')
+  await draft.locator('textarea').fill('Use my last Studio model')
   await draft.getByRole('button', { name: 'Send', exact: true }).click()
   await expect.poll(() => page.evaluate(() => (window as any).__PW_CHAT_SOCKET__?.emitted?.find((event: any) => event.event === 'run')?.payload)).toMatchObject({ provider, model })
 })

@@ -16,9 +16,9 @@ export async function verifyOfflineRuntimeStartup(resourceDirectory) {
   if (typeof validateBundledRuntimePython !== 'function') {
     throw new Error('Desktop build does not export bundled runtime Python validation')
   }
-  const sandbox = await mkdtemp(join(tmpdir(), 'AFY Studio 离线初始化-'))
+  const sandbox = await mkdtemp(join(tmpdir(), 'Studio 离线初始化-'))
   try {
-    const storageRoot = join(sandbox, '用户数据 AFY Studio')
+    const storageRoot = join(sandbox, '用户数据 Studio')
     const initialProgress = []
     const runtime = await prepareBundledRuntime({
       resourceDirectory,

@@ -30,7 +30,7 @@ test('opens Cursor native settings from Agent Manager and saves the real configu
   expect(api.unexpectedRequests).toEqual([])
 })
 
-test('navigates to Cursor Skills and imports, edits and deletes without calling AFY Studio targets', async ({ page }) => {
+test('navigates to Cursor Skills and imports, edits and deletes without calling Studio targets', async ({ page }) => {
   await authenticate(page, TEST_ACCESS_KEY, 'research')
   const api = await mockHermesApi(page)
   let imported = false

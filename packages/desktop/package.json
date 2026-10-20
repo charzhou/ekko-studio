@@ -2,7 +2,7 @@
   "name": "hermes-studio",
   "desktopName": "com.hermeswebui.studio.desktop",
   "version": "0.7.36",
-  "description": "AFY Studio desktop app for multi-agent chat, coding, and visual workflows with local runtimes.",
+  "description": "Studio desktop app for multi-agent chat, coding, and visual workflows with local runtimes.",
   "license": "BSL-1.1",
   "private": true,
   "main": "dist/main/entry.js",

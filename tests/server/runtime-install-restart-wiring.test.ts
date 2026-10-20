@@ -25,7 +25,7 @@ describe('Runtime install restart wiring', () => {
     expect(desktopMain).toContain("ipcMain.handle('hermes-desktop:restart-app'")
   })
 
-  it('does not expose hosted Web UI restart routes in AFY Studio', () => {
+  it('does not expose hosted Web UI restart routes in Studio', () => {
     const routes = readFileSync('packages/server/src/modules/hermes/routes/runtime-versions.ts', 'utf8')
     const restart = readFileSync('packages/server/src/modules/studio/public/web-ui-restart.ts', 'utf8')
     const desktopServer = readFileSync('packages/desktop/src/main/webui-server.ts', 'utf8')

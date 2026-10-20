@@ -33,8 +33,8 @@ const { toolTraceVisible } = useToolTraceVisibility()
 const listRef = ref<InstanceType<typeof VirtualMessageList> | null>(null)
 const showScrollBottomButton = ref(false)
 const emptyStateAgents = [
-    { name: 'AFY Studio', src: '/logo.png' },
-    { name: 'AFY Studio', src: '/coding-agents/ekko-agent.png' },
+    { name: 'Studio', src: '/logo.png' },
+    { name: 'Studio', src: '/coding-agents/ekko-agent.png' },
     { name: 'Codex', src: '/coding-agents/codex-openai.png' },
     { name: 'Claude', src: '/coding-agents/claude-code.svg' },
     { name: 'Pi', src: '/coding-agents/pi.svg' },

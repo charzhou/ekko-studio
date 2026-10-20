@@ -1196,7 +1196,7 @@ describe('group chat store streaming merge', () => {
     expect(url).toBe('/api/studio/group-chat/rooms/room-1/attachments')
     expect(options.method).toBe('POST')
     expect(options.headers.Authorization).toBe('Bearer test-token')
-    expect(options.headers['X-AFY Studio-Profile']).toBeUndefined()
+    expect(options.headers['X-Studio-Profile']).toBeUndefined()
     expect(options.body).toBeInstanceOf(FormData)
   })
 })

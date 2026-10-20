@@ -21,7 +21,7 @@ const levelFilter = ref<string>('')
 const searchQuery = ref('')
 
 function displayLogName(name: string): string {
-  return name.replace(/^ekko-agent(?=\/|$)/, 'AFY Studio')
+  return name.replace(/^ekko-agent(?=\/|$)/, 'Studio')
 }
 
 const logOptions = computed(() =>

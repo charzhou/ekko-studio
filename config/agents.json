@@ -4,7 +4,7 @@
   "agents": [
     {
       "id": "ekko-agent",
-      "name": "AFY Studio",
+      "name": "Studio",
       "kind": "built-in",
       "aliases": [],
       "sessionId": "ekko-agent",
@@ -33,7 +33,7 @@
     },
     {
       "id": "hermes",
-      "name": "AFY Studio",
+      "name": "Studio",
       "kind": "hermes",
       "aliases": [],
       "sessionId": "hermes",
@@ -59,7 +59,7 @@
         "compact": true,
         "serverManagedAuth": false
       },
-      "provider": "AFY Studio"
+      "provider": "Studio"
     },
     {
       "id": "claude-code",

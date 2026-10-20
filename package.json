@@ -1,7 +1,7 @@
 {
   "name": "ekko-studio",
   "version": "0.7.36",
-  "description": "AFY Studio is a local AI workspace for chat, coding, and workflows on Windows and the web.",
+  "description": "Studio is a local AI workspace for chat, coding, and workflows on Windows and the web.",
   "license": "BSL-1.1",
   "engines": {
     "node": ">=23.0.0"

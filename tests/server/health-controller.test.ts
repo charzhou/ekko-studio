@@ -146,7 +146,7 @@ describe('health controller version metadata', () => {
     expect(ctx.body.webui_version).toBe('9.9.9-test')
   })
 
-  it('does not check a hosted npm version in AFY Studio', async () => {
+  it('does not check a hosted npm version in Studio', async () => {
     vi.spyOn(console, 'log').mockImplementation(() => {})
     const pkg = readRootPackage()
     const fetchMock = vi.fn().mockResolvedValue({

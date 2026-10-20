@@ -25,7 +25,7 @@ describe('desktop identity across the Ekko Studio rename', () => {
 
     configureDesktopIdentity(app)
 
-    expect(name).toBe('AFY Studio')
+    expect(name).toBe('Studio')
     expect(app.getPath('userData')).toBe(oldProfile)
     configureDesktopIdentity(app)
     expect(app.getPath('userData')).toBe(oldProfile)

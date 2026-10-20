@@ -1,6 +1,6 @@
 # Development Guidelines
 
-This document defines project-level development rules for AFY Studio. It is tool-agnostic and applies to all contributors and coding agents.
+This document defines project-level development rules for Studio. It is tool-agnostic and applies to all contributors and coding agents.
 
 ## Commands
 
@@ -75,7 +75,7 @@ npm run build
 
 ## OEM distribution
 
-AFY Studio distributes Windows installers and offline runtime bundles as workflow artifacts. Automatic updates,
+Studio distributes Windows installers and offline runtime bundles as workflow artifacts. Automatic updates,
 managed runtime/model downloads, publication feeds, mobile/cloud relays, partner
 services, hardware firmware, Docker, NAS and macOS/Linux installers are excluded.
 Package IDs, data paths and protocols remain compatible. See `docs/oem/IMPLEMENTATION.md`.

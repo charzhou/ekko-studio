@@ -14,7 +14,7 @@ test('model settings expose keyed OpenCode providers after Free is removed', asy
   await expect(page.locator('.n-base-select-option').filter({ hasText: 'OpenCode Free' })).toHaveCount(0)
   await page.locator('.n-base-select-option').filter({ hasText: 'OpenCode Zen' }).click()
   await expect(form.locator('input[type="password"]')).toBeVisible()
-  await expect(page.getByText('Update AFY Studio Agent to use OpenCode Free.')).toHaveCount(0)
+  await expect(page.getByText('Update Studio Agent to use OpenCode Free.')).toHaveCount(0)
   expect(api.unexpectedRequests).toEqual([])
 })
 

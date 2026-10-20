@@ -1,7 +1,7 @@
 // Keep every Agent picker in the same order as single chat.
 export const AGENT_OPTIONS = [
-  { label: 'AFY Studio', value: 'ekko-agent' },
-  { label: 'AFY Studio', value: 'hermes' },
+  { label: 'Studio', value: 'ekko-agent' },
+  { label: 'Studio', value: 'hermes' },
   { label: 'Claude', value: 'claude-code' },
   { label: 'Codex', value: 'codex' },
   { label: 'Pi', value: 'pi' },

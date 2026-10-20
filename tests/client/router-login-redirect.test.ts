@@ -40,7 +40,7 @@ describe('router login redirect', () => {
   }, 60_000)
 
 
-  it.each(['/ekko/settings', '/ekko/skills', '/studio/agents/codex/settings'])('redirects retired configuration %s to AFY Studio chat', async (path) => {
+  it.each(['/ekko/settings', '/ekko/skills', '/studio/agents/codex/settings'])('redirects retired configuration %s to Studio chat', async (path) => {
     mockHasApiKey.mockReturnValue(true)
     const router = await loadRouter()
     await router.push(path)

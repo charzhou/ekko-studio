@@ -178,7 +178,7 @@ describe('KanbanTaskDrawer', () => {
       runs: [{ id: 1, profile: 'alice', status: 'done', started_at: 110, ended_at: 120 }],
       session: {
         id: 'session-1',
-        title: 'AFY Studio session',
+        title: 'Studio session',
         source: 'codex',
         model: 'gpt-5.5',
         started_at: 110,

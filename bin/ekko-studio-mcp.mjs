@@ -47,7 +47,7 @@ const VERSION = readPackageVersion()
 function printHelp() {
   process.stdout.write(`${DISPLAY_COMMAND} v${VERSION}
 
-AFY Studio MCP stdio server.
+Studio MCP stdio server.
 
 Usage:
   ${DISPLAY_COMMAND} [api|browser|devices|use|plan]
@@ -451,7 +451,7 @@ const moduleHints = {
     keywords: ['codex', 'claude', 'coding agent', 'install', 'run'],
   },
   Config: {
-    purpose: 'Read and update AFY Studio configuration.',
+    purpose: 'Read and update Studio configuration.',
     keywords: ['config', 'settings', 'preferences'],
   },
   Devices: {
@@ -592,7 +592,7 @@ function compactOpenApiDocument(openapi, args = {}) {
   }
 
   return {
-    title: openapi?.info?.title || 'AFY Studio API',
+    title: openapi?.info?.title || 'Studio API',
     version: openapi?.info?.version || '',
     usage: hasFilters
       ? 'Use the selected operation details to call ekko_studio_api_request with method, path, query, and body. Auth and profile are handled by the MCP server.'
@@ -608,7 +608,7 @@ function compactOpenApiDocument(openapi, args = {}) {
 const authArgumentProperties = {
   token: {
     type: 'string',
-    description: 'Optional AFY Studio bearer token. Usually omit this and pass profile so the MCP server can read the temporary profile token.',
+    description: 'Optional Studio bearer token. Usually omit this and pass profile so the MCP server can read the temporary profile token.',
   },
   profile: {
     type: 'string',
@@ -655,7 +655,7 @@ function browserDescriptor() {
     if (process.platform !== 'win32' && (directoryInfo.mode & 0o077) !== 0) throw new Error('unsafe descriptor directory permissions')
     descriptor = JSON.parse(readFileSync(descriptorPath, 'utf8'))
   } catch {
-    throw new Error('AFY Studio Desktop Browser is not running. Open the Desktop app and try again.')
+    throw new Error('Studio Desktop Browser is not running. Open the Desktop app and try again.')
   }
   const endpoint = String(descriptor?.endpoint || '')
   const token = String(descriptor?.token || '')
@@ -664,7 +664,7 @@ function browserDescriptor() {
     throw new Error('Desktop Browser Broker descriptor is invalid')
   }
   if (!Number.isInteger(descriptor.desktopPid) || descriptor.desktopPid <= 0) throw new Error('Desktop Browser Broker PID is invalid')
-  try { process.kill(descriptor.desktopPid, 0) } catch { throw new Error('AFY Studio Desktop Browser is no longer running') }
+  try { process.kill(descriptor.desktopPid, 0) } catch { throw new Error('Studio Desktop Browser is no longer running') }
   return { endpoint, token, instanceId: String(descriptor.instanceId || '') }
 }
 
@@ -926,7 +926,7 @@ const tools = [
   {
     name: 'ekko_studio_browser_tabs',
     toolset: 'browser',
-    description: 'List, create, activate, close, or release control of AFY Studio Desktop browser tabs. Reuse explicit tab_id values across calls.',
+    description: 'List, create, activate, close, or release control of Studio Desktop browser tabs. Reuse explicit tab_id values across calls.',
     inputSchema: browserInputSchema({
       action: { type: 'string', enum: ['list', 'create', 'activate', 'close', 'release'] },
       tab_id: { type: 'string', description: 'Required for activate, close, and release.' },
@@ -937,7 +937,7 @@ const tools = [
   {
     name: 'ekko_studio_browser_navigate',
     toolset: 'browser',
-    description: 'Open an HTTP/HTTPS URL or move back, forward, reload, or stop one AFY Studio Desktop browser tab.',
+    description: 'Open an HTTP/HTTPS URL or move back, forward, reload, or stop one Studio Desktop browser tab.',
     inputSchema: browserInputSchema({
       tab_id: { type: 'string' },
       action: { type: 'string', enum: ['open', 'back', 'forward', 'reload', 'stop'], description: 'Defaults to open when url is provided.' },
@@ -1023,7 +1023,7 @@ const tools = [
   {
     name: 'ekko_studio_api_openapi_get',
     toolset: 'api',
-    description: 'Return AFY Studio API documentation as compact JSON. When the user asks to read/check the operation manual, API docs, endpoint docs, 接口文档, 接口手册, or 操作手册, call this tool without filters first to get the outline/module index. Without filters, returns only module purpose, keywords, and operation counts because the full API catalog is large. For endpoint details, call again with tag, path, or method filters, then use ekko_studio_api_request.',
+    description: 'Return Studio API documentation as compact JSON. When the user asks to read/check the operation manual, API docs, endpoint docs, 接口文档, 接口手册, or 操作手册, call this tool without filters first to get the outline/module index. Without filters, returns only module purpose, keywords, and operation counts because the full API catalog is large. For endpoint details, call again with tag, path, or method filters, then use ekko_studio_api_request.',
     inputSchema: inputSchema({
         path: {
           type: 'string',
@@ -1047,7 +1047,7 @@ const tools = [
   {
     name: 'ekko_studio_api_request',
     toolset: 'api',
-    description: 'Execute a AFY Studio operation by calling an endpoint path. Use ekko_studio_api_openapi_get first as the operation manual to inspect method, parameters, requestBody, and responses. Do not use /api/studio/chat-run/* or /api/studio/sessions/* as an internal delegation mechanism.',
+    description: 'Execute a Studio operation by calling an endpoint path. Use ekko_studio_api_openapi_get first as the operation manual to inspect method, parameters, requestBody, and responses. Do not use /api/studio/chat-run/* or /api/studio/sessions/* as an internal delegation mechanism.',
     inputSchema: inputSchema({
         method: {
           type: 'string',
@@ -1056,7 +1056,7 @@ const tools = [
         },
         path: {
           type: 'string',
-          description: 'Relative AFY Studio endpoint path from the operation manual, for example /api/studio/sessions?limit=20. Full URLs and // paths are rejected.',
+          description: 'Relative Studio endpoint path from the operation manual, for example /api/studio/sessions?limit=20. Full URLs and // paths are rejected.',
         },
         body: {
           type: ['object', 'array', 'string', 'number', 'boolean', 'null'],
@@ -1109,7 +1109,7 @@ const tools = [
   {
     name: 'ekko_studio_use_chat_run',
     toolset: 'use',
-    description: 'Start one user-requested AFY Studio chat or coding-agent run through the HTTP bridge and wait for completion. Do not use this as an internal delegation or subtask mechanism.',
+    description: 'Start one user-requested Studio chat or coding-agent run through the HTTP bridge and wait for completion. Do not use this as an internal delegation or subtask mechanism.',
     inputSchema: inputSchema({
         input: {
           oneOf: [
@@ -1198,7 +1198,7 @@ const tools = [
   {
     name: 'ekko_studio_use_sessions_list',
     toolset: 'use',
-    description: 'List AFY Studio chat sessions for an explicit user-requested session operation. Do not use this as an internal delegation mechanism.',
+    description: 'List Studio chat sessions for an explicit user-requested session operation. Do not use this as an internal delegation mechanism.',
     inputSchema: inputSchema({
         limit: {
           type: 'number',
@@ -1213,7 +1213,7 @@ const tools = [
   {
     name: 'ekko_studio_use_sessions_count',
     toolset: 'use',
-    description: 'Count AFY Studio chat sessions without returning the session list. Do not use this as an internal delegation mechanism.',
+    description: 'Count Studio chat sessions without returning the session list. Do not use this as an internal delegation mechanism.',
     inputSchema: inputSchema({
         source: {
           type: 'string',
@@ -1224,7 +1224,7 @@ const tools = [
   {
     name: 'ekko_studio_use_usage_stats',
     toolset: 'use',
-    description: 'Query AFY Studio usage totals, cost estimate, model breakdown, and daily trend for the selected profile.',
+    description: 'Query Studio usage totals, cost estimate, model breakdown, and daily trend for the selected profile.',
     inputSchema: inputSchema({
         days: {
           type: 'number',
@@ -1235,7 +1235,7 @@ const tools = [
   {
     name: 'ekko_studio_use_session_get',
     toolset: 'use',
-    description: 'Get one AFY Studio session by id for an explicit user-requested session operation. Do not use this as an internal delegation mechanism.',
+    description: 'Get one Studio session by id for an explicit user-requested session operation. Do not use this as an internal delegation mechanism.',
     inputSchema: inputSchema({
         session_id: {
           type: 'string',
@@ -1246,7 +1246,7 @@ const tools = [
   {
     name: 'ekko_studio_use_session_messages',
     toolset: 'use',
-    description: 'Get messages for one AFY Studio conversation. By default returns user and assistant messages only. Do not use this as an internal delegation mechanism.',
+    description: 'Get messages for one Studio conversation. By default returns user and assistant messages only. Do not use this as an internal delegation mechanism.',
     inputSchema: inputSchema({
         session_id: {
           type: 'string',
@@ -1276,7 +1276,7 @@ const tools = [
   {
     name: 'ekko_studio_use_session_delete',
     toolset: 'use',
-    description: 'Delete one AFY Studio session by id for an explicit user-requested session operation. Do not use this as an internal delegation mechanism.',
+    description: 'Delete one Studio session by id for an explicit user-requested session operation. Do not use this as an internal delegation mechanism.',
     inputSchema: inputSchema({
         session_id: {
           type: 'string',
@@ -1287,7 +1287,7 @@ const tools = [
   {
     name: 'ekko_studio_use_session_rename',
     toolset: 'use',
-    description: 'Rename one AFY Studio session title for an explicit user-requested session operation. Do not use this as an internal delegation mechanism.',
+    description: 'Rename one Studio session title for an explicit user-requested session operation. Do not use this as an internal delegation mechanism.',
     inputSchema: inputSchema({
         session_id: {
           type: 'string',
@@ -1302,13 +1302,13 @@ const tools = [
   {
     name: 'ekko_studio_use_profiles_list',
     toolset: 'use',
-    description: 'List AFY Studio profiles.',
+    description: 'List Studio profiles.',
     inputSchema: inputSchema(),
   },
   {
     name: 'ekko_studio_use_available_models',
     toolset: 'use',
-    description: 'List available AFY Studio models for the selected profile as a compact provider/model summary. Use query to narrow results or include_details=true only when raw provider metadata is required.',
+    description: 'List available Studio models for the selected profile as a compact provider/model summary. Use query to narrow results or include_details=true only when raw provider metadata is required.',
     inputSchema: inputSchema({
         query: {
           type: 'string',
@@ -1338,7 +1338,7 @@ const tools = [
   {
     name: 'ekko_studio_use_provider_add',
     toolset: 'use',
-    description: 'Add or update a AFY Studio model provider for the selected profile, then make it the active default provider/model.',
+    description: 'Add or update a Studio model provider for the selected profile, then make it the active default provider/model.',
     inputSchema: inputSchema({
         name: {
           type: 'string',
@@ -1374,7 +1374,7 @@ const tools = [
   {
     name: 'ekko_studio_use_provider_delete',
     toolset: 'use',
-    description: 'Delete a AFY Studio model provider or clear a built-in provider credential for the selected profile.',
+    description: 'Delete a Studio model provider or clear a built-in provider credential for the selected profile.',
     inputSchema: inputSchema({
         pool_key: {
           type: 'string',
@@ -1400,7 +1400,7 @@ const tools = [
   {
     name: 'ekko_studio_use_workflows_list',
     toolset: 'use',
-    description: 'List AFY Studio workflows for the selected or requested profile.',
+    description: 'List Studio workflows for the selected or requested profile.',
     inputSchema: inputSchema({
         profile: {
           type: 'string',
@@ -1411,7 +1411,7 @@ const tools = [
   {
     name: 'ekko_studio_use_workflow_get',
     toolset: 'use',
-    description: 'Get one AFY Studio workflow by id.',
+    description: 'Get one Studio workflow by id.',
     inputSchema: inputSchema({
         workflow_id: {
           type: 'string',
@@ -1422,7 +1422,7 @@ const tools = [
   {
     name: 'ekko_studio_use_workflow_create',
     toolset: 'use',
-    description: 'Create a AFY Studio workflow with optional nodes, edges, viewport, workspace, and profile.',
+    description: 'Create a Studio workflow with optional nodes, edges, viewport, workspace, and profile.',
     inputSchema: inputSchema({
         name: {
           type: 'string',
@@ -1456,7 +1456,7 @@ const tools = [
   {
     name: 'ekko_studio_use_workflow_update',
     toolset: 'use',
-    description: 'Update a AFY Studio workflow name, workspace, nodes, edges, or viewport.',
+    description: 'Update a Studio workflow name, workspace, nodes, edges, or viewport.',
     inputSchema: inputSchema({
         workflow_id: {
           type: 'string',
@@ -1490,7 +1490,7 @@ const tools = [
   {
     name: 'ekko_studio_use_workflow_delete',
     toolset: 'use',
-    description: 'Delete one AFY Studio workflow by id, including its workflow run records.',
+    description: 'Delete one Studio workflow by id, including its workflow run records.',
     inputSchema: inputSchema({
         workflow_id: {
           type: 'string',
@@ -1609,13 +1609,13 @@ const TOOL_ALIASES = new Map([
 const CATEGORY_TOOLSETS = {
   browser: {
     name: 'ekko_studio_browser_toolset',
-    coverage: 'AFY Studio Desktop browser tabs and leases; HTTP/HTTPS navigation; accessibility snapshots with stable refs; single or sequential batch click, type, key press, and scroll interaction; viewport or full-page screenshots; bounded console log read and clear.',
-    description: 'Discover and invoke AFY Studio Desktop browser operations without loading every browser tool schema into the model context. Covers tab list/create/activate/close/release, navigation back/forward/reload/stop/open, accessibility snapshots, single or batch click/type/key/scroll interaction, screenshots, and console logs. Use action=list for the compact operation catalog, action=describe for one full input schema, then action=call with that exact tool name and arguments.',
+    coverage: 'Studio Desktop browser tabs and leases; HTTP/HTTPS navigation; accessibility snapshots with stable refs; single or sequential batch click, type, key press, and scroll interaction; viewport or full-page screenshots; bounded console log read and clear.',
+    description: 'Discover and invoke Studio Desktop browser operations without loading every browser tool schema into the model context. Covers tab list/create/activate/close/release, navigation back/forward/reload/stop/open, accessibility snapshots, single or batch click/type/key/scroll interaction, screenshots, and console logs. Use action=list for the compact operation catalog, action=describe for one full input schema, then action=call with that exact tool name and arguments.',
   },
   use: {
     name: 'ekko_studio_use_toolset',
     coverage: 'Explicit user-requested Studio chat/coding runs; session list/count/detail/messages/context/rename/delete; usage statistics; profiles and available models; provider add/delete; worker status; workflow CRUD and workflow run list/start/stop/rerun/delete.',
-    description: 'Discover and invoke high-level AFY Studio operations without loading every Studio-use tool schema into the model context. Covers explicit user-requested chat or coding runs, session management and clean context, usage statistics, profiles/models/providers, worker status, workflow CRUD, and workflow run lifecycle. Never use chat/session operations as an internal delegation mechanism. Use action=list for the compact operation catalog, action=describe for one full input schema, then action=call with that exact tool name and arguments.',
+    description: 'Discover and invoke high-level Studio operations without loading every Studio-use tool schema into the model context. Covers explicit user-requested chat or coding runs, session management and clean context, usage statistics, profiles/models/providers, worker status, workflow CRUD, and workflow run lifecycle. Never use chat/session operations as an internal delegation mechanism. Use action=list for the compact operation catalog, action=describe for one full input schema, then action=call with that exact tool name and arguments.',
   },
 }
 
@@ -1681,10 +1681,10 @@ function serverInstructions() {
   if (ACTIVE_TOOLSET === 'devices') return ''
   if (ACTIVE_TOOLSET === 'plan') return SHARED_TASK_PLAN_ENABLED
     ? 'Use ekko_studio_update_plan from ekko-studio-interaction to maintain the current Studio task card. Use only the context_id supplied with the latest input; expired contexts cannot update another turn.'
-      + (USER_CLARIFICATION_ENABLED ? ' Use ekko_studio_clarify from this same MCP server to ask a necessary question and wait for the user in AFY Studio, using the latest interaction context_id. Never treat timeout, dismissal, or cancellation as approval.' : '')
+      + (USER_CLARIFICATION_ENABLED ? ' Use ekko_studio_clarify from this same MCP server to ask a necessary question and wait for the user in Studio, using the latest interaction context_id. Never treat timeout, dismissal, or cancellation as approval.' : '')
     : ''
   if (ACTIVE_TOOLSET === 'api') {
-    return 'AFY Studio API operations. Use ekko_studio_api_openapi_get without filters for the compact module index, call it again with tag/path/method filters for endpoint details, then call ekko_studio_api_request with the documented relative path and JSON fields.'
+    return 'Studio API operations. Use ekko_studio_api_openapi_get without filters for the compact module index, call it again with tag/path/method filters for endpoint details, then call ekko_studio_api_request with the documented relative path and JSON fields.'
   }
   const category = CATEGORY_TOOLSETS[ACTIVE_TOOLSET]
   return category ? `${category.description} Coverage: ${category.coverage}` : ''

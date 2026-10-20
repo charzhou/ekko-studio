@@ -1,6 +1,6 @@
 !macro stopStudioExecutable EXE_NAME LABEL
   IfFileExists "$INSTDIR\${EXE_NAME}" 0 studioStopDone_${LABEL}
-    DetailPrint "Stopping AFY Studio..."
+    DetailPrint "Stopping Studio..."
     nsExec::ExecToLog '"$INSTDIR\${EXE_NAME}" --quit'
     Pop $0
 
@@ -112,7 +112,7 @@
 
 !macro repairHermesStudioUninstaller
   IfFileExists "$INSTDIR\${UNINSTALL_FILENAME}" 0 hermesStudioRepairDone
-    DetailPrint "Repairing AFY Studio uninstaller..."
+    DetailPrint "Repairing Studio uninstaller..."
     SetOutPath "$INSTDIR"
     Delete "$INSTDIR\${UNINSTALL_FILENAME}.hermes-repair"
     ClearErrors

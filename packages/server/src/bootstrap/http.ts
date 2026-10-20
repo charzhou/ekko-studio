@@ -323,7 +323,7 @@ function recordLockedHermesSelection(selection: HermesRuntimeSelection): void {
 
 export async function bootstrap() {
   bootstrapReady = false
-  console.log(`AFY Studio v${APP_VERSION} starting...`)
+  console.log(`Studio v${APP_VERSION} starting...`)
   try {
     await runRegisteredStartupTasks()
   } catch {
@@ -398,7 +398,7 @@ export async function bootstrap() {
   // Initialize all web-ui SQLite tables
   const { initAllStores } = await import('../modules/studio/infrastructure/database/init')
   initAllStores()
-  // AFY Studio only reads a previously cached model catalog; startup never
+  // Studio only reads a previously cached model catalog; startup never
   // contacts a hosted catalog service.
   const { interruptOrphanedTaskPlans } = await import('../modules/studio/repositories/task-plan-store')
   interruptOrphanedTaskPlans()
@@ -471,7 +471,7 @@ export async function bootstrap() {
   const activeGroupChatServer = new GroupChatServer(servers)
   groupChatServer = activeGroupChatServer
   setGroupChatServer(activeGroupChatServer)
-  // Remote group-agent relay is excluded from the AFY Studio distribution.
+  // Remote group-agent relay is excluded from the Studio distribution.
 
   // Chat run Socket.IO — shares the same Server instance, just adds /chat-run namespace
   chatRunServer = new ChatRunSocket(activeGroupChatServer.getIO())
@@ -568,7 +568,7 @@ export async function bootstrap() {
 }
 
 bootstrap().catch((error) => {
-  console.error('FATAL: Failed to start AFY Studio')
+  console.error('FATAL: Failed to start Studio')
   console.error(error)
   logger.fatal(error, 'Fatal error during bootstrap')
   void shutdownAfterFatal('bootstrap-error')

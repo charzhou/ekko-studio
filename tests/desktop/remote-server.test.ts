@@ -12,9 +12,9 @@ import {
 
 afterEach(() => { vi.unstubAllGlobals() })
 
-describe('AFY Studio local desktop server', () => {
+describe('Studio local desktop server', () => {
   it('ignores remote URLs from old settings and launch environment', () => {
-    const home = mkdtempSync(join(tmpdir(), 'afy-local-server-'))
+    const home = mkdtempSync(join(tmpdir(), 'studio-local-server-'))
     try {
       writeFileSync(join(home, 'desktop-remote-server.json'), JSON.stringify({ serverUrl: 'https://remote.example.com' }))
       const env = { EKKO_STUDIO_DESKTOP_SERVER_URL: 'https://another.example.com' }

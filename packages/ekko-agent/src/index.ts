@@ -7,7 +7,7 @@ export interface EkkoAgentInfo {
 export function createEkkoAgentInfo(): EkkoAgentInfo {
   return {
     name: 'ekko-agent',
-    displayName: 'AFY Studio',
+    displayName: 'Studio',
     packageName: 'ekko-agent',
   }
 }

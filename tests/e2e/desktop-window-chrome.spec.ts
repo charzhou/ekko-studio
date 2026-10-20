@@ -225,7 +225,7 @@ for (const platform of ['win32', 'linux'] as const) {
     await expect(controls).toBeVisible()
     await expect(controls.locator('.desktop-window-btn')).toHaveCount(3)
     await expect(controls.locator('img')).toHaveCount(0)
-    await expect(controls).not.toContainText('AFY Studio')
+    await expect(controls).not.toContainText('Studio')
 
     const [controlsBox, headerBox] = await Promise.all([
       controls.boundingBox(),

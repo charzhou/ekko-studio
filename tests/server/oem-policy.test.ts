@@ -17,7 +17,7 @@ import { getRuntimeVersionStatus, startRuntimeVersionDownload } from '../../pack
 import { checkAgentUpdateAndPublish, getAgentUpdateManager, installAgentAndPublish } from '../../packages/server/src/modules/coding-agents/services/update-manager'
 import { checkUpdateAgent, installCodingAgent } from '../../packages/server/src/modules/coding-agents/services'
 
-describe('AFY Studio OEM policy', () => {
+describe('Studio OEM policy', () => {
   it('keeps removed hosted capabilities disabled as a code policy', () => {
     expect(OEM_FEATURES).toEqual({ updates: false, cloudServices: false, hardware: false, partnerServices: false })
     expect(() => requireOemFeature('updates')).toThrow(OEM_DISABLED_MESSAGE)

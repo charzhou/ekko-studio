@@ -54,7 +54,7 @@ function dragRowOnto(wrapper: any, from: number, to: number) {
 }
 
 /**
- * The order of this list is the order AFY Studio tries the models in, so what the
+ * The order of this list is the order Studio tries the models in, so what the
  * rows read after a drag has to be exactly what gets saved.
  */
 describe('fallback providers panel', () => {

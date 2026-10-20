@@ -1,8 +1,7 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
-  <title>AFY Studio</title>
+  <title>Studio</title>
   <defs><linearGradient id="tile" x2="1" y2="1"><stop stop-color="#14213d"/><stop offset="1" stop-color="#080f22"/></linearGradient></defs>
   <rect width="1024" height="1024" rx="208" fill="url(#tile)"/>
-  <path d="M220 758 454 242h116L804 758H672L512 388 352 758Z" fill="#f6f8ff"/>
-  <path d="M394 614h238l48 108H346Z" fill="#65e4d4"/>
-  <circle cx="770" cy="254" r="42" fill="#65e4d4"/>
+  <path d="m512 220 292 164-292 164-292-164Z" fill="#f6f8ff"/>
+  <path d="m220 512 292 164 292-164v128L512 804 220 640Z" fill="#65e4d4"/>
 </svg>

@@ -16,7 +16,7 @@ assignees: ''
 
 ## Environment (if applicable)
 
-- AFY Studio Version:
+- Studio Version:
 - Agent Runtime and Version (if applicable):
 - Operating System:
 - Node Version:

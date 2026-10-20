@@ -109,7 +109,7 @@ export function setOpenAtLogin(app: LoginItemApp, openAtLogin: boolean, options:
   writeAutostartEntry(options, [
     '[Desktop Entry]',
     'Type=Application',
-    'Name=AFY Studio',
+    'Name=Studio',
     `Exec=${command}`,
     'Terminal=false',
     'StartupNotify=false',

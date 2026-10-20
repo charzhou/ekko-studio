@@ -18,7 +18,7 @@ afterEach(() => {
   vi.unstubAllEnvs()
 })
 
-describe('AFY Studio disabled desktop updater', () => {
+describe('Studio disabled desktop updater', () => {
   it.each(['true', 'false'])('never checks, downloads or installs even with the legacy auto-update flag %s', async flag => {
     vi.stubEnv('HERMES_DESKTOP_ENABLE_AUTO_UPDATE', flag)
     const fetchMock = vi.fn()
